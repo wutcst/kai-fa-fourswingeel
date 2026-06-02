@@ -10,36 +10,33 @@ import java.util.*;
 @Service
 public class BattleService {
 
-    // 交互战斗的当前状态
     private Player player;
     private Enemy enemy;
     private List<Card> drawPile;
     private List<Card> hand;
+    private List<Card> discardPile;
+    private int energy;
     private Random random;
     private List<String> log;
     private boolean gameOver;
     private String winner;
 
-    /**
-     * 开始一场新的交互式战斗，返回初始状态
-     */
     public synchronized Map<String, Object> newBattle() {
         this.player = new Player(70);
         this.enemy = new Enemy("邪教徒", 50, 8);
         this.drawPile = initCards();
+        Collections.shuffle(drawPile);
         this.hand = new ArrayList<>();
+        this.discardPile = new ArrayList<>();
+        this.energy = 3;
         this.random = new Random();
         this.log = new ArrayList<>();
         this.gameOver = false;
         this.winner = null;
-        drawHand(); // 抽取开局手牌
+        drawCards(5);
         return getCurrentState();
     }
 
-    /**
-     * 玩家选择一张手牌打出，执行该回合，并返回新的状态
-     * @param index 手牌列表中的索引（从0开始）
-     */
     public synchronized Map<String, Object> playCard(int index) {
         if (gameOver) {
             throw new IllegalStateException("战斗已经结束，请重新开始");
@@ -47,20 +44,25 @@ public class BattleService {
         if (index < 0 || index >= hand.size()) {
             throw new IllegalArgumentException("无效的卡牌编号: " + index);
         }
-        Card chosen = hand.get(index);
-        log.clear();
+        Card card = hand.get(index);
+        if (card.getCost() > energy) {
+            throw new IllegalStateException("能量不足，无法打出该卡牌");
+        }
+        energy -= card.getCost();
 
-        // 1. 玩家回合
-        log.add("玩家使用: " + chosen.getName());
-        if (chosen.getType() == Card.CardType.ATTACK) {
-            enemy.takeDamage(chosen.getDamage());
-            log.add("对敌人造成 " + chosen.getDamage() + " 点伤害，剩余 HP: " + enemy.getHp());
+        log.clear();
+        log.add("玩家使用: " + card.getName());
+        if (card.getType() == Card.CardType.ATTACK) {
+            enemy.takeDamage(card.getDamage());
+            log.add("造成 " + card.getDamage() + " 点伤害，敌人 HP: " + enemy.getHp());
         } else {
-            player.addBlock(chosen.getBlock());
-            log.add("获得 " + chosen.getBlock() + " 点格挡，当前格挡: " + player.getBlock());
+            player.addBlock(card.getBlock());
+            log.add("获得 " + card.getBlock() + " 点格挡，当前格挡: " + player.getBlock());
         }
 
-        // 2. 判断敌人是否死亡
+        hand.remove(index);
+        discardPile.add(card);
+
         if (!enemy.isAlive()) {
             gameOver = true;
             winner = "玩家";
@@ -68,10 +70,18 @@ public class BattleService {
             return getCurrentState();
         }
 
-        // 3. 敌人回合
+        return getCurrentState();
+    }
+
+    public synchronized Map<String, Object> endTurn() {
+        if (gameOver) {
+            throw new IllegalStateException("战斗已经结束");
+        }
+
         int dmg = enemy.getAttackDamage();
         int blocked = Math.min(player.getBlock(), dmg);
         player.takeDamage(dmg);
+        log.clear();
         log.add("敌人攻击，造成 " + dmg + " 点伤害（挡掉 " + blocked + "），玩家 HP: " + player.getHp() + " 格挡: " + player.getBlock());
 
         if (!player.isAlive()) {
@@ -81,26 +91,40 @@ public class BattleService {
             return getCurrentState();
         }
 
-        // 4. 下一回合抽牌
-        drawHand();
+        // 回合结束：格挡清零，弃掉手牌，重置能量，抽五张
+        player.addBlock(-player.getBlock());
+        discardPile.addAll(hand);
+        hand.clear();
+        energy = 3;
+        drawCards(5);
+
         return getCurrentState();
     }
 
-    private void drawHand() {
-        hand.clear();
-        for (int i = 0; i < 3; i++) {
-            hand.add(drawPile.get(random.nextInt(drawPile.size())));
+    private void drawCards(int count) {
+        for (int i = 0; i < count; i++) {
+            if (drawPile.isEmpty()) {
+                if (discardPile.isEmpty()) break;
+                drawPile.addAll(discardPile);
+                discardPile.clear();
+                Collections.shuffle(drawPile);
+            }
+            hand.add(drawPile.remove(0));
         }
     }
 
     private List<Card> initCards() {
         List<Card> cards = new ArrayList<>();
-        cards.add(new Card("打击", 6, 0, Card.CardType.ATTACK));
-        cards.add(new Card("打击", 6, 0, Card.CardType.ATTACK));
-        cards.add(new Card("打击", 6, 0, Card.CardType.ATTACK));
-        cards.add(new Card("防御", 0, 5, Card.CardType.SKILL));
-        cards.add(new Card("防御", 0, 5, Card.CardType.SKILL));
-        cards.add(new Card("剑柄打击", 8, 0, Card.CardType.ATTACK));
+        cards.add(new Card("打击", 1, 6, 0, Card.CardType.ATTACK));
+        cards.add(new Card("打击", 1, 6, 0, Card.CardType.ATTACK));
+        cards.add(new Card("防御", 1, 0, 5, Card.CardType.SKILL));
+        cards.add(new Card("防御", 1, 0, 5, Card.CardType.SKILL));
+        cards.add(new Card("重击", 2, 10, 0, Card.CardType.ATTACK));
+        cards.add(new Card("重击", 2, 10, 0, Card.CardType.ATTACK));
+        cards.add(new Card("盾击", 2, 0, 8, Card.CardType.SKILL));
+        cards.add(new Card("盾击", 2, 0, 8, Card.CardType.SKILL));
+        cards.add(new Card("猛击", 3, 18, 0, Card.CardType.ATTACK));
+        cards.add(new Card("铁壁", 3, 0, 12, Card.CardType.SKILL));
         return cards;
     }
 
@@ -111,6 +135,9 @@ public class BattleService {
         state.put("enemyName", enemy.getName());
         state.put("enemyHp", enemy.getHp());
         state.put("enemyMaxHp", enemy.getMaxHp());
+        state.put("energy", energy);
+        state.put("drawPileSize", drawPile.size());
+        state.put("discardPileSize", discardPile.size());
 
         List<Map<String, Object>> handCards = new ArrayList<>();
         for (int i = 0; i < hand.size(); i++) {
@@ -118,6 +145,7 @@ public class BattleService {
             Map<String, Object> cardInfo = new LinkedHashMap<>();
             cardInfo.put("index", i);
             cardInfo.put("name", c.getName());
+            cardInfo.put("cost", c.getCost());
             cardInfo.put("damage", c.getDamage());
             cardInfo.put("block", c.getBlock());
             cardInfo.put("type", c.getType().name());
