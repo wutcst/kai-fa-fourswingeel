@@ -139,6 +139,9 @@ public class BattleService {
         state.put("drawPileSize", drawPile.size());
         state.put("discardPileSize", discardPile.size());
 
+        // 敌人下回合将造成的伤害（固定值，因为敌人意图目前不变）
+        state.put("enemyNextDamage", enemy.getAttackDamage());
+
         List<Map<String, Object>> handCards = new ArrayList<>();
         for (int i = 0; i < hand.size(); i++) {
             Card c = hand.get(i);
@@ -151,7 +154,7 @@ public class BattleService {
             cardInfo.put("type", c.getType().name());
             handCards.add(cardInfo);
         }
-        state.put("handCards", handCards);
+        state.put("hand", handCards);   // 修改键名为 "hand"，与前端对接
         state.put("log", new ArrayList<>(log));
         state.put("gameOver", gameOver);
         state.put("winner", winner);
