@@ -20,7 +20,9 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+# AI
+.aider*
+.aider.tags.cache.v4/*
 
 # H2 文件模式数据（目前使用内存库，此规则保留备用）
 data/
-.aider
