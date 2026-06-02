@@ -1,12 +1,11 @@
-const API_BASE = '/api/game';  // 同源时使用相对路径，避免 CORS 问题
+const API_BASE = '/api/game';
 
 const app = Vue.createApp({
   data() {
     return {
-      state: null,   // 当前战斗状态
+      state: null,
       loading: false,
       error: null,
-      // 卡牌确认对话框
       showCardConfirm: false,
       selectedCard: null,
       selectedIndex: -1
@@ -15,12 +14,19 @@ const app = Vue.createApp({
 
   computed: {
     hand() {
-      // 后端返回的 hand 数组，每项至少包含 name / cost
       return this.state?.hand || [];
     }
   },
 
   methods: {
+    /**
+     * 判断卡牌是否可打出（核心新增）
+     */
+    canPlayCard(card) {
+      if (!this.state || !card) return false;
+      return card.cost <= this.state.energy;
+    },
+
     async newGame() {
       this.error = null;
       this.loading = true;
@@ -32,18 +38,15 @@ const app = Vue.createApp({
         }
         this.state = await resp.json();
       } catch (e) {
-        if (e.message && e.message.includes('Failed to fetch')) {
-          this.error = '无法连接后端。请确认后端已启动，并通过 http://localhost:8080/index.html 访问本页面（将前端文件放入后端的 src/main/resources/static 文件夹下）。';
-        } else {
-          this.error = '无法开始新战斗：' + e.message;
-        }
+        this.error = e.message.includes('Failed to fetch') 
+          ? '无法连接后端。请确认后端已启动。' 
+          : '无法开始新战斗：' + e.message;
         console.error(e);
       } finally {
         this.loading = false;
       }
     },
 
-    // 预览卡牌效果，弹出确认对话框
     previewCard(index) {
       if (!this.state) {
         this.error = '请先开始新战斗';
@@ -53,12 +56,17 @@ const app = Vue.createApp({
         this.error = '无效的卡牌编号';
         return;
       }
-      this.selectedCard = this.hand[index];
+      const card = this.hand[index];
+      // 二次校验（防绕过）
+      if (!this.canPlayCard(card)) {
+        this.error = `能量不足！该卡牌需要 ${card.cost} 点能量，当前只有 ${this.state.energy} 点`;
+        return;
+      }
+      this.selectedCard = card;
       this.selectedIndex = index;
       this.showCardConfirm = true;
     },
 
-    // 确认打出当前预览的卡牌
     async confirmPlay() {
       if (this.selectedIndex < 0) return;
       await this.playCard(this.selectedIndex);
@@ -67,51 +75,43 @@ const app = Vue.createApp({
       this.selectedIndex = -1;
     },
 
-    // 取消打出
     cancelPlay() {
       this.showCardConfirm = false;
       this.selectedCard = null;
       this.selectedIndex = -1;
     },
 
-    // 实际打出卡牌（内部方法，也可由其他逻辑调用）
     async playCard(index) {
       this.error = null;
-      if (!this.state) {
-        this.error = '请先开始新战斗';
-        return;
-      }
-      if (index < 0 || index >= this.hand.length) {
-        this.error = '无效的卡牌编号';
+      if (!this.state || index < 0 || index >= this.hand.length) {
+        this.error = '请先开始新战斗或选择有效卡牌';
         return;
       }
       try {
         const resp = await fetch(`${API_BASE}/play?index=${encodeURIComponent(index)}`, {
           method: 'POST'
         });
+        
+        const data = await resp.json();
+        
         if (!resp.ok) {
-          const text = await resp.text();
-          throw new Error(`请求失败 ${resp.status}: ${text}`);
+          this.error = data.error || `请求失败 ${resp.status}`;
+          return;
         }
-        this.state = await resp.json();
+        
+        this.state = data;
       } catch (e) {
-        if (e.message && e.message.includes('Failed to fetch')) {
-          this.error = '无法连接后端。请确认后端已启动，并通过 http://localhost:8080/index.html 访问本页面。';
-        } else {
-          this.error = '打出卡牌失败：' + e.message;
-        }
+        this.error = e.message.includes('Failed to fetch') 
+          ? '无法连接后端。请确认后端已启动。' 
+          : '打出卡牌失败：' + e.message;
         console.error(e);
       }
     },
 
     async endTurn() {
       this.error = null;
-      if (!this.state) {
-        this.error = '请先开始新战斗';
-        return;
-      }
-      if (this.state.gameOver) {
-        this.error = '战斗已结束';
+      if (!this.state || this.state.gameOver) {
+        this.error = !this.state ? '请先开始新战斗' : '战斗已结束';
         return;
       }
       try {
@@ -122,11 +122,9 @@ const app = Vue.createApp({
         }
         this.state = await resp.json();
       } catch (e) {
-        if (e.message && e.message.includes('Failed to fetch')) {
-          this.error = '无法连接后端。请确认后端已启动，并通过 http://localhost:8080/index.html 访问本页面。';
-        } else {
-          this.error = '结束回合失败：' + e.message;
-        }
+        this.error = e.message.includes('Failed to fetch') 
+          ? '无法连接后端。请确认后端已启动。' 
+          : '结束回合失败：' + e.message;
         console.error(e);
       }
     }
