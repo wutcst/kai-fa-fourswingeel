@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Slay the Spire - 前端测试</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+    }
+    #app {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .state-card {
+      background: #16213e;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .state-card h2 {
+      margin-top: 0;
+    }
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .stats .hp {
+      color: #e94560;
+    }
+    .stats .block {
+      color: #4d8cf5;
+    }
+    .energy {
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+    }
+    .enemy-intent {
+      background: #2a1a3a;
+      padding: 6px 12px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      color: #f39c12;
+    }
+    .hand {
+      margin-top: 16px;
+    }
+    .card {
+      display: inline-block;
+      background: #0f3460;
+      color: #fff;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      border: 1px solid #533483;
+      transition: background 0.2s;
+    }
+    .card:hover {
+      background: #533483;
+    }
+    .card .cost {
+      background: #e94560;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 4px;
+    }
+    button {
+      background: #e94560;
+      border: none;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    button:hover {
+      background: #c23152;
+    }
+    .error {
+      color: #ff6161;
+      margin-top: 12px;
+    }
+    .actions {
+      margin-top: 16px;
+    }
+    .end-turn-btn {
+      background: #fca311;
+      margin-left: 8px;
+    }
+    .end-turn-btn:hover {
+      background: #e09200;
+    }
+
+    /* 确认对话框遮罩 */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #1e2a4a;
+      border-radius: 10px;
+      padding: 24px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      color: #eee;
+    }
+    .modal-content h3 {
+      margin-top: 0;
+      color: #f5a623;
+    }
+    .modal-content p {
+      margin: 10px 0;
+    }
+    .modal-content button {
+      margin: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>🃏 卡牌战斗测试</h1>
+
+    <div v-if="error" class="error">{{ error }}</div>
+
+    <div class="actions">
+      <button @click="newGame">新战斗</button>
+      <button
+        v-if="state && !state.gameOver"
+        class="end-turn-btn"
+        @click="endTurn"
+      >
+        结束回合
+      </button>
+    </div>
+
+    <div v-if="state" class="state-card">
+      <h2>敌人：{{ state.enemyName }}</h2>
+      <div v-if="state.enemyNextDamage" class="enemy-intent">
+        ⚠️ 敌人下回合将造成 {{ state.enemyNextDamage }} 点伤害
+      </div>
+      <div class="stats">
+        <span class="hp">❤️ 玩家 {{ state.playerHp }} / 70</span>
+        <span class="block" v-if="state.playerBlock > 0">🛡️ {{ state.playerBlock }}</span>
+        <span>⚔️ 敌人血量 {{ state.enemyHp }} / {{ state.enemyMaxHp }}</span>
+      </div>
+      <div class="energy">⚡ 能量 {{ state.energy }}</div>
+
+      <div v-if="hand.length" class="hand">
+        <strong>手牌：</strong>
+        <div
+          v-for="(card, idx) in hand"
+          :key="idx"
+          class="card"
+          @click="previewCard(idx)"
+        >
+          <span class="cost">{{ card.cost }}</span> {{ card.name }}
+        </div>
+      </div>
+
+      <div v-else-if="state">
+        <p>没有手牌可出（可能回合结束或已打完）。</p>
+      </div>
+
+      <div style="margin-top: 12px;
+                  color: #aaa;">
+        抽牌堆：{{ state.drawPileSize }} | 弃牌堆：{{ state.discardPileSize }}
+      </div>
+
+      <div v-if="state.log && state.log.length" style="margin-top: 12px; color: #aaf;">
+        <strong>战斗日志：</strong>
+        <ul style="list-style: none; padding-left: 0;">
+          <li v-for="(msg, idx) in state.log" :key="idx">{{ msg }}</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 卡牌确认对话框 -->
+    <div v-if="showCardConfirm" class="modal-overlay" @click.self="cancelPlay">
+      <div class="modal-content">
+        <h3>确认使用卡片</h3>
+        <p><strong>{{ selectedCard.name }}</strong> (消耗 {{ selectedCard.cost }} 能量)</p>
+        <p v-if="selectedCard.type === 'ATTACK'">造成 {{ selectedCard.damage }} 点伤害</p>
+        <p v-if="selectedCard.type === 'SKILL'">获得 {{ selectedCard.block }} 点格挡</p>
+        <p v-if="state.enemyNextDamage">敌人下回合将造成 {{ state.enemyNextDamage }} 点伤害</p>
+        <button @click="confirmPlay">确认</button>
+        <button @click="cancelPlay">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

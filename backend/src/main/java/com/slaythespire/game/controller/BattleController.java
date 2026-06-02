@@ -13,15 +13,18 @@ public class BattleController {
     @Autowired
     private BattleService battleService;
 
-    // 开始新交互战斗
     @PostMapping("/new")
     public Map<String, Object> newBattle() {
         return battleService.newBattle();
     }
 
-    // 玩家出牌
     @PostMapping("/play")
     public Map<String, Object> playCard(@RequestParam int index) {
         return battleService.playCard(index);
+    }
+
+    @PostMapping("/endTurn")
+    public Map<String, Object> endTurn() {
+        return battleService.endTurn();
     }
 }
