@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>杀戮尖塔克隆 - 软件工程实训</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    /* 基础样式 */
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #e0e0e0; margin: 0; padding: 20px; }
+    #app { max-width: 900px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    h1 { margin: 0; font-size: 24px; }
+    
+    /* 按钮样式 */
+    button { padding: 10px 20px; font-size: 16px; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+    .btn-new { background: #e74c3c; color: white; }
+    .btn-end { background: #f39c12; color: white; }
+    .btn-new:hover, .btn-end:hover { opacity: 0.9; transform: translateY(-2px); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* 错误提示 */
+    .error-box { background: #c0392b; color: white; padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+
+    /* 状态面板 */
+    .status-panel { display: flex; justify-content: space-between; background: #16213e; padding: 16px; border-radius: 10px; margin-bottom: 16px; }
+    .player-info, .enemy-info { flex: 1; }
+    .enemy-info { text-align: right; }
+    .energy { text-align: center; font-size: 20px; margin: 10px 0; color: #f1c40f; }
+    .warning { background: #2c1b3d; color: #e67e22; padding: 8px; border-radius: 6px; margin-bottom: 12px; text-align: center; }
+
+    /* 手牌区域 */
+    .hand { display: flex; flex-wrap: wrap; justify-content: center; margin: 16px 0; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 12px; min-height: 150px; }
+    
+    /* 卡牌样式 */
+    .card-btn { 
+      padding: 12px 16px; margin: 8px; border: 2px solid #34495e; border-radius: 8px; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; 
+      cursor: pointer; transition: all 0.3s ease; display: inline-flex; flex-direction: column; 
+      align-items: center; min-width: 120px; position: relative; 
+    }
+    /* 🔥 能量不足的卡牌变灰 */
+    .card-btn.disabled { 
+      background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); 
+      opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); transform: scale(0.95); box-shadow: none; 
+    }
+    .card-btn.attack { border-left: 5px solid #e74c3c; }
+    .card-btn.skill { border-left: 5px solid #3498db; }
+    .card-btn:not(.disabled):hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 12px 24px rgba(0,0,0,0.4); z-index: 10; }
+    
+    .cost { position: absolute; top: -10px; left: -10px; background: #e74c3c; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    .name { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
+    .effect { font-size: 12px; opacity: 0.9; }
+
+    .deck-info { text-align: center; color: #bdc3c7; margin-bottom: 12px; }
+    .log { background: #0f3460; padding: 12px; border-radius: 8px; max-height: 200px; overflow-y: auto; }
+    .log-title { font-weight: bold; margin-bottom: 8px; color: #3498db; }
+    .log-entry { margin: 4px 0; line-height: 1.5; }
+
+    /* 确认弹窗 */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 100; }
+    .modal { background: #16213e; padding: 24px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center; }
+    .modal h3 { margin-top: 0; }
+    .modal-actions { margin-top: 16px; display: flex; gap: 10px; justify-content: center; }
+    .modal-actions button { flex: 1; }
+    .btn-confirm { background: #2ecc71; color: white; }
+    .btn-cancel { background: #95a5a6; color: white; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="header">
+      <h1>⚔️ 杀戮尖塔克隆</h1>
+      <div>
+        <button class="btn-new" @click="newGame" :disabled="loading">新战斗</button>
+        <button class="btn-end" @click="endTurn" :disabled="!state || state.gameOver || loading">结束回合</button>
+      </div>
+    </div>
+
+    <div v-if="error" class="error-box">{{ error }}</div>
+
+    <div v-if="state" class="game-area">
+      <div class="warning" v-if="state.enemyNextDamage">
+        ⚠️ 敌人下回合将造成 {{ state.enemyNextDamage }} 点伤害
+      </div>
+
+      <div class="status-panel">
+        <div class="player-info">
+          <h3>❤️ 玩家 {{ state.playerHp }} / 70</h3>
+          <p>️ 格挡: {{ state.playerBlock }}</p>
+        </div>
+        <div class="enemy-info">
+          <h3> 敌人: {{ state.enemyName }} {{ state.enemyHp }} / {{ state.enemyMaxHp }}</h3>
+        </div>
+      </div>
+
+      <div class="energy">⚡ 能量: {{ state.energy }}</div>
+
+      <div class="hand">
+        <button 
+          v-for="(card, index) in hand" 
+          :key="index"
+          @click="previewCard(index)"
+          :disabled="!canPlayCard(card) || state.gameOver"
+          :class="['card-btn', { 
+            'disabled': !canPlayCard(card),
+            'attack': card.type === 'ATTACK',
+            'skill': card.type === 'SKILL'
+          }]"
+        >
+          <span class="cost">{{ card.cost }}</span>
+          <span class="name">{{ card.name }}</span>
+          <span class="effect" v-if="card.damage > 0">伤害: {{ card.damage }}</span>
+          <span class="effect" v-if="card.block > 0">格挡: {{ card.block }}</span>
+        </button>
+      </div>
+
+      <div class="deck-info">
+        抽牌堆: {{ state.drawPileSize }} | 弃牌堆: {{ state.discardPileSize }}
+      </div>
+
+      <div class="log">
+        <div class="log-title"> 战斗日志:</div>
+        <div class="log-entry" v-for="(entry, i) in state.log" :key="i">{{ entry }}</div>
+      </div>
+
+      <div v-if="state.gameOver" class="warning" style="margin-top: 16px; font-size: 18px;">
+         战斗结束! 胜利者: {{ state.winner }}
+      </div>
+    </div>
+
+    <!-- 确认打出弹窗 -->
+    <div v-if="showCardConfirm" class="modal-overlay" @click.self="cancelPlay">
+      <div class="modal">
+        <h3>确认打出卡牌?</h3>
+        <p v-if="selectedCard">
+          <strong>{{ selectedCard.name }}</strong><br>
+          消耗能量: {{ selectedCard.cost }}<br>
+          <span v-if="selectedCard.damage > 0">造成 {{ selectedCard.damage }} 点伤害</span>
+          <span v-if="selectedCard.block > 0">获得 {{ selectedCard.block }} 点格挡</span>
+        </p>
+        <div class="modal-actions">
+          <button class="btn-confirm" @click="confirmPlay">确认打出</button>
+          <button class="btn-cancel" @click="cancelPlay">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

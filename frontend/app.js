@@ -1,0 +1,134 @@
+const API_BASE = '/api/game';
+
+const app = Vue.createApp({
+  data() {
+    return {
+      state: null,
+      loading: false,
+      error: null,
+      showCardConfirm: false,
+      selectedCard: null,
+      selectedIndex: -1
+    };
+  },
+
+  computed: {
+    hand() {
+      return this.state?.hand || [];
+    }
+  },
+
+  methods: {
+    /**
+     * 判断卡牌是否可打出（核心新增）
+     */
+    canPlayCard(card) {
+      if (!this.state || !card) return false;
+      return card.cost <= this.state.energy;
+    },
+
+    async newGame() {
+      this.error = null;
+      this.loading = true;
+      try {
+        const resp = await fetch(`${API_BASE}/new`, { method: 'POST' });
+        if (!resp.ok) {
+          const text = await resp.text();
+          throw new Error(`请求失败 ${resp.status}: ${text}`);
+        }
+        this.state = await resp.json();
+      } catch (e) {
+        this.error = e.message.includes('Failed to fetch') 
+          ? '无法连接后端。请确认后端已启动。' 
+          : '无法开始新战斗：' + e.message;
+        console.error(e);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    previewCard(index) {
+      if (!this.state) {
+        this.error = '请先开始新战斗';
+        return;
+      }
+      if (index < 0 || index >= this.hand.length) {
+        this.error = '无效的卡牌编号';
+        return;
+      }
+      const card = this.hand[index];
+      // 二次校验（防绕过）
+      if (!this.canPlayCard(card)) {
+        this.error = `能量不足！该卡牌需要 ${card.cost} 点能量，当前只有 ${this.state.energy} 点`;
+        return;
+      }
+      this.selectedCard = card;
+      this.selectedIndex = index;
+      this.showCardConfirm = true;
+    },
+
+    async confirmPlay() {
+      if (this.selectedIndex < 0) return;
+      await this.playCard(this.selectedIndex);
+      this.showCardConfirm = false;
+      this.selectedCard = null;
+      this.selectedIndex = -1;
+    },
+
+    cancelPlay() {
+      this.showCardConfirm = false;
+      this.selectedCard = null;
+      this.selectedIndex = -1;
+    },
+
+    async playCard(index) {
+      this.error = null;
+      if (!this.state || index < 0 || index >= this.hand.length) {
+        this.error = '请先开始新战斗或选择有效卡牌';
+        return;
+      }
+      try {
+        const resp = await fetch(`${API_BASE}/play?index=${encodeURIComponent(index)}`, {
+          method: 'POST'
+        });
+        
+        const data = await resp.json();
+        
+        if (!resp.ok) {
+          this.error = data.error || `请求失败 ${resp.status}`;
+          return;
+        }
+        
+        this.state = data;
+      } catch (e) {
+        this.error = e.message.includes('Failed to fetch') 
+          ? '无法连接后端。请确认后端已启动。' 
+          : '打出卡牌失败：' + e.message;
+        console.error(e);
+      }
+    },
+
+    async endTurn() {
+      this.error = null;
+      if (!this.state || this.state.gameOver) {
+        this.error = !this.state ? '请先开始新战斗' : '战斗已结束';
+        return;
+      }
+      try {
+        const resp = await fetch(`${API_BASE}/endTurn`, { method: 'POST' });
+        if (!resp.ok) {
+          const text = await resp.text();
+          throw new Error(`请求失败 ${resp.status}: ${text}`);
+        }
+        this.state = await resp.json();
+      } catch (e) {
+        this.error = e.message.includes('Failed to fetch') 
+          ? '无法连接后端。请确认后端已启动。' 
+          : '结束回合失败：' + e.message;
+        console.error(e);
+      }
+    }
+  }
+});
+
+app.mount('#app');
