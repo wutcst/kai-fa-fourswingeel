@@ -1,25 +1,25 @@
-# Compiled class file
+# Java / Maven
+target/
 *.class
-
-# Log file
-*.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
 *.jar
 *.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
-.aider*
+# Node / 前端
+node_modules/
+frontend/build/
+backend/src/main/resources/static/
+.env
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# H2 文件模式数据（目前使用内存库，此规则保留备用）
+data/
