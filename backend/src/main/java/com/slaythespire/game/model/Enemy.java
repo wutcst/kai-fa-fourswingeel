@@ -1,16 +1,26 @@
 package com.slaythespire.game.model;
 
+import com.slaythespire.repository.EnemyTemplate;
+
+/**
+ * 怪物实例类 - 运行时状态与基础属性
+ * 属性数据由 EnemyTemplate 注入，方便后续按地图节点动态生成
+ */
 public class Enemy {
     private String name;
     private int hp;
     private int maxHp;
     private int attackDamage;
 
-    public Enemy(String name, int hp, int attackDamage) {
-        this.name = name;
-        this.hp = hp;
-        this.maxHp = hp;
-        this.attackDamage = attackDamage;
+    /**
+     * 基于数据模板构造怪物实例
+     * @param template 怪物静态配置数据
+     */
+    public Enemy(EnemyTemplate template) {
+        this.name = template.getName();
+        this.maxHp = template.getMaxHp();
+        this.hp = this.maxHp; // 实例化时默认满血
+        this.attackDamage = template.getAttackDamage();
     }
 
     public String getName() { return name; }
@@ -19,6 +29,7 @@ public class Enemy {
     public int getAttackDamage() { return attackDamage; }
 
     public void takeDamage(int dmg) {
+        if (dmg < 0) return;
         hp -= dmg;
         if (hp < 0) hp = 0;
     }

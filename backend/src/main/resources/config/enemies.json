@@ -1,0 +1,5 @@
+[
+  { "id": "cultist", "name": "邪教徒", "maxHp": 50, "attackDamage": 8 },
+  { "id": "slime",   "name": "绿色史莱姆", "maxHp": 40, "attackDamage": 6 },
+  { "id": "boss1",   "name": "六火亡魂", "maxHp": 200, "attackDamage": 15 }
+]
