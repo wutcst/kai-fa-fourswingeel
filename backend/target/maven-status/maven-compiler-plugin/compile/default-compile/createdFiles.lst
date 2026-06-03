@@ -1,8 +1,13 @@
-com\slaythespire\controller\HealthController.class
-com\slaythespire\game\model\Card.class
+com\slaythespire\repository\GameDataRepository$2.class
 com\slaythespire\game\service\BattleService.class
+com\slaythespire\game\model\Card.class
 com\slaythespire\game\model\Card$CardType.class
-com\slaythespire\game\controller\BattleController.class
-com\slaythespire\SlayTheSpireApplication.class
 com\slaythespire\game\model\Enemy.class
 com\slaythespire\game\model\Player.class
+com\slaythespire\controller\HealthController.class
+com\slaythespire\repository\CardTemplate.class
+com\slaythespire\repository\GameDataRepository$1.class
+com\slaythespire\repository\EnemyTemplate.class
+com\slaythespire\game\controller\BattleController.class
+com\slaythespire\SlayTheSpireApplication.class
+com\slaythespire\repository\GameDataRepository.class
