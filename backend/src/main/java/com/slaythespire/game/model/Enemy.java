@@ -13,6 +13,7 @@ public class Enemy {
     private String name;
     private int hp;
     private int maxHp;
+    private int block = 0; // ✅ 新增：怪物格挡
     
     private final List<IntentTemplate> intentSequence;
     private int currentTurn;
@@ -45,6 +46,9 @@ public class Enemy {
         if (currentIntent == null) return 0;
         switch (currentIntent.getType()) {
             case ATTACK: return modifyDamage(currentIntent.getValue());
+            case DEFEND: 
+                addBlock(currentIntent.getValue()); // ✅ 支持怪物加盾意图
+                return 0;
             default: return 0;
         }
     }
@@ -59,14 +63,22 @@ public class Enemy {
         statuses.put(type, current + count);
     }
 
+    public void addBlock(int amount) {
+        if (amount > 0) block += amount;
+    }
+
     /**
-     * 受到伤害：应用【易伤】效果
+     * 受到伤害：应用【易伤】效果，优先消耗格挡
      * @return 实际受到的伤害值
      */
     public int takeDamage(int dmg) {
         if (dmg < 0) return 0;
         int actualDmg = calculateIncomingDamage(dmg);
-        hp = Math.max(0, hp - actualDmg);
+        
+        int blocked = Math.min(block, actualDmg);
+        block -= blocked;
+        hp = Math.max(0, hp - (actualDmg - blocked));
+        
         return actualDmg;
     }
 
@@ -86,16 +98,42 @@ public class Enemy {
         return originalDamage;
     }
 
+    /**
+     * ✅ 回合结束结算：状态延迟衰减（标记为负数，下回合开始前真正扣除）
+     */
     public void onTurnEnd() {
         for (StatusType type : StatusType.values()) {
             int count = statuses.getOrDefault(type, 0);
-            if (count > 0) statuses.put(type, count - 1);
+            if (count > 0) statuses.put(type, -count); 
+        }
+    }
+
+    /**
+     * ✅ 新增：怪物下回合行动前调用
+     * 1. 清空怪物上回合遗留的格挡
+     * 2. 结算状态的真正衰减
+     */
+    public void onTurnStart() {
+        block = 0; 
+
+        for (StatusType type : StatusType.values()) {
+            int count = statuses.getOrDefault(type, 0);
+            if (count < 0) {
+                int realCount = Math.abs(count);
+                int newCount = realCount - 1;
+                if (newCount > 0) {
+                    statuses.put(type, newCount); 
+                } else {
+                    statuses.remove(type); 
+                }
+            }
         }
     }
 
     public String getName() { return name; }
     public int getHp() { return hp; }
     public int getMaxHp() { return maxHp; }
+    public int getBlock() { return block; }
     public IntentTemplate getCurrentIntentTemplate() { return currentIntent; }
     public Map<StatusType, Integer> getStatuses() { return statuses; }
     

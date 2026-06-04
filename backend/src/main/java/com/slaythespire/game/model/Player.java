@@ -52,9 +52,6 @@ public class Player {
         return actualDmg;
     }
 
-    /**
-     * 计算 incoming 伤害（应用易伤）
-     */
     private int calculateIncomingDamage(int dmg) {
         if (dmg <= 0) return 0;
         if (statuses.getOrDefault(StatusType.VULNERABLE, 0) > 0) {
@@ -86,14 +83,21 @@ public class Player {
     }
 
     /**
-     * 回合结束结算：清空格挡，所有状态层数 -1
+     * ✅ 回合结束结算：状态层数 -1（格挡保留到玩家下回合开始前）
      */
     public void onTurnEnd() {
-        block = 0;
         for (StatusType type : StatusType.values()) {
             int count = statuses.getOrDefault(type, 0);
             if (count > 0) statuses.put(type, count - 1);
         }
+    }
+
+    /**
+     * ✅ 新增：玩家下回合开始前（抽取新牌、重置能量后调用）
+     * 此时清空上回合遗留的格挡
+     */
+    public void onTurnStart() {
+        block = 0;
     }
 
     public void heal(int amount) {

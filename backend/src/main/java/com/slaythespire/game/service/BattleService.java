@@ -45,6 +45,8 @@ public class BattleService {
         this.logList = new ArrayList<>();
         this.gameOver = false;
         this.winner = null;
+        
+        player.onTurnStart(); 
         drawCards(5);
         return getCurrentState();
     }
@@ -86,8 +88,8 @@ public class BattleService {
         logList.add("🃏 玩家使用: " + card.getName());
 
         if (card.getType() == Card.CardType.ATTACK) {
-            int baseDmg = player.modifyDamage(card.getDamage()); // 虚弱修正
-            int actualDmg = enemy.takeDamage(baseDmg);           // 易伤修正并扣血
+            int baseDmg = player.modifyDamage(card.getDamage()); 
+            int actualDmg = enemy.takeDamage(baseDmg);           
             logList.add(String.format("造成 %d 点伤害，敌人 HP: %d", actualDmg, enemy.getHp()));
         } else {
             player.addBlock(card.getBlock());
@@ -120,6 +122,18 @@ public class BattleService {
 
     public synchronized Map<String, Object> endTurn() {
         validateBattleActive();
+
+        // ================= 阶段 1：玩家回合结束结算 =================
+        player.onTurnEnd(); 
+        discardPile.addAll(hand);
+        hand.clear();
+        energy = 3;
+        drawCards(5); 
+        
+        // ================= 阶段 2：怪物下回合开始前 =================
+        enemy.onTurnStart(); 
+
+        // ================= 阶段 3：怪物执行当前意图 =================
         int baseDmg = enemy.executeCurrentIntent();
         int actualDmg = player.takeDamage(baseDmg);
         
@@ -146,19 +160,18 @@ public class BattleService {
             }
         }
 
+        // ================= 阶段 4：玩家下回合开始前 =================
+        player.onTurnStart(); 
+
         if (!player.isAlive()) {
             gameOver = true; winner = "敌人";
             logList.add("💀 玩家倒下... 战斗失败。");
             return getCurrentState();
         }
 
-        player.onTurnEnd();
-        enemy.onTurnEnd();
-        discardPile.addAll(hand);
-        hand.clear();
-        energy = 3;
-        drawCards(5);
+        // ================= 阶段 5：推进怪物意图到下一轮 =================
         enemy.advanceIntent();
+
         return getCurrentState();
     }
 
@@ -174,6 +187,9 @@ public class BattleService {
         }
     }
 
+    /**
+     * ✅ 核心修改：增加怪物格挡和意图附带状态的返回
+     */
     private Map<String, Object> getCurrentState() {
         Map<String, Object> state = new LinkedHashMap<>();
         state.put("playerHp", player.getHp());
@@ -189,8 +205,19 @@ public class BattleService {
         state.put("enemyName", enemy.getName());
         state.put("enemyHp", enemy.getHp());
         state.put("enemyMaxHp", enemy.getMaxHp());
+        state.put("enemyBlock", enemy.getBlock()); // ✅ 新增：返回怪物格挡
         state.put("enemyNextDamage", enemy.getNextDamage());
         state.put("enemyIntentDesc", enemy.getIntentDesc());
+        
+        // ✅ 新增：返回怪物当前意图附带的状态效果
+        IntentTemplate currentIntent = enemy.getCurrentIntentTemplate();
+        if (currentIntent != null && currentIntent.getApplyStatusType() != null) {
+            state.put("enemyIntentStatusType", currentIntent.getApplyStatusType());
+            state.put("enemyIntentStatusCount", currentIntent.getApplyStatusCount());
+        } else {
+            state.put("enemyIntentStatusType", null);
+            state.put("enemyIntentStatusCount", 0);
+        }
         
         Map<String, Integer> enemyStatusMap = new LinkedHashMap<>();
         for (Map.Entry<StatusType, Integer> entry : enemy.getStatuses().entrySet()) {
@@ -212,7 +239,6 @@ public class BattleService {
             cardInfo.put("damage", c.getDamage());
             cardInfo.put("block", c.getBlock());
             cardInfo.put("type", c.getType().name());
-            // ✅ 补全状态字段给前端
             cardInfo.put("applyStatusType", c.getApplyStatusType());
             cardInfo.put("applyStatusCount", c.getApplyStatusCount());
             handCards.add(cardInfo);
