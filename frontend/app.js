@@ -136,20 +136,19 @@ const app = Vue.createApp({
     },
 
     // 战斗结束后的处理：同步血量，胜利进奖励页，失败回地图
-        goAfterFight() {
+            goAfterFight() {
       if (this.state && this.state.playerHp !== undefined) {
         localStorage.setItem('playerHP', this.state.playerHp);
       }
       if (window.updateStatusBar) window.updateStatusBar();
 
       const charParam = new URLSearchParams(window.location.search).get('char') || '1';
-      const isWin = this.state && (this.state.winner === 'player' || this.state.winner === 'Player' || this.state.gameOver && this.state.playerHp > 0); // 防御性判断
 
-      if (this.isFromMap && isWin) {
+      if (this.isFromMap && this.state && (this.state.winner === 'player' || this.state.winner === 'Player' || (this.state.gameOver && this.state.playerHp > 0))) {
         const nodeType = new URLSearchParams(window.location.search).get('nodeType') || 'monster';
         const prev = this.prevNodeId || 'start';
         const next = this.nextNodeId || prev;
-        window.location.href = `reward.html?source=fight&char=${charParam}&prevNode=${prev}&nextNode=${next}&nodeType=${nodeType}`;
+        window.location.href = `reward.html?source=fight&char=${charParam}&prevNode=${prev}&nextNode=${next}&nodeType=${nodeType}&gotCard=0`;
       } else {
         const target = this.isFromMap ? (this.prevNodeId || 'start') : 'start';
         window.location.href = `map.html?char=${charParam}&currentNode=${target}`;

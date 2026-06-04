@@ -48,11 +48,10 @@
       const prevNode = params.get('prevNode') || 'start';
       const nextNode = params.get('nextNode') || 'start';
       const nodeType = params.get('nodeType') || 'monster';
-      // 从 URL 读取已领取状态（选牌页返回时携带）
       const gotGold = params.get('gotGold') === '1';
       const gotRelic = params.get('gotRelic') === '1';
+      const gotCard = params.get('gotCard') === '1';  // 新增
 
-      // 默认奖励数据
       const defaultReward = {
         gold: 50,
         relic: '神秘遗物',
@@ -63,7 +62,6 @@
         ]
       };
 
-      // 尝试从后端获取奖励
       let reward = defaultReward;
       try {
         const resp = await fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}`);
@@ -79,7 +77,6 @@
         console.warn('后端奖励接口不可用，使用默认奖励', e);
       }
 
-      // 本地状态（用于按钮禁用）
       let localGotGold = gotGold;
       let localGotRelic = gotRelic;
 
@@ -88,7 +85,7 @@
       }
 
       function giveGold(amount) {
-        if (localGotGold) return; // 防止重复
+        if (localGotGold) return;
         let gold = parseInt(localStorage.getItem('gold') || '0');
         gold += amount;
         localStorage.setItem('gold', gold);
@@ -108,13 +105,11 @@
       }
 
       function goToCardSelect() {
-        // 将卡牌池存入 sessionStorage，并传递当前领取状态
         sessionStorage.setItem('rewardCards', JSON.stringify(reward.cardPool));
         const query = `char=${encodeURIComponent(char)}&prevNode=${encodeURIComponent(prevNode)}&nextNode=${encodeURIComponent(nextNode)}&nodeType=${encodeURIComponent(nodeType)}&gotGold=${localGotGold ? '1' : '0'}&gotRelic=${localGotRelic ? '1' : '0'}`;
         window.location.href = `card_select.html?${query}`;
       }
 
-      // 渲染按钮
       const panel = document.getElementById('reward-panel');
       panel.innerHTML = '';
 
@@ -129,14 +124,15 @@
       });
       panel.appendChild(goldBtn);
 
-      // 卡牌按钮
+      // 卡牌按钮（根据 gotCard 禁用）
       const cardBtn = document.createElement('button');
       cardBtn.className = 'reward-btn';
       cardBtn.textContent = '🃏 选择一张卡牌';
+      if (gotCard) cardBtn.disabled = true;   // 新增
       cardBtn.addEventListener('click', goToCardSelect);
       panel.appendChild(cardBtn);
 
-      // 遗物按钮（精英/宝箱/boss）
+      // 遗物按钮
       if (nodeType === 'elite' || nodeType === 'chest' || nodeType === 'boss') {
         const relicBtn = document.createElement('button');
         relicBtn.className = 'reward-btn';
