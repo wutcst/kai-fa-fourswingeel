@@ -6,58 +6,19 @@
   <title>杀戮尖塔 - 地图</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #0a0a1a; color: #e0e0e0;
-      overflow: hidden; height: 100vh; width: 100vw;
-      padding-top: 40px; /* 为状态栏留空 */
-    }
-    #map-container {
-      position: relative; width: 100%; height: calc(100% - 40px);
-      display: flex; justify-content: center; align-items: flex-end;
-      padding-bottom: 20px;
-    }
-    svg#lines {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
-    }
-    .node {
-      position: absolute; width: 60px; height: 60px; border-radius: 50%;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      cursor: pointer; transition: all 0.3s; font-size: 12px; font-weight: bold;
-      text-transform: uppercase; color: white; border: 3px solid #444;
-      background: rgba(20, 20, 40, 0.9); backdrop-filter: blur(4px); z-index: 2;
-    }
-    .node.current {
-      border-color: #f1c40f; box-shadow: 0 0 20px #f1c40f;
-      background: rgba(241, 196, 15, 0.3); color: #fff;
-    }
-    .node.clickable {
-      border-color: #e74c3c; animation: pulse 1.5s infinite;
-    }
-    .node.visited {
-      opacity: 0.5; cursor: default; border-color: #555;
-      background: rgba(20, 20, 40, 0.4);
-    }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
-      70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
-    }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a1a; color: #e0e0e0; overflow: hidden; height: 100vh; width: 100vw; padding-top: 40px; }
+    #map-container { position: relative; width: 100%; height: calc(100% - 40px); display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; }
+    svg#lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .node { position: absolute; width: 60px; height: 60px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; font-size: 12px; font-weight: bold; text-transform: uppercase; color: white; border: 3px solid #444; background: rgba(20, 20, 40, 0.9); backdrop-filter: blur(4px); z-index: 2; }
+    .node.current { border-color: #f1c40f; box-shadow: 0 0 20px #f1c40f; background: rgba(241, 196, 15, 0.3); color: #fff; }
+    .node.clickable { border-color: #e74c3c; animation: pulse 1.5s infinite; }
+    .node.visited { opacity: 0.5; cursor: default; border-color: #555; background: rgba(20, 20, 40, 0.4); }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
     .node .icon { font-size: 28px; }
     .node .label { font-size: 10px; margin-top: 2px; }
-    line {
-      stroke: #555; stroke-width: 3; stroke-linecap: round; transition: stroke 0.3s;
-    }
-    .info-bar {
-      position: fixed; bottom: 20px; left: 20px;
-      background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px;
-      font-size: 14px; z-index: 10;
-    }
-    .btn-return {
-      position: fixed; top: 50px; right: 20px; /* 下移避免被状态栏挡住 */
-      background: #e74c3c; color: white; border: none;
-      padding: 10px 20px; border-radius: 6px; cursor: pointer; z-index: 10;
-    }
+    line { stroke: #555; stroke-width: 3; stroke-linecap: round; transition: stroke 0.3s; }
+    .info-bar { position: fixed; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px; font-size: 14px; z-index: 10; }
+    .btn-return { position: fixed; top: 50px; right: 20px; background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; z-index: 10; }
   </style>
 </head>
 <body>
@@ -71,38 +32,10 @@
 
   <script>
     (function() {
-      // ===== 默认地图数据 =====
-      const defaultMap = {
-        nodes: [
-          { id: 'start', type: 'start', label: '起点', x: 50, y: 90, icon: '🛡️' },
-          { id: 'm1', type: 'monster', label: '小怪', x: 25, y: 70, icon: '👾' },
-          { id: 'e1', type: 'elite', label: '精英', x: 50, y: 70, icon: '💀' },
-          { id: 'm2', type: 'monster', label: '小怪', x: 75, y: 70, icon: '👾' },
-          { id: 'm3', type: 'monster', label: '小怪', x: 25, y: 50, icon: '👾' },
-          { id: 'chest1', type: 'chest', label: '宝箱', x: 50, y: 50, icon: '📦' },
-          { id: 'shop1', type: 'shop', label: '商店', x: 75, y: 50, icon: '🛒' }, // 新增
-          { id: 'q1', type: 'question', label: '?', x: 90, y: 50, icon: '❓' }, // 调整坐标避免重叠
-          { id: 'e2', type: 'elite', label: '精英', x: 37.5, y: 30, icon: '💀' },
-          { id: 'm4', type: 'monster', label: '小怪', x: 62.5, y: 30, icon: '👾' },
-          { id: 'boss', type: 'boss', label: 'BOSS', x: 50, y: 10, icon: '👑' }
-        ],
-        edges: [
-          { from: 'start', to: 'm1' }, { from: 'start', to: 'e1' }, { from: 'start', to: 'm2' },
-          { from: 'm1', to: 'm3' }, { from: 'm1', to: 'chest1' },
-          { from: 'e1', to: 'chest1' }, { from: 'e1', to: 'shop1' },   // 精英可到商店
-          { from: 'm2', to: 'shop1' }, { from: 'm2', to: 'q1' },
-          { from: 'm3', to: 'e2' }, { from: 'chest1', to: 'e2' }, { from: 'chest1', to: 'm4' },
-          { from: 'shop1', to: 'm4' },   // 商店连接下一层
-          { from: 'q1', to: 'm4' },
-          { from: 'e2', to: 'boss' }, { from: 'm4', to: 'boss' }
-        ]
-      };
-
       const params = new URLSearchParams(window.location.search);
       let currentNodeId = params.get('currentNode') || 'start';
       const charParam = params.get('char') || '1';
 
-      // 读取/更新已访问节点
       let visitedNodes = JSON.parse(localStorage.getItem('visitedNodes') || '["start"]');
       if (!visitedNodes.includes(currentNodeId)) {
         visitedNodes.push(currentNodeId);
@@ -113,50 +46,71 @@
       const svg = document.getElementById('lines');
       const currentLabel = document.getElementById('current-node-label');
 
-      function getNodeById(id) {
-        return defaultMap.nodes.find(n => n.id === id);
-      }
+      // ✅ 修复：使用全局变量，在数据加载后重新计算
+      let defaultMap = { nodes: [], edges: [] };
+      let nextNodeIds = [];
+      let currentNode = null;
 
-      function getNextNodes(fromId) {
-        return defaultMap.edges.filter(e => e.from === fromId).map(e => e.to);
-      }
+      function getNodeById(id) { return defaultMap.nodes.find(n => n.id === id); }
+      function getNextNodes(fromId) { return defaultMap.edges.filter(e => e.from === fromId).map(e => e.to); }
 
-      const nextNodeIds = getNextNodes(currentNodeId).filter(id => !visitedNodes.includes(id));
-      const currentNode = getNodeById(currentNodeId);
-      if (currentNode) {
-        currentLabel.textContent = currentNode.label || currentNode.id;
+      // ✅ 核心修复：异步加载数据，成功后再计算状态并渲染
+      async function loadMapData() {
+        try {
+          const resp = await fetch('/api/map');
+          if (resp.ok) {
+            defaultMap = await resp.json();
+            
+            // 数据拿到后，重新计算当前节点和可点击节点
+            nextNodeIds = getNextNodes(currentNodeId).filter(id => !visitedNodes.includes(id));
+            currentNode = getNodeById(currentNodeId);
+            if (currentNode) currentLabel.textContent = currentNode.label || currentNode.id;
+            
+            // 最后渲染地图
+            draw();
+          } else {
+            console.error('获取地图数据失败');
+          }
+        } catch (e) {
+          console.error('后端地图接口不可用', e);
+        }
       }
 
       function draw() {
         container.querySelectorAll('.node').forEach(n => n.remove());
         svg.innerHTML = '';
 
+        // 1. 绘制连线
         defaultMap.edges.forEach(edge => {
           const fromNode = getNodeById(edge.from);
           const toNode = getNodeById(edge.to);
           if (fromNode && toNode) {
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            line.setAttribute("x1", `${fromNode.x}%`);
-            line.setAttribute("y1", `${fromNode.y}%`);
-            line.setAttribute("x2", `${toNode.x}%`);
-            line.setAttribute("y2", `${toNode.y}%`);
+            line.setAttribute("x1", `${fromNode.x}%`); line.setAttribute("y1", `${fromNode.y}%`);
+            line.setAttribute("x2", `${toNode.x}%`); line.setAttribute("y2", `${toNode.y}%`);
+            
+            // 如果当前节点指向可点击节点，高亮连线
             if (edge.from === currentNodeId && nextNodeIds.includes(edge.to)) {
-              line.setAttribute("stroke", "#e74c3c");
+              line.setAttribute("stroke", "#e74c3c"); 
               line.setAttribute("stroke-width", "4");
             } else {
-              line.setAttribute("stroke", "#555");
+              line.setAttribute("stroke", "#555"); 
               line.setAttribute("stroke-width", "2");
             }
             svg.appendChild(line);
           }
         });
 
+        // 2. 绘制节点
         defaultMap.nodes.forEach(node => {
           const div = document.createElement('div');
           div.className = 'node';
-          div.style.left = `${node.x - 3}%`;
+          div.style.left = `${node.x - 3}%`; 
           div.style.top = `${node.y - 3}%`;
-          div.innerHTML = `<span class="icon">${node.icon}</span><span class="label">${node.label}</span>`;
+          
+          // 处理图标为空的情况
+          const iconHtml = node.icon ? `<span class="icon">${node.icon}</span>` : '';
+          div.innerHTML = `${iconHtml}<span class="label">${node.label}</span>`;
 
           if (node.id === currentNodeId) {
             div.classList.add('current');
@@ -173,8 +127,7 @@
         });
       }
 
-            function handleNodeClick(node) {
-        const baseParams = `char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
+      function handleNodeClick(node) {
         if (node.type === 'monster' || node.type === 'elite' || node.type === 'boss') {
           window.location.href = `index.html?from=map&prevNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}&nodeType=${node.type}&char=${charParam}`;
         } else if (node.type === 'chest') {
@@ -186,15 +139,13 @@
         }
       }
 
-      draw();
+      // ✅ 启动加载
+      loadMapData();
 
-      // 返回封面按钮
       const returnBtn = document.createElement('button');
       returnBtn.className = 'btn-return';
       returnBtn.textContent = '返回封面';
-      returnBtn.onclick = () => {
-        window.location.href = `cover.html?char=${charParam}`;
-      };
+      returnBtn.onclick = () => { window.location.href = `cover.html?char=${charParam}`; };
       document.body.appendChild(returnBtn);
     })();
   </script>
