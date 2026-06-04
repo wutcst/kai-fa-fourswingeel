@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>选择卡牌</title>
+  <style>
+    body {
+      background: #1a1a2e; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; height: 100vh; margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #e0e0e0;
+    }
+    .card-row {
+      display: flex; gap: 30px; margin-top: 20px; flex-wrap: wrap; justify-content: center;
+    }
+    .card {
+      width: 140px; padding: 20px; border: 2px solid #34495e;
+      border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2);
+      text-align: center; cursor: pointer; transition: all 0.3s;
+      color: white; font-weight: bold;
+    }
+    .card:hover:not(.selected):not(.locked) { transform: scale(1.05); box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+    .card.selected {
+      border-color: #f1c40f; box-shadow: 0 0 20px #f1c40f;
+      transform: scale(1.05);
+    }
+    .card.locked {
+      opacity: 0.5; cursor: not-allowed; filter: grayscale(80%); transform: none;
+      border-color: #555;
+    }
+    .card-name { font-size: 18px; margin: 10px 0; }
+    .card-cost { color: #f1c40f; }
+    .loading { color: #f1c40f; font-size: 18px; }
+    .actions {
+      margin-top: 30px; display: flex; gap: 20px;
+    }
+    .btn {
+      padding: 12px 24px; font-size: 16px; border-radius: 8px;
+      border: none; cursor: pointer; transition: all 0.3s;
+    }
+    .confirm-btn {
+      background: #2ecc71; color: white;
+    }
+    .confirm-btn:hover:not(:disabled) { background: #27ae60; transform: translateY(-2px); }
+    .confirm-btn:disabled { background: #555; color: #aaa; cursor: not-allowed; transform: none; }
+    .skip-btn {
+      background: #e74c3c; color: white;
+    }
+    .skip-btn:hover { background: #c0392b; transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+  <script src="status_bar.js"></script>
+  <h2>选择一张卡牌加入你的卡组</h2>
+  <div class="card-row" id="card-row">
+    <div class="loading">正在加载卡牌...</div>
+  </div>
+  <div class="actions">
+    <button class="btn confirm-btn" id="confirm-btn" disabled>确定</button>
+    <button class="btn skip-btn" id="skip-btn">跳过</button>
+  </div>
+  <script>
+    (async function() {
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      const prevNode = params.get('prevNode') || 'start';
+      const nextNode = params.get('nextNode') || 'start';
+      const nodeType = params.get('nodeType') || 'monster';
+      const gotGold = params.get('gotGold') || '0';
+      const gotRelic = params.get('gotRelic') || '0';
+
+      // 默认卡牌池
+      const defaultCards = [
+        { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
+        { name: '防御', cost: 1, damage: 0, block: 5, type: 'SKILL' },
+        { name: '重击', cost: 2, damage: 12, block: 0, type: 'ATTACK' }
+      ];
+
+      let cards = defaultCards;
+
+      // 1. 尝试从 sessionStorage 读取（奖励页传入）
+      const storedCards = sessionStorage.getItem('rewardCards');
+      if (storedCards) {
+        try {
+          cards = JSON.parse(storedCards);
+          sessionStorage.removeItem('rewardCards');
+        } catch (e) {}
+      } else {
+        // 2. 尝试从后端获取
+        try {
+          const resp = await fetch(`/api/cardPool?char=${encodeURIComponent(char)}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            if (Array.isArray(data) && data.length > 0) {
+              cards = data;
+            }
+          }
+        } catch (e) {
+          console.warn('后端卡牌池接口不可用，使用默认卡牌', e);
+        }
+      }
+
+      let selectedCard = null;
+      let cardLocked = false; // 是否已确定（锁定卡片）
+      const row = document.getElementById('card-row');
+      const confirmBtn = document.getElementById('confirm-btn');
+      const skipBtn = document.getElementById('skip-btn');
+
+      // 渲染卡片
+      row.innerHTML = '';
+      cards.forEach(card => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+          <div class="card-name">${card.name}</div>
+          <div class="card-cost">⚡ ${card.cost}</div>
+          <div>${card.damage > 0 ? `🗡️ ${card.damage}` : ''} ${card.block > 0 ? `🛡️ ${card.block}` : ''}</div>
+        `;
+        div.addEventListener('click', () => {
+          if (cardLocked) return;
+          // 移除其他卡片选中状态
+          document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+          div.classList.add('selected');
+          selectedCard = card;
+          confirmBtn.disabled = false;
+        });
+        row.appendChild(div);
+      });
+
+      // 确定按钮：获得卡牌，跳回奖励页并标记 gotCard=1
+      confirmBtn.addEventListener('click', () => {
+        if (!selectedCard || cardLocked) return;
+        const deck = JSON.parse(localStorage.getItem('deck') || '[]');
+        deck.push(selectedCard);
+        localStorage.setItem('deck', JSON.stringify(deck));
+        cardLocked = true;
+        document.querySelectorAll('.card').forEach(c => c.classList.add('locked'));
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '已确定';
+        // 构建返回奖励页 URL，携带已领取状态
+        const query = `char=${encodeURIComponent(char)}&prevNode=${encodeURIComponent(prevNode)}&nextNode=${encodeURIComponent(nextNode)}&nodeType=${encodeURIComponent(nodeType)}&gotGold=${gotGold}&gotRelic=${gotRelic}&gotCard=1`;
+        // 延迟一下让用户看到“已确定”状态，然后跳转
+        setTimeout(() => {
+          window.location.href = `reward.html?${query}`;
+        }, 300);
+      });
+
+      // 跳过按钮：不获得卡牌，返回奖励页，gotCard=0
+      skipBtn.addEventListener('click', () => {
+        const query = `char=${encodeURIComponent(char)}&prevNode=${encodeURIComponent(prevNode)}&nextNode=${encodeURIComponent(nextNode)}&nodeType=${encodeURIComponent(nodeType)}&gotGold=${gotGold}&gotRelic=${gotRelic}&gotCard=0`;
+        window.location.href = `reward.html?${query}`;
+      });
+    })();
+  </script>
+</body>
+</html>

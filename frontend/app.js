@@ -32,9 +32,6 @@ const app = Vue.createApp({
   },
 
   methods: {
-    /**
-     * 判断卡牌是否可打出（核心新增）
-     */
     canPlayCard(card) {
       if (!this.state || !card) return false;
       return card.cost <= this.state.energy;
@@ -51,8 +48,8 @@ const app = Vue.createApp({
         }
         this.state = await resp.json();
       } catch (e) {
-        this.error = e.message.includes('Failed to fetch') 
-          ? '无法连接后端。请确认后端已启动。' 
+        this.error = e.message.includes('Failed to fetch')
+          ? '无法连接后端。请确认后端已启动。'
           : '无法开始新战斗：' + e.message;
         console.error(e);
       } finally {
@@ -70,7 +67,6 @@ const app = Vue.createApp({
         return;
       }
       const card = this.hand[index];
-      // 二次校验（防绕过）
       if (!this.canPlayCard(card)) {
         this.error = `能量不足！该卡牌需要 ${card.cost} 点能量，当前只有 ${this.state.energy} 点`;
         return;
@@ -104,18 +100,15 @@ const app = Vue.createApp({
         const resp = await fetch(`${API_BASE}/play?index=${encodeURIComponent(index)}`, {
           method: 'POST'
         });
-        
         const data = await resp.json();
-        
         if (!resp.ok) {
           this.error = data.error || `请求失败 ${resp.status}`;
           return;
         }
-        
         this.state = data;
       } catch (e) {
-        this.error = e.message.includes('Failed to fetch') 
-          ? '无法连接后端。请确认后端已启动。' 
+        this.error = e.message.includes('Failed to fetch')
+          ? '无法连接后端。请确认后端已启动。'
           : '打出卡牌失败：' + e.message;
         console.error(e);
       }
@@ -135,22 +128,31 @@ const app = Vue.createApp({
         }
         this.state = await resp.json();
       } catch (e) {
-        this.error = e.message.includes('Failed to fetch') 
-          ? '无法连接后端。请确认后端已启动。' 
+        this.error = e.message.includes('Failed to fetch')
+          ? '无法连接后端。请确认后端已启动。'
           : '结束回合失败：' + e.message;
         console.error(e);
       }
     },
 
-    // 返回地图（战斗结束后调用）
-    goBackToMap() {
-      let targetNode = this.prevNodeId || 'start';
-      // 如果胜利，则前进到目标节点；否则退回原节点
-      if (this.state && this.state.winner === 'player') {
-        targetNode = this.nextNodeId || targetNode;
+    // 战斗结束后的处理：同步血量，胜利进奖励页，失败回地图
+            goAfterFight() {
+      if (this.state && this.state.playerHp !== undefined) {
+        localStorage.setItem('playerHP', this.state.playerHp);
       }
+      if (window.updateStatusBar) window.updateStatusBar();
+
       const charParam = new URLSearchParams(window.location.search).get('char') || '1';
-      window.location.href = `map.html?currentNode=${encodeURIComponent(targetNode)}&char=${charParam}`;
+
+      if (this.isFromMap && this.state && (this.state.winner === 'player' || this.state.winner === 'Player' || (this.state.gameOver && this.state.playerHp > 0))) {
+        const nodeType = new URLSearchParams(window.location.search).get('nodeType') || 'monster';
+        const prev = this.prevNodeId || 'start';
+        const next = this.nextNodeId || prev;
+        window.location.href = `reward.html?source=fight&char=${charParam}&prevNode=${prev}&nextNode=${next}&nodeType=${nodeType}&gotCard=0`;
+      } else {
+        const target = this.isFromMap ? (this.prevNodeId || 'start') : 'start';
+        window.location.href = `map.html?char=${charParam}&currentNode=${target}`;
+      }
     }
   }
 });
