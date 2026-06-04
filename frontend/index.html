@@ -126,6 +126,10 @@
 
       <div v-if="state.gameOver" class="warning" style="margin-top: 16px; font-size: 18px;">
          战斗结束! 胜利者: {{ state.winner }}
+         <br>
+   <button v-if="isFromMap" @click="goBackToMap" style="margin-top:10px; background:#e67e22; color:white; border:none; padding:8px 20px; border-radius:6px; cursor:pointer;">
+     返回地图
+   </button>
       </div>
     </div>
 
