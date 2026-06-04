@@ -37,11 +37,21 @@ const app = Vue.createApp({
       return card.cost <= this.state.energy;
     },
 
+    // ✅ 修改：传递玩家真实卡组给后端
     async newGame() {
       this.error = null;
       this.loading = true;
       try {
-        const resp = await fetch(`${API_BASE}/new`, { method: 'POST' });
+        // 读取玩家当前的真实卡组
+        const currentDeck = JSON.parse(localStorage.getItem('deck') || '[]');
+        
+        // 将卡组作为 JSON 发送给后端
+        const resp = await fetch(`${API_BASE}/new`, { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deck: currentDeck })
+        });
+        
         if (!resp.ok) {
           const text = await resp.text();
           throw new Error(`请求失败 ${resp.status}: ${text}`);
@@ -136,7 +146,7 @@ const app = Vue.createApp({
     },
 
     // 战斗结束后的处理：同步血量，胜利进奖励页，失败回地图
-            goAfterFight() {
+    goAfterFight() {
       if (this.state && this.state.playerHp !== undefined) {
         localStorage.setItem('playerHP', this.state.playerHp);
       }
