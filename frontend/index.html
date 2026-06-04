@@ -68,7 +68,8 @@
   </style>
 </head>
 <body>
-  <div id="app">
+  <script src="status_bar.js"></script>
+  <div id="app" style="margin-top: 40px;">
     <div class="header">
       <h1>⚔️ 杀戮尖塔克隆</h1>
       <div>
@@ -124,13 +125,13 @@
         <div class="log-entry" v-for="(entry, i) in state.log" :key="i">{{ entry }}</div>
       </div>
 
-      <div v-if="state.gameOver" class="warning" style="margin-top: 16px; font-size: 18px;">
-         战斗结束! 胜利者: {{ state.winner }}
-         <br>
-   <button v-if="isFromMap" @click="goBackToMap" style="margin-top:10px; background:#e67e22; color:white; border:none; padding:8px 20px; border-radius:6px; cursor:pointer;">
-     返回地图
-   </button>
-      </div>
+          <div v-if="state.gameOver" class="warning" style="margin-top: 16px; font-size: 18px;">
+      战斗结束! 胜利者: {{ state.winner }}
+      <br>
+      <button v-if="isFromMap" @click="goAfterFight" style="margin-top:10px; background:#e67e22; color:white; border:none; padding:8px 20px; border-radius:6px; cursor:pointer;">
+        继续
+      </button>
+          </div>
     </div>
 
     <!-- 确认打出弹窗 -->
