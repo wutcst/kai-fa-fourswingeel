@@ -120,18 +120,23 @@ public class BattleService {
         return getCurrentState();
     }
 
+    /**
+     * ✅ 核心修复：在阶段1中补上了 enemy.onTurnEnd()
+     */
     public synchronized Map<String, Object> endTurn() {
         validateBattleActive();
 
-        // ================= 阶段 1：玩家回合结束结算 =================
+        // ================= 阶段 1：回合结束结算 =================
         player.onTurnEnd(); 
+        enemy.onTurnEnd(); // ✅ 补上这一行！将怪物状态标记为负数，准备下回合衰减
+        
         discardPile.addAll(hand);
         hand.clear();
         energy = 3;
         drawCards(5); 
         
         // ================= 阶段 2：怪物下回合开始前 =================
-        enemy.onTurnStart(); 
+        enemy.onTurnStart(); // 1. 清空怪物上回合的格挡 2. 结算怪物状态的真正衰减
 
         // ================= 阶段 3：怪物执行当前意图 =================
         int baseDmg = enemy.executeCurrentIntent();
@@ -161,7 +166,7 @@ public class BattleService {
         }
 
         // ================= 阶段 4：玩家下回合开始前 =================
-        player.onTurnStart(); 
+        player.onTurnStart(); // 此时才清空玩家上回合遗留的格挡
 
         if (!player.isAlive()) {
             gameOver = true; winner = "敌人";
@@ -187,9 +192,6 @@ public class BattleService {
         }
     }
 
-    /**
-     * ✅ 核心修改：增加怪物格挡和意图附带状态的返回
-     */
     private Map<String, Object> getCurrentState() {
         Map<String, Object> state = new LinkedHashMap<>();
         state.put("playerHp", player.getHp());
@@ -205,11 +207,10 @@ public class BattleService {
         state.put("enemyName", enemy.getName());
         state.put("enemyHp", enemy.getHp());
         state.put("enemyMaxHp", enemy.getMaxHp());
-        state.put("enemyBlock", enemy.getBlock()); // ✅ 新增：返回怪物格挡
+        state.put("enemyBlock", enemy.getBlock()); 
         state.put("enemyNextDamage", enemy.getNextDamage());
         state.put("enemyIntentDesc", enemy.getIntentDesc());
         
-        // ✅ 新增：返回怪物当前意图附带的状态效果
         IntentTemplate currentIntent = enemy.getCurrentIntentTemplate();
         if (currentIntent != null && currentIntent.getApplyStatusType() != null) {
             state.put("enemyIntentStatusType", currentIntent.getApplyStatusType());
