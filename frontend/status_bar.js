@@ -1,6 +1,5 @@
 // status_bar.js
 (function() {
-  // 从 localStorage 读取数据
   function getPlayerData() {
     return {
       char: localStorage.getItem('char') || '1',
@@ -12,16 +11,17 @@
     };
   }
 
-  // 更新显示
   function updateBar() {
     const data = getPlayerData();
-    const charNames = { '1': '铁甲战士', '2': '??? ' };
-    document.getElementById('bar-char').textContent = charNames[data.char] || '未知';
-    document.getElementById('bar-hp').textContent = `${data.hp}/${data.maxHp}`;
-    document.getElementById('bar-gold').textContent = data.gold;
+    const charNames = { '1': '铁甲战士', '2': '???' };
+    const charEl = document.getElementById('bar-char');
+    const hpEl = document.getElementById('bar-hp');
+    const goldEl = document.getElementById('bar-gold');
+    if (charEl) charEl.textContent = charNames[data.char] || '未知';
+    if (hpEl) hpEl.textContent = `${data.hp}/${data.maxHp}`;
+    if (goldEl) goldEl.textContent = data.gold;
   }
 
-  // 创建 HTML 结构
   const barHTML = `
     <div id="status-bar" style="
       position: fixed; top: 0; left: 0; width: 100%; height: 40px;
@@ -33,25 +33,29 @@
       <span>👤 <span id="bar-char">铁甲战士</span></span>
       <span>❤️ <span id="bar-hp">70/70</span></span>
       <span>💰 <span id="bar-gold">0</span></span>
-      <span class="bar-btn" id="relic-btn">📿 遗物</span>
-      <span class="bar-btn" id="deck-btn">🃏 卡组</span>
+      <span class="bar-btn" id="relic-btn" style="cursor:pointer;">📿 遗物</span>
+      <span class="bar-btn" id="deck-btn" style="cursor:pointer;">🃏 卡组</span>
     </div>
   `;
 
-  // 插入到 body 最前面
   document.body.insertAdjacentHTML('afterbegin', barHTML);
 
-  // 按钮事件（暂为占位）
+  // 遗物按钮：避免在自身页面反复跳转
   document.getElementById('relic-btn').addEventListener('click', () => {
-    alert('遗物页面即将开放！');
+    const currentPage = window.location.pathname.split('/').pop();
+    if (currentPage !== 'relics.html') {
+      window.location.href = 'relics.html';
+    }
   });
+
+  // 卡组按钮
   document.getElementById('deck-btn').addEventListener('click', () => {
-    alert('卡组页面即将开放！');
+    const currentPage = window.location.pathname.split('/').pop();
+    if (currentPage !== 'deck.html') {
+      window.location.href = 'deck.html';
+    }
   });
 
-  // 初始化更新
   updateBar();
-
-  // 公开更新函数供其他页面调用
   window.updateStatusBar = updateBar;
 })();
