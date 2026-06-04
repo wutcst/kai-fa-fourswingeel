@@ -238,7 +238,8 @@
           return;
         }
         // 跳转到游戏主界面，可附带角色参数（如 ?char=1）
-        window.location.href = `index.html?char=${selectedCharacter}`;
+        // 跳转到地图页面，携带角色参数
+        window.location.href = `map.html?char=${selectedCharacter}`;
       });
 
       // 初始隐藏角色选择页，显示封面

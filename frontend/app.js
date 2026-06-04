@@ -8,8 +8,21 @@ const app = Vue.createApp({
       error: null,
       showCardConfirm: false,
       selectedCard: null,
-      selectedIndex: -1
+      selectedIndex: -1,
+      // 地图相关
+      isFromMap: false,
+      prevNodeId: null,
+      nextNodeId: null
     };
+  },
+
+  mounted() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('from') === 'map') {
+      this.isFromMap = true;
+      this.prevNodeId = params.get('prevNode') || 'start';
+      this.nextNodeId = params.get('nextNode');
+    }
   },
 
   computed: {
@@ -127,6 +140,17 @@ const app = Vue.createApp({
           : '结束回合失败：' + e.message;
         console.error(e);
       }
+    },
+
+    // 返回地图（战斗结束后调用）
+    goBackToMap() {
+      let targetNode = this.prevNodeId || 'start';
+      // 如果胜利，则前进到目标节点；否则退回原节点
+      if (this.state && this.state.winner === 'player') {
+        targetNode = this.nextNodeId || targetNode;
+      }
+      const charParam = new URLSearchParams(window.location.search).get('char') || '1';
+      window.location.href = `map.html?currentNode=${encodeURIComponent(targetNode)}&char=${charParam}`;
     }
   }
 });
