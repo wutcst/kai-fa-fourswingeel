@@ -6,7 +6,7 @@
     "attackDamage": 8,
     "intents": [
       { "type": "ATTACK", "value": 6, "desc": "轻击" },
-      { "type": "ATTACK", "value": 10, "desc": "诅咒重击", "applyStatusType": "WEAK", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" },
+      { "type": "ATTACK", "value": 10, "desc": "诅咒重击", "applyStatusType": "WEAK", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
       { "type": "DEFEND", "value": 14, "desc": "格挡" }
     ]
   },

@@ -16,7 +16,6 @@ import java.util.*;
 
 @Service
 public class BattleService {
-
     private static final Logger log = LoggerFactory.getLogger(BattleService.class);
     
     @Autowired
@@ -24,9 +23,7 @@ public class BattleService {
 
     private Player player;
     private Enemy enemy;
-    private List<Card> drawPile;
-    private List<Card> hand;
-    private List<Card> discardPile;
+    private List<Card> drawPile, hand, discardPile;
     private int energy;
     private final Random random = new Random();
     private List<String> logList;
@@ -35,33 +32,25 @@ public class BattleService {
 
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, int playerHp, int playerMaxHp) {
         log.info("🎮 开始新战斗... 玩家血量: {}/{}", playerHp, playerMaxHp);
-        
         this.player = new Player(playerHp, playerMaxHp);
-
         List<EnemyTemplate> enemies = dataRepo.getAllEnemies();
         if (enemies.isEmpty()) throw new IllegalStateException("怪物配置为空");
         this.enemy = new Enemy(enemies.get(0));
         
         this.drawPile = buildDeckFromPlayerData(playerDeck);
         Collections.shuffle(drawPile);
-        
         this.hand = new ArrayList<>();
         this.discardPile = new ArrayList<>();
         this.energy = 3;
         this.logList = new ArrayList<>();
         this.gameOver = false;
         this.winner = null;
-        
         drawCards(5);
         return getCurrentState();
     }
 
-    /**
-     * ✅ 核心修复：根据玩家存档数据构建牌堆，并完整恢复状态配置
-     */
     private List<Card> buildDeckFromPlayerData(List<Map<String, Object>> playerDeck) {
         List<Card> deck = new ArrayList<>();
-        
         if (playerDeck != null && !playerDeck.isEmpty()) {
             for (Map<String, Object> cardData : playerDeck) {
                 String name = (String) cardData.get("name");
@@ -73,26 +62,15 @@ public class BattleService {
                 Card.CardType type = Card.CardType.valueOf((String) cardData.get("type"));
                 
                 Card card = new Card(name, cost, damage, block, type);
-                
-                // 从存档数据中恢复状态配置
-                if (cardData.get("applyStatusType") != null) {
-                    card.setApplyStatusType((String) cardData.get("applyStatusType"));
-                }
-                if (cardData.get("applyStatusCount") != null) {
-                    card.setApplyStatusCount(((Number) cardData.get("applyStatusCount")).intValue());
-                }
-                if (cardData.get("applyStatusTarget") != null) {
-                    card.setApplyStatusTarget((String) cardData.get("applyStatusTarget"));
-                }
-                
+                if (cardData.get("applyStatusType") != null) card.setApplyStatusType((String) cardData.get("applyStatusType"));
+                if (cardData.get("applyStatusCount") != null) card.setApplyStatusCount(((Number) cardData.get("applyStatusCount")).intValue());
+                if (cardData.get("applyStatusTarget") != null) card.setApplyStatusTarget((String) cardData.get("applyStatusTarget"));
                 deck.add(card);
             }
         } else {
-            log.info("⚠️ 未接收到玩家卡组，使用默认新手卡组(3打击+2防御)");
             for(int i=0; i<3; i++) deck.add(new Card("打击", 1, 6, 0, Card.CardType.ATTACK));
             for(int i=0; i<2; i++) deck.add(new Card("防御", 1, 0, 5, Card.CardType.SKILL));
         }
-        
         return deck;
     }
 
@@ -108,23 +86,19 @@ public class BattleService {
         logList.add("🃏 玩家使用: " + card.getName());
 
         if (card.getType() == Card.CardType.ATTACK) {
-            int finalDamage = player.modifyDamage(card.getDamage());
-            enemy.takeDamage(finalDamage);
-            logList.add(String.format("造成 %d 点伤害，敌人 HP: %d", finalDamage, enemy.getHp()));
+            int baseDmg = player.modifyDamage(card.getDamage()); // 虚弱修正
+            int actualDmg = enemy.takeDamage(baseDmg);           // 易伤修正并扣血
+            logList.add(String.format("造成 %d 点伤害，敌人 HP: %d", actualDmg, enemy.getHp()));
         } else {
             player.addBlock(card.getBlock());
             logList.add(String.format("获得 %d 点格挡，当前格挡: %d", card.getBlock(), player.getBlock()));
         }
 
-        // 自动施加卡牌附带的状态效果
         if (card.getApplyStatusType() != null && !card.getApplyStatusType().isEmpty()) {
             StatusType type = StatusType.valueOf(card.getApplyStatusType());
             int count = card.getApplyStatusCount();
-            
             String target = card.getApplyStatusTarget();
-            if (target == null || target.isEmpty()) {
-                target = (card.getType() == Card.CardType.ATTACK) ? "ENEMY" : "SELF";
-            }
+            if (target == null || target.isEmpty()) target = (card.getType() == Card.CardType.ATTACK) ? "ENEMY" : "SELF";
 
             if ("ENEMY".equals(target)) {
                 enemy.addStatus(type, count);
@@ -137,26 +111,22 @@ public class BattleService {
 
         hand.remove(index);
         discardPile.add(card);
-
         if (!enemy.isAlive()) {
-            gameOver = true;
-            winner = "玩家";
-            logList.add(" 敌人被击败！战斗胜利！");
+            gameOver = true; winner = "玩家";
+            logList.add("🎉 敌人被击败！战斗胜利！");
         }
-
         return getCurrentState();
     }
 
     public synchronized Map<String, Object> endTurn() {
         validateBattleActive();
-
-        int dmg = enemy.executeCurrentIntent();
+        int baseDmg = enemy.executeCurrentIntent();
+        int actualDmg = player.takeDamage(baseDmg);
         
-        if (dmg > 0) {
-            player.takeDamage(dmg);
+        if (actualDmg > 0) {
             logList.clear();
             logList.add(String.format("⚔️ %s %s，造成 %d 点伤害。玩家 HP: %d | 格挡: %d", 
-                                    enemy.getName(), enemy.getIntentDesc(), dmg, player.getHp(), player.getBlock()));
+                                    enemy.getName(), enemy.getIntentDesc(), actualDmg, player.getHp(), player.getBlock()));
         } else {
             logList.clear();
             logList.add(String.format("🛡️ %s %s", enemy.getName(), enemy.getIntentDesc()));
@@ -166,8 +136,7 @@ public class BattleService {
         if (currentIntent != null && currentIntent.getApplyStatusType() != null && !currentIntent.getApplyStatusType().isEmpty()) {
             StatusType type = StatusType.valueOf(currentIntent.getApplyStatusType());
             int count = currentIntent.getApplyStatusCount();
-            String target = currentIntent.getApplyStatusTarget(); 
-            
+            String target = currentIntent.getApplyStatusTarget();
             if ("ENEMY".equals(target)) {
                 enemy.addStatus(type, count);
                 logList.add(String.format("怪物给自己施加了 %d 层 %s", count, translateStatus(type)));
@@ -178,22 +147,18 @@ public class BattleService {
         }
 
         if (!player.isAlive()) {
-            gameOver = true;
-            winner = "敌人";
+            gameOver = true; winner = "敌人";
             logList.add("💀 玩家倒下... 战斗失败。");
             return getCurrentState();
         }
 
         player.onTurnEnd();
         enemy.onTurnEnd();
-        
         discardPile.addAll(hand);
         hand.clear();
         energy = 3;
         drawCards(5);
-
         enemy.advanceIntent();
-
         return getCurrentState();
     }
 
@@ -247,6 +212,9 @@ public class BattleService {
             cardInfo.put("damage", c.getDamage());
             cardInfo.put("block", c.getBlock());
             cardInfo.put("type", c.getType().name());
+            // ✅ 补全状态字段给前端
+            cardInfo.put("applyStatusType", c.getApplyStatusType());
+            cardInfo.put("applyStatusCount", c.getApplyStatusCount());
             handCards.add(cardInfo);
         }
         state.put("hand", handCards);
@@ -265,11 +233,6 @@ public class BattleService {
         }
     }
 
-    private void validateBattleActive() {
-        if (gameOver) throw new IllegalStateException("战斗已经结束");
-    }
-
-    private void validateCardIndex(int index) {
-        if (index < 0 || index >= hand.size()) throw new IllegalArgumentException("无效的卡牌编号");
-    }
+    private void validateBattleActive() { if (gameOver) throw new IllegalStateException("战斗已经结束"); }
+    private void validateCardIndex(int index) { if (index < 0 || index >= hand.size()) throw new IllegalArgumentException("无效的卡牌编号"); }
 }
