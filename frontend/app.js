@@ -37,19 +37,25 @@ const app = Vue.createApp({
       return card.cost <= this.state.energy;
     },
 
-    // ✅ 修改：传递玩家真实卡组给后端
+    // ✅ 修改：传递玩家真实血量、卡组给后端
     async newGame() {
       this.error = null;
       this.loading = true;
       try {
-        // 读取玩家当前的真实卡组
+        // 读取玩家当前的真实卡组和血量
         const currentDeck = JSON.parse(localStorage.getItem('deck') || '[]');
+        const currentHp = parseInt(localStorage.getItem('playerHP')) || 70;
+        const maxHp = parseInt(localStorage.getItem('maxHP')) || 70;
         
-        // 将卡组作为 JSON 发送给后端
+        // 将血量和卡组作为 JSON 发送给后端
         const resp = await fetch(`${API_BASE}/new`, { 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ deck: currentDeck })
+          body: JSON.stringify({ 
+            deck: currentDeck,
+            playerHp: currentHp,
+            playerMaxHp: maxHp
+          })
         });
         
         if (!resp.ok) {

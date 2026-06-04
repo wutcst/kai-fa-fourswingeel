@@ -6,6 +6,7 @@ D:\work\kai-fa-fourswingeel\backend\src\main\java\com\slaythespire\game\service\
 D:\work\kai-fa-fourswingeel\backend\src\main\java\com\slaythespire\repository\GameDataRepository.java
 D:\work\kai-fa-fourswingeel\backend\src\main\java\com\slaythespire\SlayTheSpireApplication.java
 D:\work\kai-fa-fourswingeel\backend\src\main\java\com\slaythespire\repository\IntentType.java
+D:\work\kai-fa-fourswingeel\backend\src\main\java\com\slaythespire\game\model\StatusType.java
 D:\work\kai-fa-fourswingeel\backend\src\main\java\com\slaythespire\controller\HomeController.java
 D:\work\kai-fa-fourswingeel\backend\src\main\java\com\slaythespire\game\model\Player.java
 D:\work\kai-fa-fourswingeel\backend\src\main\java\com\slaythespire\controller\GameConfigController.java

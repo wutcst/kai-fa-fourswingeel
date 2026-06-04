@@ -4,20 +4,21 @@ import com.slaythespire.repository.EnemyTemplate;
 import com.slaythespire.repository.IntentTemplate;
 import com.slaythespire.repository.IntentType;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
-/**
- * 怪物运行时实例 - 管理生命值、意图执行与回合计数
- */
 public class Enemy {
     private String name;
     private int hp;
     private int maxHp;
     
-    // 意图系统相关
-    private final List<IntentTemplate> intentSequence;  // 预定义的意图序列
-    private int currentTurn;  // 当前是第几个玩家回合结束（怪物行动次数）
-    private IntentTemplate currentIntent;  // 本回合将要执行的意图
+    private final List<IntentTemplate> intentSequence;
+    private int currentTurn;
+    private IntentTemplate currentIntent;
+    private final Random random = new Random();
+    private Map<StatusType, Integer> statuses;
 
     public Enemy(EnemyTemplate template) {
         this.name = template.getName();
@@ -26,81 +27,109 @@ public class Enemy {
         this.intentSequence = template.getIntents();
         this.currentTurn = 0;
         this.currentIntent = null;
+        this.statuses = new EnumMap<>(StatusType.class);
         
-        // 初始化：预计算第一回合的意图
+        if (template.getInitialStatuses() != null) {
+            for (Map.Entry<String, Integer> entry : template.getInitialStatuses().entrySet()) {
+                try {
+                    StatusType type = StatusType.valueOf(entry.getKey());
+                    if (entry.getValue() > 0) this.addStatus(type, entry.getValue());
+                } catch (IllegalArgumentException ignored) {}
+            }
+        }
+
+        // ✅ 初始化时，计算出玩家第一回合结束时怪物要做的动作
         updateCurrentIntent();
     }
 
+    // ================= 核心修复：意图执行与推进分离 =================
+
     /**
-     * 玩家回合结束后调用：更新怪物意图并执行
-     * @return 本次行动造成的伤害（用于前端日志）
+     * 1. 执行当前意图（不改变 currentIntent，仅供 BattleService 在 endTurn 时调用）
+     * @return 本次行动造成的伤害
      */
-    public int executeNextIntent() {
-        currentTurn++;  // 回合数+1
-        updateCurrentIntent();  // 更新本回合意图
+    public int executeCurrentIntent() {
+        if (currentIntent == null) return 0;
         
-        if (currentIntent == null) {
-            return 0;  // 无行动
-        }
-        
-        // 执行意图逻辑（当前只实现 ATTACK）
         switch (currentIntent.getType()) {
             case ATTACK:
-                return currentIntent.getValue();  // 返回伤害值，由 BattleService 应用
+                return modifyDamage(currentIntent.getValue());
             case DEFEND:
             case BUFF:
-            case DEBUFF:
-                // 后续扩展：实现对应逻辑
-                return 0;
+                return 0; 
             default:
                 return 0;
         }
     }
 
     /**
-     * 根据当前回合数，从序列中获取对应意图（支持循环）
+     * 2. 推进到下一个意图（在回合结算的最后调用）
      */
-    private void updateCurrentIntent() {
-        if (intentSequence == null || intentSequence.isEmpty()) {
-            this.currentIntent = null;
-            return;
-        }
-        
-        // ✅ 修复：使用 Math.floorMod 确保索引始终非负
-        // 回合 1→意图[0], 回合 2→意图[1], 回合 5→意图[0]...
-        int index = Math.floorMod(currentTurn - 1, intentSequence.size());
-        this.currentIntent = intentSequence.get(index);
+    public void advanceIntent() {
+        currentTurn++;
+        updateCurrentIntent();
     }
 
-    // ============ Getter 方法 ============
-    
+    // ================= 状态与 Getter =================
+
+    public void addStatus(StatusType type, int count) {
+        int current = statuses.getOrDefault(type, 0);
+        statuses.put(type, current + count);
+    }
+
+    public void takeDamage(int dmg) {
+        if (dmg < 0) return;
+        if (statuses.getOrDefault(StatusType.VULNERABLE, 0) > 0) {
+            dmg = (int) Math.ceil(dmg * 1.5);
+        }
+        hp = Math.max(0, hp - dmg);
+    }
+
+    public int modifyDamage(int originalDamage) {
+        if (originalDamage <= 0) return originalDamage;
+        if (statuses.getOrDefault(StatusType.WEAK, 0) > 0) {
+            return (int) Math.floor(originalDamage * 0.75);
+        }
+        return originalDamage;
+    }
+
+    public void onTurnEnd() {
+        for (StatusType type : StatusType.values()) {
+            int count = statuses.getOrDefault(type, 0);
+            if (count > 0) statuses.put(type, count - 1);
+        }
+    }
+
     public String getName() { return name; }
     public int getHp() { return hp; }
     public int getMaxHp() { return maxHp; }
+    public IntentTemplate getCurrentIntentTemplate() { return currentIntent; }
+    public Map<StatusType, Integer> getStatuses() { return statuses; }
     
     /**
-     * 获取下回合怪物将造成的伤害（用于前端提示）
-     */
-    public int getNextDamage() {
-        return currentIntent != null && currentIntent.getType() == IntentType.ATTACK 
-            ? currentIntent.getValue() 
-            : 0;
-    }
-    
-    /**
-     * 获取当前意图的描述（用于前端显示）
+     * 获取当前意图的描述（用于前端预警）
+     * 语义修正：这是“玩家按下结束回合后，怪物马上要做的动作”
      */
     public String getIntentDesc() {
         return currentIntent != null ? currentIntent.getDesc() : "待机";
     }
 
-    public void takeDamage(int dmg) {
-        if (dmg < 0) return;
-        hp -= dmg;
-        if (hp < 0) hp = 0;
+    /**
+     * 获取当前意图的伤害（用于前端预警）
+     */
+    public int getNextDamage() {
+        if (currentIntent == null || currentIntent.getType() != IntentType.ATTACK) return 0;
+        return modifyDamage(currentIntent.getValue());
     }
 
-    public boolean isAlive() {
-        return hp > 0;
+    public boolean isAlive() { return hp > 0; }
+
+    private void updateCurrentIntent() {
+        if (intentSequence == null || intentSequence.isEmpty()) {
+            this.currentIntent = null;
+            return;
+        }
+        int index = Math.floorMod(currentTurn, intentSequence.size());
+        this.currentIntent = intentSequence.get(index);
     }
 }
