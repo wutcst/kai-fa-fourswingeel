@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商人</title>
+  <style>
+    body {
+      background: #1a1a2e; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; height: 100vh; margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #e0e0e0;
+    }
+    .merchant-icon {
+      font-size: 100px; cursor: pointer; transition: transform 0.3s;
+      user-select: none;
+    }
+    .merchant-icon:hover { transform: scale(1.2); }
+    .hint { margin-top: 20px; color: #f1c40f; }
+  </style>
+</head>
+<body>
+  <script src="status_bar.js"></script>
+  <div class="merchant-icon" id="merchant">🧑‍💼</div>
+  <div class="hint">点击与商人交易</div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const char = params.get('char') || '1';
+    const currentNode = params.get('currentNode') || '';
+    const nextNode = params.get('nextNode') || currentNode;
+
+    document.getElementById('merchant').addEventListener('click', () => {
+      window.location.href = `shop.html?char=${char}&currentNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}`;
+    });
+  </script>
+</body>
+</html>

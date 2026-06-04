@@ -80,7 +80,8 @@
           { id: 'm2', type: 'monster', label: '小怪', x: 75, y: 70, icon: '👾' },
           { id: 'm3', type: 'monster', label: '小怪', x: 25, y: 50, icon: '👾' },
           { id: 'chest1', type: 'chest', label: '宝箱', x: 50, y: 50, icon: '📦' },
-          { id: 'q1', type: 'question', label: '?', x: 75, y: 50, icon: '❓' },
+          { id: 'shop1', type: 'shop', label: '商店', x: 75, y: 50, icon: '🛒' }, // 新增
+          { id: 'q1', type: 'question', label: '?', x: 90, y: 50, icon: '❓' }, // 调整坐标避免重叠
           { id: 'e2', type: 'elite', label: '精英', x: 37.5, y: 30, icon: '💀' },
           { id: 'm4', type: 'monster', label: '小怪', x: 62.5, y: 30, icon: '👾' },
           { id: 'boss', type: 'boss', label: 'BOSS', x: 50, y: 10, icon: '👑' }
@@ -88,9 +89,10 @@
         edges: [
           { from: 'start', to: 'm1' }, { from: 'start', to: 'e1' }, { from: 'start', to: 'm2' },
           { from: 'm1', to: 'm3' }, { from: 'm1', to: 'chest1' },
-          { from: 'e1', to: 'chest1' }, { from: 'e1', to: 'q1' },
-          { from: 'm2', to: 'q1' },
+          { from: 'e1', to: 'chest1' }, { from: 'e1', to: 'shop1' },   // 精英可到商店
+          { from: 'm2', to: 'shop1' }, { from: 'm2', to: 'q1' },
           { from: 'm3', to: 'e2' }, { from: 'chest1', to: 'e2' }, { from: 'chest1', to: 'm4' },
+          { from: 'shop1', to: 'm4' },   // 商店连接下一层
           { from: 'q1', to: 'm4' },
           { from: 'e2', to: 'boss' }, { from: 'm4', to: 'boss' }
         ]
@@ -171,13 +173,14 @@
         });
       }
 
-      function handleNodeClick(node) {
+            function handleNodeClick(node) {
         const baseParams = `char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
-
         if (node.type === 'monster' || node.type === 'elite' || node.type === 'boss') {
           window.location.href = `index.html?from=map&prevNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}&nodeType=${node.type}&char=${charParam}`;
         } else if (node.type === 'chest') {
           window.location.href = `chest.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
+        } else if (node.type === 'shop') {
+          window.location.href = `merchant.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
         } else if (node.type === 'question') {
           alert('问号事件尚未开放，敬请期待！');
         }
