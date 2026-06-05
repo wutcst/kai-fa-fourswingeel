@@ -57,7 +57,7 @@
   <script src="status_bar.js"></script>
   <div id="app">
     <div class="header">
-      <h1>⚔️ 杀戮尖塔克隆</h1>
+      <h1>️ 杀戮尖塔克隆</h1>
       <div>
         <button class="btn-new" @click="newGame" :disabled="loading">新战斗</button>
         <button class="btn-end" @click="endTurn" :disabled="!state || state.gameOver || loading">结束回合</button>
@@ -66,9 +66,9 @@
     <div v-if="error" class="error-box">{{ error }}</div>
     
     <div v-if="state" class="game-area">
-      <!-- ✅ 优化：修正意图文案为“即将行动”，并展示意图附带的特殊效果 -->
+      <!-- 意图预警 -->
       <div class="warning" v-if="state.enemyNextDamage > 0 || state.enemyIntentStatusType">
-        ️ 敌人即将行动：{{ state.enemyIntentDesc }} 
+        ⚠️ 敌人即将行动：{{ state.enemyIntentDesc }} 
         <span v-if="state.enemyNextDamage > 0">(造成 {{ state.enemyNextDamage }} 点伤害)</span>
         <span v-if="state.enemyIntentStatusType" style="color: #f1c40f; margin-left: 8px;">
           并施加 {{ getStatusName(state.enemyIntentStatusType) }} {{ state.enemyIntentStatusCount }} 层
@@ -78,7 +78,9 @@
       <div class="status-panel">
         <div class="player-info">
           <h3>❤️ 玩家 {{ state.playerHp }} / {{ state.playerMaxHp }}</h3>
-          <p>🛡️ 格挡: {{ state.playerBlock }}</p>
+          <!-- ✅ 核心修改：增加 v-if 判断，格挡为 0 时不显示 -->
+          <p v-if="state.playerBlock > 0">🛡️ 格挡: {{ state.playerBlock }}</p>
+          
           <div class="status-effects">
             <span v-for="(count, type) in state.playerStatuses" :key="type" :class="'status-' + type.toLowerCase()">
               {{ getStatusName(type) }}: {{ count }}
@@ -87,7 +89,7 @@
         </div>
         <div class="enemy-info">
           <h3>👹 {{ state.enemyName }}: {{ state.enemyHp }} / {{ state.enemyMaxHp }}</h3>
-          <!-- ✅ 新增：怪物格挡显示 -->
+          <!-- 怪物格挡：同样为 0 时不显示 -->
           <p v-if="state.enemyBlock > 0">🛡️ 格挡: {{ state.enemyBlock }}</p>
           <div class="status-effects">
             <span v-for="(count, type) in state.enemyStatuses" :key="type" :class="'status-' + type.toLowerCase()">
