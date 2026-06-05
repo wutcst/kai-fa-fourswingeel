@@ -23,7 +23,6 @@
     .energy { text-align: center; font-size: 20px; margin: 10px 0; color: #f1c40f; }
     .warning { background: #2c1b3d; color: #e67e22; padding: 10px; border-radius: 6px; margin-bottom: 12px; text-align: center; font-weight: bold; }
 
-    /* 状态效果样式 */
     .status-effects { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; justify-content: inherit; }
     .player-info .status-effects { justify-content: flex-start; }
     .enemy-info .status-effects { justify-content: flex-end; }
@@ -66,10 +65,11 @@
     <div v-if="error" class="error-box">{{ error }}</div>
     
     <div v-if="state" class="game-area">
-      <!-- 意图预警 -->
-      <div class="warning" v-if="state.enemyNextDamage > 0 || state.enemyIntentStatusType">
+      <!-- ✅ 核心修复：增加 enemyNextBlock 的判断和显示 -->
+      <div class="warning" v-if="state.enemyNextDamage > 0 || state.enemyNextBlock > 0 || state.enemyIntentStatusType">
         ⚠️ 敌人即将行动：{{ state.enemyIntentDesc }} 
         <span v-if="state.enemyNextDamage > 0">(造成 {{ state.enemyNextDamage }} 点伤害)</span>
+        <span v-if="state.enemyNextBlock > 0">(获得 {{ state.enemyNextBlock }} 点格挡)</span>
         <span v-if="state.enemyIntentStatusType" style="color: #f1c40f; margin-left: 8px;">
           并施加 {{ getStatusName(state.enemyIntentStatusType) }} {{ state.enemyIntentStatusCount }} 层
         </span>
@@ -78,9 +78,7 @@
       <div class="status-panel">
         <div class="player-info">
           <h3>❤️ 玩家 {{ state.playerHp }} / {{ state.playerMaxHp }}</h3>
-          <!-- ✅ 核心修改：增加 v-if 判断，格挡为 0 时不显示 -->
           <p v-if="state.playerBlock > 0">🛡️ 格挡: {{ state.playerBlock }}</p>
-          
           <div class="status-effects">
             <span v-for="(count, type) in state.playerStatuses" :key="type" :class="'status-' + type.toLowerCase()">
               {{ getStatusName(type) }}: {{ count }}
@@ -89,7 +87,6 @@
         </div>
         <div class="enemy-info">
           <h3>👹 {{ state.enemyName }}: {{ state.enemyHp }} / {{ state.enemyMaxHp }}</h3>
-          <!-- 怪物格挡：同样为 0 时不显示 -->
           <p v-if="state.enemyBlock > 0">🛡️ 格挡: {{ state.enemyBlock }}</p>
           <div class="status-effects">
             <span v-for="(count, type) in state.enemyStatuses" :key="type" :class="'status-' + type.toLowerCase()">
@@ -125,7 +122,6 @@
       </div>
     </div>
 
-    <!-- 确认弹窗 -->
     <div v-if="showCardConfirm" class="modal-overlay" @click.self="cancelPlay">
       <div class="modal">
         <h3>确认打出卡牌?</h3>

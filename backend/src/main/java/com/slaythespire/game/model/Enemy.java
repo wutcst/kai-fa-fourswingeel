@@ -13,7 +13,7 @@ public class Enemy {
     private String name;
     private int hp;
     private int maxHp;
-    private int block = 0; // ✅ 新增：怪物格挡
+    private int block = 0;
     
     private final List<IntentTemplate> intentSequence;
     private int currentTurn;
@@ -38,7 +38,6 @@ public class Enemy {
                 } catch (IllegalArgumentException ignored) {}
             }
         }
-
         updateCurrentIntent();
     }
 
@@ -47,7 +46,7 @@ public class Enemy {
         switch (currentIntent.getType()) {
             case ATTACK: return modifyDamage(currentIntent.getValue());
             case DEFEND: 
-                addBlock(currentIntent.getValue()); // ✅ 支持怪物加盾意图
+                addBlock(currentIntent.getValue()); 
                 return 0;
             default: return 0;
         }
@@ -63,22 +62,23 @@ public class Enemy {
         statuses.put(type, current + count);
     }
 
+    /**
+     * 怪物获得格挡：应用【脆弱】效果
+     */
     public void addBlock(int amount) {
-        if (amount > 0) block += amount;
+        if (amount <= 0) return;
+        if (statuses.getOrDefault(StatusType.FRAIL, 0) > 0) {
+            amount = (int) Math.floor(amount * 0.75);
+        }
+        block += amount;
     }
 
-    /**
-     * 受到伤害：应用【易伤】效果，优先消耗格挡
-     * @return 实际受到的伤害值
-     */
     public int takeDamage(int dmg) {
         if (dmg < 0) return 0;
         int actualDmg = calculateIncomingDamage(dmg);
-        
         int blocked = Math.min(block, actualDmg);
         block -= blocked;
         hp = Math.max(0, hp - (actualDmg - blocked));
-        
         return actualDmg;
     }
 
@@ -99,32 +99,24 @@ public class Enemy {
     }
 
     /**
-     * ✅ 回合结束结算：状态延迟衰减（标记为负数，下回合开始前真正扣除）
+     * ✅ 修改：怪物回合开始时，只清空格挡，不衰减状态
+     */
+    public void onTurnStart() {
+        block = 0; 
+    }
+
+    /**
+     * ✅ 修改：怪物回合结束时，状态层数减 1
      */
     public void onTurnEnd() {
         for (StatusType type : StatusType.values()) {
             int count = statuses.getOrDefault(type, 0);
-            if (count > 0) statuses.put(type, -count); 
-        }
-    }
-
-    /**
-     * ✅ 新增：怪物下回合行动前调用
-     * 1. 清空怪物上回合遗留的格挡
-     * 2. 结算状态的真正衰减
-     */
-    public void onTurnStart() {
-        block = 0; 
-
-        for (StatusType type : StatusType.values()) {
-            int count = statuses.getOrDefault(type, 0);
-            if (count < 0) {
-                int realCount = Math.abs(count);
-                int newCount = realCount - 1;
+            if (count > 0) {
+                int newCount = count - 1;
                 if (newCount > 0) {
-                    statuses.put(type, newCount); 
+                    statuses.put(type, newCount);
                 } else {
-                    statuses.remove(type); 
+                    statuses.remove(type);
                 }
             }
         }
@@ -138,10 +130,21 @@ public class Enemy {
     public Map<StatusType, Integer> getStatuses() { return statuses; }
     
     public String getIntentDesc() { return currentIntent != null ? currentIntent.getDesc() : "待机"; }
+    
     public int getNextDamage() {
         if (currentIntent == null || currentIntent.getType() != IntentType.ATTACK) return 0;
         return modifyDamage(currentIntent.getValue());
     }
+
+    public int getNextBlock() {
+        if (currentIntent == null || currentIntent.getType() != IntentType.DEFEND) return 0;
+        int baseBlock = currentIntent.getValue();
+        if (statuses.getOrDefault(StatusType.FRAIL, 0) > 0) {
+            baseBlock = (int) Math.floor(baseBlock * 0.75);
+        }
+        return baseBlock;
+    }
+
     public boolean isAlive() { return hp > 0; }
 
     private void updateCurrentIntent() {

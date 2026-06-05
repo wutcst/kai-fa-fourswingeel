@@ -31,7 +31,7 @@ public class BattleService {
     private String winner;
 
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, int playerHp, int playerMaxHp) {
-        log.info("🎮 开始新战斗... 玩家血量: {}/{}", playerHp, playerMaxHp);
+        log.info(" 开始新战斗... 玩家血量: {}/{}", playerHp, playerMaxHp);
         this.player = new Player(playerHp, playerMaxHp);
         List<EnemyTemplate> enemies = dataRepo.getAllEnemies();
         if (enemies.isEmpty()) throw new IllegalStateException("怪物配置为空");
@@ -121,25 +121,24 @@ public class BattleService {
     }
 
     /**
-     * ✅ 核心修复：在阶段1中补上了 enemy.onTurnEnd()
+     * ✅ 核心修复：调整 endTurn 时序，确保怪物在执行意图时状态未衰减
      */
     public synchronized Map<String, Object> endTurn() {
         validateBattleActive();
 
-        // ================= 阶段 1：回合结束结算 =================
-        player.onTurnEnd(); 
-        enemy.onTurnEnd(); // ✅ 补上这一行！将怪物状态标记为负数，准备下回合衰减
+        // ================= 阶段 1：玩家回合结束 =================
+        player.onTurnEnd(); // 玩家状态减 1
         
         discardPile.addAll(hand);
         hand.clear();
         energy = 3;
         drawCards(5); 
         
-        // ================= 阶段 2：怪物下回合开始前 =================
-        enemy.onTurnStart(); // 1. 清空怪物上回合的格挡 2. 结算怪物状态的真正衰减
+        // ================= 阶段 2：怪物回合开始 =================
+        enemy.onTurnStart(); // 怪物格挡清空（此时状态保持不变）
 
         // ================= 阶段 3：怪物执行当前意图 =================
-        int baseDmg = enemy.executeCurrentIntent();
+        int baseDmg = enemy.executeCurrentIntent(); // ✅ 此时怪物拥有完整的状态（如 1 层脆弱）
         int actualDmg = player.takeDamage(baseDmg);
         
         if (actualDmg > 0) {
@@ -165,8 +164,11 @@ public class BattleService {
             }
         }
 
-        // ================= 阶段 4：玩家下回合开始前 =================
-        player.onTurnStart(); // 此时才清空玩家上回合遗留的格挡
+        // ================= 阶段 4：怪物回合结束 =================
+        enemy.onTurnEnd(); // ✅ 核心修复：怪物行动完毕后，状态才减 1
+
+        // ================= 阶段 5：玩家回合开始 =================
+        player.onTurnStart(); // 玩家格挡清空
 
         if (!player.isAlive()) {
             gameOver = true; winner = "敌人";
@@ -174,7 +176,7 @@ public class BattleService {
             return getCurrentState();
         }
 
-        // ================= 阶段 5：推进怪物意图到下一轮 =================
+        // ================= 阶段 6：推进怪物意图到下一轮 =================
         enemy.advanceIntent();
 
         return getCurrentState();
@@ -208,7 +210,9 @@ public class BattleService {
         state.put("enemyHp", enemy.getHp());
         state.put("enemyMaxHp", enemy.getMaxHp());
         state.put("enemyBlock", enemy.getBlock()); 
+        
         state.put("enemyNextDamage", enemy.getNextDamage());
+        state.put("enemyNextBlock", enemy.getNextBlock()); 
         state.put("enemyIntentDesc", enemy.getIntentDesc());
         
         IntentTemplate currentIntent = enemy.getCurrentIntentTemplate();
