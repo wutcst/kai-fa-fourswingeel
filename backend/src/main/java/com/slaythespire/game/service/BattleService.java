@@ -43,9 +43,6 @@ public class BattleService {
         return getCurrentState();
     }
 
-    /**
-     * ✅ 核心修复：根据玩家存档数据构建牌堆，兜底逻辑也从配置读取
-     */
     private List<Card> buildDeckFromPlayerData(List<Map<String, Object>> playerDeck) {
         List<Card> deck = new ArrayList<>();
         if (playerDeck != null && !playerDeck.isEmpty()) {
@@ -63,12 +60,10 @@ public class BattleService {
                 deck.add(card);
             }
         } else {
-            // ✅ 修复：不再硬编码数值，而是根据 ID 从 cards.json 读取模板
             List<String> starterIds = Arrays.asList("strike", "strike", "strike", "defend", "defend");
             for (String id : starterIds) {
                 CardTemplate tpl = dataRepo.getCardById(id);
                 if (tpl != null) {
-                    // 使用基于模板的构造函数，自动包含所有配置（包括未来的状态效果）
                     deck.add(new Card(tpl)); 
                 }
             }
@@ -76,6 +71,9 @@ public class BattleService {
         return deck;
     }
 
+    /**
+     * ✅ 核心修复：解耦伤害与格挡逻辑，支持“攻击牌带格挡”（如铁斩波）
+     */
     public synchronized Map<String, Object> playCard(int index) {
         validateBattleActive();
         validateCardIndex(index);
@@ -87,14 +85,19 @@ public class BattleService {
         logList.clear();
         logList.add("🃏 玩家使用: " + card.getName());
 
-        if (card.getType() == Card.CardType.ATTACK) {
+        // 1. 处理伤害（无论卡牌类型，只要有伤害就执行）
+        if (card.getDamage() > 0) {
             int actualDmg = enemy.takeDamage(card.getDamage(), player);           
             logList.add(String.format("造成 %d 点伤害，敌人 HP: %d", actualDmg, enemy.getHp()));
-        } else {
+        }
+
+        // 2. 处理格挡（无论卡牌类型，只要有格挡就执行）
+        if (card.getBlock() > 0) {
             player.gainBlock(card.getBlock());
             logList.add(String.format("获得 %d 点格挡，当前格挡: %d", card.getBlock(), player.getBlock()));
         }
 
+        // 3. 施加状态效果
         if (card.getApplyStatusType() != null && !card.getApplyStatusType().isEmpty()) {
             StatusEffect status = StatusFactory.create(card.getApplyStatusType(), card.getApplyStatusCount(), dataRepo);
             if (status != null) {
