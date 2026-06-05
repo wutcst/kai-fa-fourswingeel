@@ -1,0 +1,6 @@
+[
+  { "id": "VULNERABLE", "name": "易伤", "description": "受到的伤害增加 50%。", "effectType": "INCOMING_DAMAGE_MULTIPLIER", "value": 1.5, "color": "#e74c3c" },
+  { "id": "WEAK", "name": "虚弱", "description": "造成的伤害减少 25%。", "effectType": "OUTGOING_DAMAGE_MULTIPLIER", "value": 0.75, "color": "#9b59b6" },
+  { "id": "FRAIL", "name": "脆弱", "description": "获得的格挡减少 25%。", "effectType": "BLOCK_GAIN_MULTIPLIER", "value": 0.75, "color": "#3498db" },
+  { "id": "STRENGTH", "name": "力量", "description": "每层力量使攻击伤害增加 1 点。", "effectType": "OUTGOING_DAMAGE_FLAT", "value": 1.0, "color": "#f1c40f" }
+]
