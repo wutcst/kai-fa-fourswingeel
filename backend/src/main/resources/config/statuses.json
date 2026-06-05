@@ -3,7 +3,7 @@
   { "id": "WEAK", "name": "虚弱", "description": "造成的伤害减少 25%。", "effectType": "OUTGOING_DAMAGE_MULTIPLIER", "value": 0.75, "color": "#9b59b6", "decay": true },
   { "id": "FRAIL", "name": "脆弱", "description": "获得的格挡减少 25%。", "effectType": "BLOCK_GAIN_MULTIPLIER", "value": 0.75, "color": "#3498db", "decay": true },
   { "id": "STRENGTH", "name": "力量", "description": "每层力量使攻击伤害增加 1 点。", "effectType": "OUTGOING_DAMAGE_FLAT", "value": 1.0, "color": "#f1c40f", "decay": false },
-  { "id": "DEXTERITY", "name": "敏捷", "description": "每层敏捷使获得的格挡增加 1 点。", "effectType": "OUTGOING_BLOCK_FLAT", "value": 1.0, "color": "#2ecc71", "decay": true },
+  { "id": "DEXTERITY", "name": "敏捷", "description": "每层敏捷使获得的格挡增加 1 点。", "effectType": "OUTGOING_BLOCK_FLAT", "value": 1.0, "color": "#2ecc71", "decay": false },
   { "id": "POISON", "name": "毒", "description": "回合结束时，造成等同于毒层数的伤害，然后减少 1 层。", "effectType": "TURN_END_DAMAGE", "value": 1.0, "color": "#27ae60", "decay": true },
   { "id": "REGENERATION", "name": "再生", "description": "回合结束时，恢复等同于再生层数的生命，然后减少 1 层。", "effectType": "TURN_END_HEAL", "value": 1.0, "color": "#8e44ad", "decay": true }
 ]
