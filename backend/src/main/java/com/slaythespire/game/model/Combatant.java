@@ -9,6 +9,9 @@ public abstract class Combatant {
     protected int block = 0;
     protected List<StatusEffect> statuses = new ArrayList<>();
     protected List<Relic> relics = new ArrayList<>();
+    
+    // ✅ 新增：用于收集回合结束时的日志
+    protected List<String> lastTurnEndLogs = new ArrayList<>();
 
     public Combatant(int hp, int maxHp) {
         this.maxHp = maxHp;
@@ -24,8 +27,14 @@ public abstract class Combatant {
     public void addRelic(Relic relic) { relics.add(relic); }
     public List<Relic> getRelics() { return relics; }
     public List<StatusEffect> getStatuses() { return statuses; }
+    public List<String> getLastTurnEndLogs() { return lastTurnEndLogs; } // ✅ 新增 Getter
 
+    // ✅ 修改：增加 ignoreBlock 参数
     public int takeDamage(int rawDamage, Combatant source) {
+        return takeDamage(rawDamage, source, false);
+    }
+
+    public int takeDamage(int rawDamage, Combatant source, boolean ignoreBlock) {
         int finalDamage = rawDamage;
         if (source != null) {
             for (StatusEffect s : source.statuses) finalDamage = s.onDamageDealt(finalDamage, source, this);
@@ -34,8 +43,11 @@ public abstract class Combatant {
         for (StatusEffect s : this.statuses) finalDamage = s.onDamageTaken(finalDamage, source, this);
         for (Relic r : this.relics) finalDamage = r.onDamageTaken(finalDamage, this);
 
-        int blocked = Math.min(block, finalDamage);
-        block -= blocked;
+        int blocked = 0;
+        if (!ignoreBlock) { // ✅ 毒伤害无视格挡
+            blocked = Math.min(block, finalDamage);
+            block -= blocked;
+        }
         hp = Math.max(0, hp - (finalDamage - blocked));
         return finalDamage;
     }
@@ -46,11 +58,16 @@ public abstract class Combatant {
         block += finalBlock;
     }
 
+    // ✅ 修改：收集状态和遗物产生的日志
     public void onTurnEnd() {
-        for (Relic r : relics) r.onTurnEnd(this);
+        lastTurnEndLogs.clear();
+        for (Relic r : relics) {
+            r.onTurnEnd(this);
+        }
         List<StatusEffect> toRemove = new ArrayList<>();
         for (StatusEffect s : statuses) {
-            s.onTurnEnd(this);
+            String log = s.onTurnEnd(this); // ✅ 获取日志
+            if (log != null) lastTurnEndLogs.add(log);
             s.decrement();
             if (s.getCount() <= 0) toRemove.add(s);
         }

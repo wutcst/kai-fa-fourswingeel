@@ -60,6 +60,7 @@ public class BattleService {
                 deck.add(card);
             }
         } else {
+            // 从配置读取初始牌组
             List<String> starterIds = Arrays.asList("strike", "strike", "strike", "defend", "defend");
             for (String id : starterIds) {
                 CardTemplate tpl = dataRepo.getCardById(id);
@@ -71,9 +72,6 @@ public class BattleService {
         return deck;
     }
 
-    /**
-     * ✅ 核心修复：解耦伤害与格挡逻辑，支持“攻击牌带格挡”（如铁斩波）
-     */
     public synchronized Map<String, Object> playCard(int index) {
         validateBattleActive();
         validateCardIndex(index);
@@ -91,7 +89,7 @@ public class BattleService {
             logList.add(String.format("造成 %d 点伤害，敌人 HP: %d", actualDmg, enemy.getHp()));
         }
 
-        // 2. 处理格挡（无论卡牌类型，只要有格挡就执行）
+        // 2. 处理格挡（无论卡牌类型，只要有格挡就执行，支持铁斩波）
         if (card.getBlock() > 0) {
             player.gainBlock(card.getBlock());
             logList.add(String.format("获得 %d 点格挡，当前格挡: %d", card.getBlock(), player.getBlock()));
@@ -126,25 +124,29 @@ public class BattleService {
     public synchronized Map<String, Object> endTurn() {
         validateBattleActive();
 
+        // ================= 阶段 1：玩家回合结束 =================
         player.onTurnEnd(); 
+        logList.addAll(player.getLastTurnEndLogs()); // ✅ 收集玩家身上的毒/再生等日志
+        
         discardPile.addAll(hand);
         hand.clear();
         energy = 3;
         drawCards(5); 
         
+        // ================= 阶段 2：怪物回合开始 =================
         enemy.onTurnStart(); 
 
+        // ================= 阶段 3：怪物执行当前意图 =================
         int actualDmg = enemy.executeCurrentIntent(player); 
         
         if (actualDmg > 0) {
-            logList.clear();
             logList.add(String.format("⚔️ %s %s，造成 %d 点伤害。玩家 HP: %d | 格挡: %d", 
                                     enemy.getEnemyName(), enemy.getIntentDesc(), actualDmg, player.getHp(), player.getBlock()));
         } else {
-            logList.clear();
             logList.add(String.format("🛡️ %s %s", enemy.getEnemyName(), enemy.getIntentDesc()));
         }
 
+        // 怪物施加意图附带的状态
         IntentTemplate currentIntent = enemy.getCurrentIntentTemplate();
         if (currentIntent != null && currentIntent.getApplyStatusType() != null) {
             StatusEffect status = StatusFactory.create(currentIntent.getApplyStatusType(), currentIntent.getApplyStatusCount(), dataRepo);
@@ -160,7 +162,11 @@ public class BattleService {
             }
         }
 
+        // ================= 阶段 4：怪物回合结束 =================
         enemy.onTurnEnd(); 
+        logList.addAll(enemy.getLastTurnEndLogs()); // ✅ 收集怪物身上的毒/再生等日志
+
+        // ================= 阶段 5：玩家回合开始 =================
         player.onTurnStart(); 
 
         if (!player.isAlive()) {
@@ -169,6 +175,7 @@ public class BattleService {
             return getCurrentState();
         }
 
+        // ================= 阶段 6：推进怪物意图到下一轮 =================
         enemy.advanceIntent();
         return getCurrentState();
     }
