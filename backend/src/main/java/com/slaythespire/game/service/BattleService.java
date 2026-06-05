@@ -24,10 +24,10 @@ public class BattleService {
     private String winner;
 
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, int playerHp, int playerMaxHp) {
-        this.player = new Player(playerHp, playerMaxHp, dataRepo); // 传入 dataRepo
+        this.player = new Player(playerHp, playerMaxHp, dataRepo);
         List<EnemyTemplate> enemies = dataRepo.getAllEnemies();
         if (enemies.isEmpty()) throw new IllegalStateException("怪物配置为空");
-        this.enemy = new Enemy(enemies.get(0), dataRepo); // 传入 dataRepo
+        this.enemy = new Enemy(enemies.get(0), dataRepo);
         
         this.drawPile = buildDeckFromPlayerData(playerDeck);
         Collections.shuffle(drawPile);
@@ -43,6 +43,9 @@ public class BattleService {
         return getCurrentState();
     }
 
+    /**
+     * ✅ 核心修复：根据玩家存档数据构建牌堆，兜底逻辑也从配置读取
+     */
     private List<Card> buildDeckFromPlayerData(List<Map<String, Object>> playerDeck) {
         List<Card> deck = new ArrayList<>();
         if (playerDeck != null && !playerDeck.isEmpty()) {
@@ -52,6 +55,7 @@ public class BattleService {
                 int damage = cardData.get("damage") != null ? ((Number) cardData.get("damage")).intValue() : 0;
                 int block = cardData.get("block") != null ? ((Number) cardData.get("block")).intValue() : 0;
                 Card.CardType type = Card.CardType.valueOf((String) cardData.get("type"));
+                
                 Card card = new Card(name, cost, damage, block, type);
                 if (cardData.get("applyStatusType") != null) card.setApplyStatusType((String) cardData.get("applyStatusType"));
                 if (cardData.get("applyStatusCount") != null) card.setApplyStatusCount(((Number) cardData.get("applyStatusCount")).intValue());
@@ -59,8 +63,15 @@ public class BattleService {
                 deck.add(card);
             }
         } else {
-            for(int i=0; i<3; i++) deck.add(new Card("打击", 1, 6, 0, Card.CardType.ATTACK));
-            for(int i=0; i<2; i++) deck.add(new Card("防御", 1, 0, 5, Card.CardType.SKILL));
+            // ✅ 修复：不再硬编码数值，而是根据 ID 从 cards.json 读取模板
+            List<String> starterIds = Arrays.asList("strike", "strike", "strike", "defend", "defend");
+            for (String id : starterIds) {
+                CardTemplate tpl = dataRepo.getCardById(id);
+                if (tpl != null) {
+                    // 使用基于模板的构造函数，自动包含所有配置（包括未来的状态效果）
+                    deck.add(new Card(tpl)); 
+                }
+            }
         }
         return deck;
     }
@@ -84,7 +95,6 @@ public class BattleService {
             logList.add(String.format("获得 %d 点格挡，当前格挡: %d", card.getBlock(), player.getBlock()));
         }
 
-        // 施加状态：使用工厂类创建对象
         if (card.getApplyStatusType() != null && !card.getApplyStatusType().isEmpty()) {
             StatusEffect status = StatusFactory.create(card.getApplyStatusType(), card.getApplyStatusCount(), dataRepo);
             if (status != null) {
@@ -178,7 +188,6 @@ public class BattleService {
         state.put("playerMaxHp", player.getMaxHp());
         state.put("playerBlock", player.getBlock());
         
-        // 返回包含 name 和 color 的状态列表
         List<Map<String, Object>> playerStatusList = new ArrayList<>();
         for (StatusEffect s : player.getStatuses()) {
             Map<String, Object> info = new LinkedHashMap<>();

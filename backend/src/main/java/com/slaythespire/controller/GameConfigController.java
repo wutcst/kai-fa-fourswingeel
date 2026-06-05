@@ -18,10 +18,9 @@ public class GameConfigController {
 
     @GetMapping("/map")
     public Map<String, Object> getMapData() {
-        // 地图数据保持不变...
         Map<String, Object> mapData = new LinkedHashMap<>();
         List<Map<String, Object>> nodes = new ArrayList<>();
-        nodes.add(createNode("start", "start", "起点", 50, 90, "🛡️"));
+        nodes.add(createNode("start", "start", "起点", 50, 90, "️"));
         nodes.add(createNode("m1", "monster", "小怪", 25, 70, "👾"));
         nodes.add(createNode("e1", "elite", "精英", 50, 70, "💀"));
         nodes.add(createNode("m2", "monster", "小怪", 75, 70, "👾"));
@@ -30,7 +29,7 @@ public class GameConfigController {
         nodes.add(createNode("shop1", "shop", "商店", 75, 50, ""));
         nodes.add(createNode("q1", "question", "?", 90, 50, "❓"));
         nodes.add(createNode("e2", "elite", "精英", 37.5, 30, "💀"));
-        nodes.add(createNode("m4", "monster", "小怪", 62.5, 30, "👾"));
+        nodes.add(createNode("m4", "monster", "小怪", 62.5, 30, ""));
         nodes.add(createNode("boss", "boss", "BOSS", 50, 10, "👑"));
         
         List<Map<String, String>> edges = new ArrayList<>();
@@ -66,8 +65,6 @@ public class GameConfigController {
                 cardMap.put("damage", tpl.getDamage());
                 cardMap.put("block", tpl.getBlock());
                 cardMap.put("type", tpl.getType().name());
-                
-                // ✅ 核心修复：商店卡牌也要带完整状态配置
                 cardMap.put("applyStatusType", tpl.getApplyStatusType());
                 cardMap.put("applyStatusCount", tpl.getApplyStatusCount());
                 cardMap.put("applyStatusTarget", tpl.getApplyStatusTarget());
@@ -92,27 +89,43 @@ public class GameConfigController {
         return shop;
     }
 
+    /**
+     * ✅ 核心修复：角色初始牌组从配置读取，而非硬编码
+     */
     @GetMapping("/character/{charId}")
     public Map<String, Object> getCharacterInfo(@PathVariable String charId) {
-        // 角色数据保持不变...
         Map<String, Object> info = new LinkedHashMap<>();
+        
         if ("1".equals(charId)) {
             info.put("name", "铁甲战士");
             info.put("maxHp", 70);
             info.put("gold", 0);
+            
+            // 从 cards.json 读取初始牌组 ID
+            List<String> starterIds = Arrays.asList("strike", "strike", "strike", "defend", "defend");
             List<Map<String, Object>> deck = new ArrayList<>();
-            for(int i = 0; i < 5; i++) {
-                Map<String, Object> card = new LinkedHashMap<>();
-                if (i < 3) { 
-                    card.put("name", "打击"); card.put("cost", 1); card.put("damage", 6); card.put("block", 0); card.put("type", "ATTACK");
-                } else { 
-                    card.put("name", "防御"); card.put("cost", 1); card.put("damage", 0); card.put("block", 5); card.put("type", "SKILL");
+            
+            for (String id : starterIds) {
+                CardTemplate tpl = dataRepo.getCardById(id);
+                if (tpl != null) {
+                    Map<String, Object> cardMap = new LinkedHashMap<>();
+                    cardMap.put("name", tpl.getName());
+                    cardMap.put("cost", tpl.getCost());
+                    cardMap.put("damage", tpl.getDamage());
+                    cardMap.put("block", tpl.getBlock());
+                    cardMap.put("type", tpl.getType().name());
+                    // 补全状态字段，确保前端存档完整
+                    cardMap.put("applyStatusType", tpl.getApplyStatusType());
+                    cardMap.put("applyStatusCount", tpl.getApplyStatusCount());
+                    cardMap.put("applyStatusTarget", tpl.getApplyStatusTarget());
+                    deck.add(cardMap);
                 }
-                deck.add(card);
             }
             info.put("startingDeck", deck);
         } else {
-            info.put("name", "未知角色"); info.put("maxHp", 50); info.put("gold", 0);
+            info.put("name", "未知角色");
+            info.put("maxHp", 50);
+            info.put("gold", 0);
             info.put("startingDeck", Collections.emptyList());
         }
         return info;
