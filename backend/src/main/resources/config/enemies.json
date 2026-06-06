@@ -3,12 +3,11 @@
     "id": "cultist",
     "name": "邪教徒",
     "maxHp": 50,
-    "attackDamage": 6,
+    "attackDamage": 8,
     "intents": [
       { "type": "ATTACK", "value": 6, "desc": "轻击" },
-      { "type": "ATTACK", "value": 10, "desc": "重击" },
-      { "type": "ATTACK", "value": 14, "desc": "猛击" },
-      { "type": "ATTACK", "value": 18, "desc": "致命一击" }
+      { "type": "ATTACK", "value": 10, "desc": "诅咒重击", "applyStatusType": "WEAK", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
+      { "type": "DEFEND", "value": 14, "desc": "格挡" }
     ]
   },
   {
@@ -20,18 +19,6 @@
       { "type": "ATTACK", "value": 6, "desc": "撞击" },
       { "type": "DEFEND", "value": 8, "desc": "缩壳" },
       { "type": "ATTACK", "value": 9, "desc": "弹射" }
-    ]
-  },
-  {
-    "id": "boss1",
-    "name": "六火亡魂",
-    "maxHp": 200,
-    "attackDamage": 15,
-    "intents": [
-      { "type": "ATTACK", "value": 15, "desc": "六火灼烧" },
-      { "type": "ATTACK", "value": 15, "desc": "六火灼烧" },
-      { "type": "BUFF", "value": 3, "desc": "充能（下回合伤害+3）" },
-      { "type": "ATTACK", "value": 25, "desc": "烈焰爆发" }
     ]
   }
 ]

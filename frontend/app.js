@@ -32,16 +32,40 @@ const app = Vue.createApp({
   },
 
   methods: {
+    // ✅ 状态效果中文翻译
+    getStatusName(type) {
+      const map = { 'VULNERABLE': '易伤', 'WEAK': '虚弱', 'FRAIL': '脆弱', 'STRENGTH': '力量' };
+      return map[type] || type;
+    },
+
     canPlayCard(card) {
       if (!this.state || !card) return false;
       return card.cost <= this.state.energy;
     },
 
+    // ✅ 核心修改：传递玩家真实血量、卡组和遗物给后端
     async newGame() {
       this.error = null;
       this.loading = true;
       try {
-        const resp = await fetch(`${API_BASE}/new`, { method: 'POST' });
+        // 读取玩家当前的真实数据
+        const currentDeck = JSON.parse(localStorage.getItem('deck') || '[]');
+        const currentRelics = JSON.parse(localStorage.getItem('relics') || '[]'); // ✅ 读取遗物
+        const currentHp = parseInt(localStorage.getItem('playerHP')) || 70;
+        const maxHp = parseInt(localStorage.getItem('maxHP')) || 70;
+        
+        // 将数据作为 JSON 发送给后端
+        const resp = await fetch(`${API_BASE}/new`, { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            deck: currentDeck,
+            relics: currentRelics, // ✅ 传递遗物 ID 列表
+            playerHp: currentHp,
+            playerMaxHp: maxHp
+          })
+        });
+        
         if (!resp.ok) {
           const text = await resp.text();
           throw new Error(`请求失败 ${resp.status}: ${text}`);
@@ -136,7 +160,7 @@ const app = Vue.createApp({
     },
 
     // 战斗结束后的处理：同步血量，胜利进奖励页，失败回地图
-            goAfterFight() {
+    goAfterFight() {
       if (this.state && this.state.playerHp !== undefined) {
         localStorage.setItem('playerHP', this.state.playerHp);
       }

@@ -2,82 +2,57 @@ package com.slaythespire.repository;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * 游戏数据仓库 - 从 JSON 配置文件加载卡牌/怪物数据
- * 替代原静态 GameConfig，实现数据与代码完全解耦
- */
 @Repository
 public class GameDataRepository {
+    private List<CardTemplate> cards = new ArrayList<>();
+    private List<EnemyTemplate> enemies = new ArrayList<>();
+    private List<RelicTemplate> relics = new ArrayList<>();
+    private List<StatusTemplate> statuses = new ArrayList<>();
 
-    private static final Logger log = LoggerFactory.getLogger(GameDataRepository.class);
-    private final ObjectMapper mapper = new ObjectMapper();
-
-    // 内存缓存：ID -> 模板对象
-    private final Map<String, CardTemplate> cardCache = new LinkedHashMap<>();
-    private final Map<String, EnemyTemplate> enemyCache = new LinkedHashMap<>();
-
-    /**
-     * Spring 容器初始化后自动执行：读取 classpath 下的 JSON 文件
-     */
     @PostConstruct
-    public void loadData() {
+    public void init() {
+        loadJson("config/cards.json", cards, new TypeReference<List<CardTemplate>>() {});
+        loadJson("config/enemies.json", enemies, new TypeReference<List<EnemyTemplate>>() {});
+        loadJson("config/relics.json", relics, new TypeReference<List<RelicTemplate>>() {});
+        loadJson("config/statuses.json", statuses, new TypeReference<List<StatusTemplate>>() {});
+    }
+
+    private <T> void loadJson(String path, List<T> target, TypeReference<List<T>> typeRef) {
         try {
-            loadCards();
-            loadEnemies();
-            log.info("✅ 游戏配置加载完成 | 卡牌: {} 张 | 怪物: {} 只", cardCache.size(), enemyCache.size());
-        } catch (Exception e) {
-            log.error("❌ 游戏配置文件加载失败，请检查 resources/config/ 目录", e);
-            throw new RuntimeException("Failed to load game config", e);
+            ObjectMapper mapper = new ObjectMapper();
+            InputStream is = new ClassPathResource(path).getInputStream();
+            List<T> data = mapper.readValue(is, typeRef);
+            target.clear();
+            target.addAll(data);
+            System.out.println("✅ 加载配置成功: " + path + " (" + data.size() + " 条)");
+        } catch (IOException e) {
+            System.err.println("❌ 加载配置失败: " + path + " - " + e.getMessage());
         }
     }
 
-    private void loadCards() throws IOException {
-        try (InputStream is = new ClassPathResource("config/cards.json").getInputStream()) {
-            List<CardTemplate> cards = mapper.readValue(is, new TypeReference<List<CardTemplate>>() {});
-            for (CardTemplate c : cards) {
-                cardCache.put(c.getId(), c);
-            }
-        }
+    public List<CardTemplate> getAllCards() { return cards; }
+    public List<EnemyTemplate> getAllEnemies() { return enemies; }
+    public List<RelicTemplate> getAllRelics() { return relics; }
+    public List<StatusTemplate> getAllStatuses() { return statuses; }
+
+    public StatusTemplate getStatusById(String id) {
+        return statuses.stream().filter(s -> s.getId().equals(id)).findFirst().orElse(null);
     }
-
-    private void loadEnemies() throws IOException {
-        try (InputStream is = new ClassPathResource("config/enemies.json").getInputStream()) {
-            List<EnemyTemplate> enemies = mapper.readValue(is, new TypeReference<List<EnemyTemplate>>() {});
-            for (EnemyTemplate e : enemies) {
-                enemyCache.put(e.getId(), e);
-            }
-        }
+    public RelicTemplate getRelicById(String id) {
+        return relics.stream().filter(r -> r.getId().equals(id)).findFirst().orElse(null);
     }
-
-    // ================= 对外查询接口 =================
-
-    /** 获取所有卡牌（用于初始化牌堆） */
-    public List<CardTemplate> getAllCards() {
-        return new ArrayList<>(cardCache.values());
-    }
-
-    /** 根据 ID 获取指定卡牌 */
+    
+    // ✅ 新增：根据 ID 查找卡牌模板
     public CardTemplate getCardById(String id) {
-        return cardCache.get(id);
-    }
-
-    /** 获取所有怪物 */
-    public List<EnemyTemplate> getAllEnemies() {
-        return new ArrayList<>(enemyCache.values());
-    }
-
-    /** 根据 ID 获取指定怪物 */
-    public EnemyTemplate getEnemyById(String id) {
-        return enemyCache.get(id);
+        return cards.stream().filter(c -> c.getId().equals(id)).findFirst().orElse(null);
     }
 }

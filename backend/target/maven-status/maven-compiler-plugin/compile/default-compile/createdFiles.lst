@@ -1,9 +1,8 @@
 com\slaythespire\game\service\BattleService.class
-com\slaythespire\game\model\Card.class
-com\slaythespire\game\model\Card$CardType.class
 com\slaythespire\game\model\Enemy.class
 com\slaythespire\game\model\Player.class
-com\slaythespire\controller\HealthController.class
 com\slaythespire\game\controller\BattleController.class
+com\slaythespire\game\model\Card.class
+com\slaythespire\game\model\Card$CardType.class
+com\slaythespire\controller\HealthController.class
 com\slaythespire\SlayTheSpireApplication.class
-com\slaythespire\game\model\Enemy$1.class

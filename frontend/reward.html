@@ -50,7 +50,10 @@
       const nodeType = params.get('nodeType') || 'monster';
       const gotGold = params.get('gotGold') === '1';
       const gotRelic = params.get('gotRelic') === '1';
-      const gotCard = params.get('gotCard') === '1';  // 新增
+      const gotCard = params.get('gotCard') === '1';
+
+      // 如果是返回页面（已领取过部分奖励），则从缓存恢复奖励，避免重新随机生成
+      const isReturnVisit = params.has('gotGold') || params.has('gotRelic') || params.has('gotCard');
 
       const defaultReward = {
         gold: 50,
@@ -62,23 +65,45 @@
         ]
       };
 
-      let reward = defaultReward;
-      try {
-        const resp = await fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}`);
-        if (resp.ok) {
-          const data = await resp.json();
-          reward = {
-            gold: data.gold || defaultReward.gold,
-            relic: data.relic || defaultReward.relic,
-            cardPool: data.cards || defaultReward.cardPool
-          };
+      let reward = null;
+
+      // 如果是返回访问，尝试从 sessionStorage 恢复奖励
+      if (isReturnVisit) {
+        const saved = sessionStorage.getItem('rewardData');
+        if (saved) {
+          try { reward = JSON.parse(saved); } catch (e) {}
         }
-      } catch (e) {
-        console.warn('后端奖励接口不可用，使用默认奖励', e);
+      }
+
+      // 首次进入或恢复失败时，从后端请求奖励
+      if (!reward) {
+        try {
+          const resp = await fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            reward = {
+              gold: data.gold || defaultReward.gold,
+              relic: data.relic || defaultReward.relic,
+              cardPool: data.cards || defaultReward.cardPool
+            };
+          }
+        } catch (e) {
+          console.warn('后端奖励接口不可用，使用默认奖励', e);
+        }
+        if (!reward) reward = defaultReward;
+        // 将本次奖励存入 sessionStorage，以便返回后还能恢复
+        sessionStorage.setItem('rewardData', JSON.stringify(reward));
       }
 
       let localGotGold = gotGold;
       let localGotRelic = gotRelic;
+
+      // 更新 URL 中的 get 参数，防止刷新后状态丢失
+      function updateUrlParam(key, value) {
+        const url = new URL(window.location.href);
+        url.searchParams.set(key, value);
+        window.history.replaceState(null, '', url.toString());
+      }
 
       function goBackToMap() {
         window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
@@ -92,6 +117,7 @@
         localGotGold = true;
         alert(`获得 ${amount} 金币！`);
         if (window.updateStatusBar) window.updateStatusBar();
+        updateUrlParam('gotGold', '1');
       }
 
       function giveRelic(relicName) {
@@ -102,6 +128,7 @@
         localGotRelic = true;
         alert(`获得 ${relicName}！`);
         if (window.updateStatusBar) window.updateStatusBar();
+        updateUrlParam('gotRelic', '1');
       }
 
       function goToCardSelect() {
@@ -124,11 +151,11 @@
       });
       panel.appendChild(goldBtn);
 
-      // 卡牌按钮（根据 gotCard 禁用）
+      // 卡牌按钮
       const cardBtn = document.createElement('button');
       cardBtn.className = 'reward-btn';
       cardBtn.textContent = '🃏 选择一张卡牌';
-      if (gotCard) cardBtn.disabled = true;   // 新增
+      if (gotCard) cardBtn.disabled = true;
       cardBtn.addEventListener('click', goToCardSelect);
       panel.appendChild(cardBtn);
 
