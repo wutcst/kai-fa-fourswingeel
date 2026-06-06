@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>杀戮尖塔克隆 - 战斗</title>
+  <title>杀戮尖塔 - 战斗</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #e0e0e0; margin: 0; padding: 20px; }
@@ -11,8 +11,7 @@
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     h1 { margin: 0; font-size: 24px; }
     button { padding: 10px 20px; font-size: 16px; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
-    .btn-new { background: #e74c3c; color: white; } .btn-end { background: #f39c12; color: white; }
-    .btn-new:hover, .btn-end:hover { opacity: 0.9; transform: translateY(-2px); }
+    .btn-end { background: #f39c12; color: white; } .btn-end:hover { opacity: 0.9; transform: translateY(-2px); }
     button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .error-box { background: #c0392b; color: white; padding: 12px; border-radius: 6px; margin-bottom: 16px; }
     
@@ -53,9 +52,8 @@
   <script src="status_bar.js"></script>
   <div id="app">
     <div class="header">
-      <h1>️ 杀戮尖塔克隆</h1>
+      <h1>⚔️ 杀戮尖塔 - 战斗</h1>
       <div>
-        <button class="btn-new" @click="newGame" :disabled="loading">新战斗</button>
         <button class="btn-end" @click="endTurn" :disabled="!state || state.gameOver || loading">结束回合</button>
       </div>
     </div>
@@ -74,8 +72,7 @@
       <div class="status-panel">
         <div class="player-info">
           <h3>❤️ 玩家 {{ state.playerHp }} / {{ state.playerMaxHp }}</h3>
-          <p v-if="state.playerBlock > 0">️ 格挡: {{ state.playerBlock }}</p>
-          <!-- ✅ 适配新的状态数据结构 -->
+          <p v-if="state.playerBlock > 0">🛡️ 格挡: {{ state.playerBlock }}</p>
           <div class="status-effects">
             <span v-for="status in state.playerStatuses" :key="status.id" 
                   :style="{ background: status.color || '#666', border: '1px solid ' + (status.color || '#666') }">
@@ -86,7 +83,6 @@
         <div class="enemy-info">
           <h3>👹 {{ state.enemyName }}: {{ state.enemyHp }} / {{ state.enemyMaxHp }}</h3>
           <p v-if="state.enemyBlock > 0">🛡️ 格挡: {{ state.enemyBlock }}</p>
-          <!-- ✅ 适配新的状态数据结构 -->
           <div class="status-effects">
             <span v-for="status in state.enemyStatuses" :key="status.id" 
                   :style="{ background: status.color || '#666', border: '1px solid ' + (status.color || '#666') }">
@@ -111,12 +107,12 @@
       <div class="deck-info">抽牌堆: {{ state.drawPileSize }} | 弃牌堆: {{ state.discardPileSize }}</div>
 
       <div class="log">
-        <div class="log-title"> 战斗日志:</div>
+        <div class="log-title">📜 战斗日志:</div>
         <div class="log-entry" v-for="(entry, i) in state.log" :key="i">{{ entry }}</div>
       </div>
 
       <div v-if="state.gameOver" class="warning" style="margin-top: 16px; font-size: 18px;">
-         战斗结束! 胜利者: {{ state.winner }}
+        🏁 战斗结束! 胜利者: {{ state.winner }}
         <br>
         <button v-if="isFromMap" @click="goAfterFight" style="margin-top:10px; background:#e67e22; color:white; border:none; padding:8px 20px; border-radius:6px; cursor:pointer;">继续</button>
       </div>
@@ -139,6 +135,188 @@
       </div>
     </div>
   </div>
-  <script src="app.js"></script>
+
+  <script>
+    const API_BASE = '/api/game';
+
+    const app = Vue.createApp({
+      data() {
+        return {
+          state: null,
+          loading: false,
+          error: null,
+          showCardConfirm: false,
+          selectedCard: null,
+          selectedIndex: -1,
+          isFromMap: false,
+          prevNodeId: null,
+          nextNodeId: null
+        };
+      },
+
+      mounted() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('from') === 'map') {
+          this.isFromMap = true;
+          this.prevNodeId = params.get('prevNode') || 'start';
+          this.nextNodeId = params.get('nextNode');
+        }
+        // 自动开始战斗
+        this.newGame();
+      },
+
+      computed: {
+        hand() {
+          return this.state?.hand || [];
+        }
+      },
+
+      methods: {
+        getStatusName(type) {
+          const map = { 'VULNERABLE': '易伤', 'WEAK': '虚弱', 'FRAIL': '脆弱', 'STRENGTH': '力量' };
+          return map[type] || type;
+        },
+
+        canPlayCard(card) {
+          if (!this.state || !card) return false;
+          return card.cost <= this.state.energy;
+        },
+
+        async newGame() {
+          this.error = null;
+          this.loading = true;
+          try {
+            const currentDeck = JSON.parse(localStorage.getItem('deck') || '[]');
+            const currentRelics = JSON.parse(localStorage.getItem('relics') || '[]');
+            const currentHp = parseInt(localStorage.getItem('playerHP')) || 70;
+            const maxHp = parseInt(localStorage.getItem('maxHP')) || 70;
+            
+            const resp = await fetch(`${API_BASE}/new`, { 
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                deck: currentDeck,
+                relics: currentRelics,
+                playerHp: currentHp,
+                playerMaxHp: maxHp
+              })
+            });
+            
+            if (!resp.ok) {
+              const text = await resp.text();
+              throw new Error(`请求失败 ${resp.status}: ${text}`);
+            }
+            this.state = await resp.json();
+          } catch (e) {
+            this.error = e.message.includes('Failed to fetch')
+              ? '无法连接后端。请确认后端已启动。'
+              : '无法开始战斗：' + e.message;
+            console.error(e);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        previewCard(index) {
+          if (!this.state) {
+            this.error = '请先开始新战斗';
+            return;
+          }
+          if (index < 0 || index >= this.hand.length) {
+            this.error = '无效的卡牌编号';
+            return;
+          }
+          const card = this.hand[index];
+          if (!this.canPlayCard(card)) {
+            this.error = `能量不足！该卡牌需要 ${card.cost} 点能量，当前只有 ${this.state.energy} 点`;
+            return;
+          }
+          this.selectedCard = card;
+          this.selectedIndex = index;
+          this.showCardConfirm = true;
+        },
+
+        async confirmPlay() {
+          if (this.selectedIndex < 0) return;
+          await this.playCard(this.selectedIndex);
+          this.showCardConfirm = false;
+          this.selectedCard = null;
+          this.selectedIndex = -1;
+        },
+
+        cancelPlay() {
+          this.showCardConfirm = false;
+          this.selectedCard = null;
+          this.selectedIndex = -1;
+        },
+
+        async playCard(index) {
+          this.error = null;
+          if (!this.state || index < 0 || index >= this.hand.length) {
+            this.error = '请先开始新战斗或选择有效卡牌';
+            return;
+          }
+          try {
+            const resp = await fetch(`${API_BASE}/play?index=${encodeURIComponent(index)}`, {
+              method: 'POST'
+            });
+            const data = await resp.json();
+            if (!resp.ok) {
+              this.error = data.error || `请求失败 ${resp.status}`;
+              return;
+            }
+            this.state = data;
+          } catch (e) {
+            this.error = e.message.includes('Failed to fetch')
+              ? '无法连接后端。请确认后端已启动。'
+              : '打出卡牌失败：' + e.message;
+            console.error(e);
+          }
+        },
+
+        async endTurn() {
+          this.error = null;
+          if (!this.state || this.state.gameOver) {
+            this.error = !this.state ? '请先开始新战斗' : '战斗已结束';
+            return;
+          }
+          try {
+            const resp = await fetch(`${API_BASE}/endTurn`, { method: 'POST' });
+            if (!resp.ok) {
+              const text = await resp.text();
+              throw new Error(`请求失败 ${resp.status}: ${text}`);
+            }
+            this.state = await resp.json();
+          } catch (e) {
+            this.error = e.message.includes('Failed to fetch')
+              ? '无法连接后端。请确认后端已启动。'
+              : '结束回合失败：' + e.message;
+            console.error(e);
+          }
+        },
+
+        goAfterFight() {
+          if (this.state && this.state.playerHp !== undefined) {
+            localStorage.setItem('playerHP', this.state.playerHp);
+          }
+          if (window.updateStatusBar) window.updateStatusBar();
+
+          const charParam = new URLSearchParams(window.location.search).get('char') || '1';
+
+          if (this.isFromMap && this.state && (this.state.winner === 'player' || this.state.winner === 'Player' || (this.state.gameOver && this.state.playerHp > 0))) {
+            const nodeType = new URLSearchParams(window.location.search).get('nodeType') || 'monster';
+            const prev = this.prevNodeId || 'start';
+            const next = this.nextNodeId || prev;
+            window.location.href = `reward.html?source=fight&char=${charParam}&prevNode=${prev}&nextNode=${next}&nodeType=${nodeType}&gotCard=0`;
+          } else {
+            const target = this.isFromMap ? (this.prevNodeId || 'start') : 'start';
+            window.location.href = `map.html?char=${charParam}&currentNode=${target}`;
+          }
+        }
+      }
+    });
+
+    app.mount('#app');
+  </script>
 </body>
 </html>

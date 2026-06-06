@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商店</title>
+  <style>
+    body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    h2 { color: #f1c40f; margin: 20px 0; }
+    .gold-display { font-size: 20px; background: #16213e; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; }
+    .section { width: 500px; max-width: 95%; background: #16213e; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
+    .section h3 { margin-top: 0; color: #e67e22; }
+    .item-list { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+    .shop-item { border: 2px solid #34495e; border-radius: 8px; padding: 15px; width: 120px; text-align: center; cursor: pointer; transition: all 0.3s; background: linear-gradient(135deg, #2c3e50, #34495e); }
+    .shop-item:hover:not(.sold) { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+    .shop-item.sold { opacity: 0.4; cursor: not-allowed; }
+    .shop-item .price { color: #f1c40f; font-weight: bold; margin-top: 8px; }
+    .delete-list { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-height: 200px; overflow-y: auto; }
+    .delete-item { border: 1px solid #e74c3c; border-radius: 6px; padding: 8px 12px; cursor: pointer; background: rgba(231,76,60,0.1); transition: all 0.2s; }
+    .delete-item:hover { background: rgba(231,76,60,0.3); }
+    .delete-item .delete-cost { color: #e74c3c; font-weight: bold; }
+    .skip-btn { margin: 20px 0 40px; background: #e74c3c; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+    .skip-btn:hover { background: #c0392b; transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+  <script src="status_bar.js"></script>
+  <h2>🛒 商 店</h2>
+  <div class="gold-display">💰 金币：<span id="gold-amount">0</span></div>
+
+  <div class="section"><h3>购买卡牌</h3><div class="item-list" id="buy-cards"></div></div>
+  <div class="section"><h3>购买遗物</h3><div class="item-list" id="buy-relics"></div></div>
+  <div class="section"><h3 id="delete-title">删除卡牌 (75 金币)</h3><div class="delete-list" id="delete-cards"></div></div>
+
+  <button class="skip-btn" id="skip-btn">跳过 →</button>
+
+  <script>
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      const currentNode = params.get('currentNode') || 'start';
+      const nextNode = params.get('nextNode') || currentNode;
+
+      let gold = parseInt(localStorage.getItem('gold') || '0');
+      const updateGoldDisplay = () => document.getElementById('gold-amount').textContent = gold;
+      updateGoldDisplay();
+
+      const syncGold = () => {
+        gold = parseInt(localStorage.getItem('gold') || '0');
+        updateGoldDisplay();
+        if (window.updateStatusBar) window.updateStatusBar();
+      };
+
+      const spendGold = (amount) => {
+        if (gold >= amount) {
+          gold -= amount;
+          localStorage.setItem('gold', gold);
+          syncGold();
+          return true;
+        } else { alert('金币不足！'); return false; }
+      };
+
+      // ✅ 从后端获取商店数据
+      async function loadShopData() {
+        try {
+          const resp = await fetch(`/api/shop?char=${encodeURIComponent(char)}`);
+          if (resp.ok) {
+            const shopData = await resp.json();
+            renderShop(shopData);
+          }
+        } catch (e) { console.error('后端商店接口不可用', e); }
+      }
+
+      function renderShop(shopData) {
+        const buyCardsDiv = document.getElementById('buy-cards');
+        buyCardsDiv.innerHTML = '';
+        shopData.cards.forEach(card => {
+          const div = document.createElement('div');
+          div.className = 'shop-item';
+          div.innerHTML = `<div><strong>${card.name}</strong></div><div>🗡️ ${card.damage} ️ ${card.block}</div><div> ${card.cost}</div><div class="price">${card.price} 💰</div>`;
+          div.addEventListener('click', () => {
+            if (div.classList.contains('sold')) return;
+            if (spendGold(card.price)) {
+              const deck = JSON.parse(localStorage.getItem('deck') || '[]');
+              deck.push({ name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type });
+              localStorage.setItem('deck', JSON.stringify(deck));
+              alert(`购买成功：${card.name}`);
+              div.classList.add('sold');
+            }
+          });
+          buyCardsDiv.appendChild(div);
+        });
+
+        const buyRelicsDiv = document.getElementById('buy-relics');
+        buyRelicsDiv.innerHTML = '';
+        shopData.relics.forEach(relic => {
+          const relicDiv = document.createElement('div');
+          relicDiv.className = 'shop-item';
+          relicDiv.innerHTML = `<div>📿 ${relic.name}</div><div class="price">${relic.price} 💰</div>`;
+          relicDiv.addEventListener('click', () => {
+            if (relicDiv.classList.contains('sold')) return;
+            if (spendGold(relic.price)) {
+              const relics = JSON.parse(localStorage.getItem('relics') || '[]');
+              relics.push(relic.name);
+              localStorage.setItem('relics', JSON.stringify(relics));
+              alert(`购买成功：${relic.name}`);
+              relicDiv.classList.add('sold');
+            }
+          });
+          buyRelicsDiv.appendChild(relicDiv);
+        });
+
+        const deleteDiv = document.getElementById('delete-cards');
+        deleteDiv.innerHTML = '';
+        const deleteCost = shopData.deleteCost || 75;
+        document.getElementById('delete-title').textContent = `删除卡牌 (${deleteCost} 金币)`;
+        
+        const deck = JSON.parse(localStorage.getItem('deck') || '[]');
+        if (deck.length === 0) {
+          deleteDiv.innerHTML = '<p style="color:#aaa;">卡组为空</p>';
+        } else {
+          deck.forEach((card, index) => {
+            const span = document.createElement('span');
+            span.className = 'delete-item';
+            span.innerHTML = `${card.name} <span class="delete-cost">-${deleteCost}💰</span>`;
+            span.addEventListener('click', () => {
+              if (spendGold(deleteCost)) {
+                const currentDeck = JSON.parse(localStorage.getItem('deck') || '[]');
+                currentDeck.splice(index, 1);
+                localStorage.setItem('deck', JSON.stringify(currentDeck));
+                alert(`删除了 ${card.name}`);
+                location.reload();
+              }
+            });
+            deleteDiv.appendChild(span);
+          });
+        }
+      }
+
+      loadShopData();
+
+      document.getElementById('skip-btn').addEventListener('click', () => {
+        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>遗物</title>
+  <style>
+    body {
+      margin: 0; padding-top: 50px; /* 为状态栏留空 */
+      background: #1a1a2e; color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex; flex-direction: column; align-items: center;
+      min-height: 100vh;
+    }
+    h2 {
+      color: #f1c40f; margin: 30px 0 20px;
+    }
+    .relic-list {
+      width: 400px; max-width: 90%;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .relic-item {
+      background: #16213e; border-radius: 8px; padding: 12px 18px;
+      display: flex; align-items: center; gap: 12px;
+      border-left: 4px solid #e67e22;
+      font-size: 16px;
+    }
+    .relic-icon {
+      font-size: 24px;
+    }
+    .empty {
+      color: #aaa; margin-top: 40px; font-size: 18px;
+    }
+    .back-btn {
+      margin-top: 30px;
+      background: #e74c3c; color: white; border: none;
+      padding: 10px 24px; font-size: 16px; border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .back-btn:hover { background: #c0392b; transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+  <script src="status_bar.js"></script>
+  <h2>📿 已获得的遗物</h2>
+  <div class="relic-list" id="relic-list">
+    <!-- 动态生成 -->
+  </div>
+  <button class="back-btn" onclick="history.back()">返回</button>
+
+  <script>
+    (function() {
+      const relics = JSON.parse(localStorage.getItem('relics') || '[]');
+      const list = document.getElementById('relic-list');
+      if (relics.length === 0) {
+        list.innerHTML = '<div class="empty">暂无遗物</div>';
+        return;
+      }
+      relics.forEach(name => {
+        const div = document.createElement('div');
+        div.className = 'relic-item';
+        div.innerHTML = `<span class="relic-icon">📿</span> ${name}`;
+        list.appendChild(div);
+      });
+    })();
+  </script>
+</body>
+</html>

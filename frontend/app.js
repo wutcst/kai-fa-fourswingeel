@@ -8,8 +8,21 @@ const app = Vue.createApp({
       error: null,
       showCardConfirm: false,
       selectedCard: null,
-      selectedIndex: -1
+      selectedIndex: -1,
+      // 地图相关
+      isFromMap: false,
+      prevNodeId: null,
+      nextNodeId: null
     };
+  },
+
+  mounted() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('from') === 'map') {
+      this.isFromMap = true;
+      this.prevNodeId = params.get('prevNode') || 'start';
+      this.nextNodeId = params.get('nextNode');
+    }
   },
 
   computed: {
@@ -19,27 +32,48 @@ const app = Vue.createApp({
   },
 
   methods: {
-    /**
-     * 判断卡牌是否可打出（核心新增）
-     */
+    // ✅ 状态效果中文翻译
+    getStatusName(type) {
+      const map = { 'VULNERABLE': '易伤', 'WEAK': '虚弱', 'FRAIL': '脆弱', 'STRENGTH': '力量' };
+      return map[type] || type;
+    },
+
     canPlayCard(card) {
       if (!this.state || !card) return false;
       return card.cost <= this.state.energy;
     },
 
+    // ✅ 核心修改：传递玩家真实血量、卡组和遗物给后端
     async newGame() {
       this.error = null;
       this.loading = true;
       try {
-        const resp = await fetch(`${API_BASE}/new`, { method: 'POST' });
+        // 读取玩家当前的真实数据
+        const currentDeck = JSON.parse(localStorage.getItem('deck') || '[]');
+        const currentRelics = JSON.parse(localStorage.getItem('relics') || '[]'); // ✅ 读取遗物
+        const currentHp = parseInt(localStorage.getItem('playerHP')) || 70;
+        const maxHp = parseInt(localStorage.getItem('maxHP')) || 70;
+        
+        // 将数据作为 JSON 发送给后端
+        const resp = await fetch(`${API_BASE}/new`, { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            deck: currentDeck,
+            relics: currentRelics, // ✅ 传递遗物 ID 列表
+            playerHp: currentHp,
+            playerMaxHp: maxHp
+          })
+        });
+        
         if (!resp.ok) {
           const text = await resp.text();
           throw new Error(`请求失败 ${resp.status}: ${text}`);
         }
         this.state = await resp.json();
       } catch (e) {
-        this.error = e.message.includes('Failed to fetch') 
-          ? '无法连接后端。请确认后端已启动。' 
+        this.error = e.message.includes('Failed to fetch')
+          ? '无法连接后端。请确认后端已启动。'
           : '无法开始新战斗：' + e.message;
         console.error(e);
       } finally {
@@ -57,7 +91,6 @@ const app = Vue.createApp({
         return;
       }
       const card = this.hand[index];
-      // 二次校验（防绕过）
       if (!this.canPlayCard(card)) {
         this.error = `能量不足！该卡牌需要 ${card.cost} 点能量，当前只有 ${this.state.energy} 点`;
         return;
@@ -91,18 +124,15 @@ const app = Vue.createApp({
         const resp = await fetch(`${API_BASE}/play?index=${encodeURIComponent(index)}`, {
           method: 'POST'
         });
-        
         const data = await resp.json();
-        
         if (!resp.ok) {
           this.error = data.error || `请求失败 ${resp.status}`;
           return;
         }
-        
         this.state = data;
       } catch (e) {
-        this.error = e.message.includes('Failed to fetch') 
-          ? '无法连接后端。请确认后端已启动。' 
+        this.error = e.message.includes('Failed to fetch')
+          ? '无法连接后端。请确认后端已启动。'
           : '打出卡牌失败：' + e.message;
         console.error(e);
       }
@@ -122,10 +152,30 @@ const app = Vue.createApp({
         }
         this.state = await resp.json();
       } catch (e) {
-        this.error = e.message.includes('Failed to fetch') 
-          ? '无法连接后端。请确认后端已启动。' 
+        this.error = e.message.includes('Failed to fetch')
+          ? '无法连接后端。请确认后端已启动。'
           : '结束回合失败：' + e.message;
         console.error(e);
+      }
+    },
+
+    // 战斗结束后的处理：同步血量，胜利进奖励页，失败回地图
+    goAfterFight() {
+      if (this.state && this.state.playerHp !== undefined) {
+        localStorage.setItem('playerHP', this.state.playerHp);
+      }
+      if (window.updateStatusBar) window.updateStatusBar();
+
+      const charParam = new URLSearchParams(window.location.search).get('char') || '1';
+
+      if (this.isFromMap && this.state && (this.state.winner === 'player' || this.state.winner === 'Player' || (this.state.gameOver && this.state.playerHp > 0))) {
+        const nodeType = new URLSearchParams(window.location.search).get('nodeType') || 'monster';
+        const prev = this.prevNodeId || 'start';
+        const next = this.nextNodeId || prev;
+        window.location.href = `reward.html?source=fight&char=${charParam}&prevNode=${prev}&nextNode=${next}&nodeType=${nodeType}&gotCard=0`;
+      } else {
+        const target = this.isFromMap ? (this.prevNodeId || 'start') : 'start';
+        window.location.href = `map.html?char=${charParam}&currentNode=${target}`;
       }
     }
   }

@@ -1,0 +1,12 @@
+[
+  { "id": "strike", "name": "test秒杀", "cost": 1, "damage": 999, "block": 0, "type": "ATTACK" },
+  { "id": "defend", "name": "test防哈", "cost": 1, "damage": 0, "block": 999, "type": "SKILL" },
+  { "id": "bash", "name": "痛击", "cost": 2, "damage": 8, "block": 0, "type": "ATTACK", "applyStatusType": "VULNERABLE", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" },
+  { "id": "ironwave", "name": "铁斩波", "cost": 1, "damage": 5, "block": 5, "type": "ATTACK" },
+  { "id": "shrug_off", "name": "耸肩无视", "cost": 1, "damage": 0, "block": 8, "type": "SKILL" },
+  { "id": "brittle_test", "name": "脆弱测试", "cost": 0, "damage": 0, "block": 0, "type": "SKILL", "applyStatusType": "FRAIL", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" },
+  { "id": "inflame", "name": "力量爆发", "cost": 1, "damage": 0, "block": 0, "type": "SKILL", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "SELF" },
+  { "id": "deflect", "name": "敏捷", "cost": 1, "damage": 0, "block": 0, "type": "SKILL", "applyStatusType": "DEXTERITY", "applyStatusCount": 2, "applyStatusTarget": "SELF" },
+  { "id": "regen_potion", "name": "再生药水", "cost": 1, "damage": 0, "block": 0, "type": "SKILL", "applyStatusType": "REGEN", "applyStatusCount": 5, "applyStatusTarget": "SELF" },
+  { "id": "poison_dart", "name": "毒镖", "cost": 1, "damage": 4, "block": 0, "type": "ATTACK", "applyStatusType": "POISON", "applyStatusCount": 3, "applyStatusTarget": "ENEMY" }
+]

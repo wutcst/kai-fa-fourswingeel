@@ -1,0 +1,24 @@
+[
+  {
+    "id": "cultist",
+    "name": "邪教徒",
+    "maxHp": 50,
+    "attackDamage": 8,
+    "intents": [
+      { "type": "ATTACK", "value": 6, "desc": "轻击" },
+      { "type": "ATTACK", "value": 10, "desc": "诅咒重击", "applyStatusType": "WEAK", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
+      { "type": "DEFEND", "value": 14, "desc": "格挡" }
+    ]
+  },
+  {
+    "id": "slime",
+    "name": "绿色史莱姆",
+    "maxHp": 40,
+    "attackDamage": 6,
+    "intents": [
+      { "type": "ATTACK", "value": 6, "desc": "撞击" },
+      { "type": "DEFEND", "value": 8, "desc": "缩壳" },
+      { "type": "ATTACK", "value": 9, "desc": "弹射" }
+    ]
+  }
+]
