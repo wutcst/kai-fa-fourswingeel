@@ -129,7 +129,7 @@
 
       function handleNodeClick(node) {
         if (node.type === 'monster' || node.type === 'elite' || node.type === 'boss') {
-          window.location.href = `index.html?from=map&prevNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}&nodeType=${node.type}&char=${charParam}`;
+          window.location.href = `fight.html?from=map&prevNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}&nodeType=${node.type}&char=${charParam}`;
         } else if (node.type === 'chest') {
           window.location.href = `chest.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
         } else if (node.type === 'shop') {
