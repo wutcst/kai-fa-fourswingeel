@@ -46,7 +46,6 @@
       const svg = document.getElementById('lines');
       const currentLabel = document.getElementById('current-node-label');
 
-      // ✅ 修复：使用全局变量，在数据加载后重新计算
       let defaultMap = { nodes: [], edges: [] };
       let nextNodeIds = [];
       let currentNode = null;
@@ -54,33 +53,80 @@
       function getNodeById(id) { return defaultMap.nodes.find(n => n.id === id); }
       function getNextNodes(fromId) { return defaultMap.edges.filter(e => e.from === fromId).map(e => e.to); }
 
-      // ✅ 核心修复：异步加载数据，成功后再计算状态并渲染
+      // 默认地图（包含篝火）
+      const defaultFallback = {
+        nodes: [
+          { id: 'start', type: 'start', label: '起点', x: 50, y: 90, icon: '🛡️' },
+          { id: 'm1', type: 'monster', label: '小怪', x: 25, y: 70, icon: '👾' },
+          { id: 'e1', type: 'elite', label: '精英', x: 50, y: 70, icon: '💀' },
+          { id: 'm2', type: 'monster', label: '小怪', x: 75, y: 70, icon: '👾' },
+          { id: 'campfire1', type: 'campfire', label: '篝火', x: 35, y: 50, icon: '🔥' },
+          { id: 'm3', type: 'monster', label: '小怪', x: 25, y: 50, icon: '👾' },
+          { id: 'chest1', type: 'chest', label: '宝箱', x: 50, y: 50, icon: '📦' },
+          { id: 'shop1', type: 'shop', label: '商店', x: 75, y: 50, icon: '🛒' },
+          { id: 'q1', type: 'question', label: '?', x: 90, y: 50, icon: '❓' },
+          { id: 'e2', type: 'elite', label: '精英', x: 37.5, y: 30, icon: '💀' },
+          { id: 'm4', type: 'monster', label: '小怪', x: 62.5, y: 30, icon: '👾' },
+          { id: 'boss', type: 'boss', label: 'BOSS', x: 50, y: 10, icon: '👑' }
+        ],
+        edges: [
+          { from: 'start', to: 'm1' }, { from: 'start', to: 'e1' }, { from: 'start', to: 'm2' },
+          { from: 'm1', to: 'campfire1' }, { from: 'e1', to: 'campfire1' },
+          { from: 'm1', to: 'm3' }, { from: 'e1', to: 'chest1' }, { from: 'm2', to: 'shop1' },
+          { from: 'campfire1', to: 'e2' },
+          { from: 'm3', to: 'e2' }, { from: 'chest1', to: 'e2' }, { from: 'chest1', to: 'm4' },
+          { from: 'shop1', to: 'e2' }, { from: 'shop1', to: 'm4' },
+          { from: 'q1', to: 'm4' },
+          { from: 'e2', to: 'boss' }, { from: 'm4', to: 'boss' }
+        ]
+      };
+
+      function applyAndDraw() {
+        if (defaultMap.nodes.length > 0) {
+          nextNodeIds = getNextNodes(currentNodeId).filter(id => !visitedNodes.includes(id));
+          currentNode = getNodeById(currentNodeId);
+          if (currentNode) currentLabel.textContent = currentNode.label || currentNode.id;
+          draw();
+        }
+      }
+
       async function loadMapData() {
+        // 检查本局地图模式
+        const mapMode = sessionStorage.getItem('mapMode');
+        if (mapMode === 'default') {
+          console.log('本局使用默认地图（含篝火）');
+          defaultMap = defaultFallback;
+          applyAndDraw();
+          return;
+        }
+
+        // 否则尝试从后端获取
         try {
           const resp = await fetch('/api/map');
           if (resp.ok) {
-            defaultMap = await resp.json();
-            
-            // 数据拿到后，重新计算当前节点和可点击节点
-            nextNodeIds = getNextNodes(currentNodeId).filter(id => !visitedNodes.includes(id));
-            currentNode = getNodeById(currentNodeId);
-            if (currentNode) currentLabel.textContent = currentNode.label || currentNode.id;
-            
-            // 最后渲染地图
-            draw();
+            const data = await resp.json();
+            if (data && Array.isArray(data.nodes) && data.nodes.length > 0) {
+              defaultMap = data;
+            } else {
+              console.warn('后端地图数据无效，降级为默认地图');
+              defaultMap = defaultFallback;
+            }
           } else {
-            console.error('获取地图数据失败');
+            console.warn('后端地图接口返回错误，降级为默认地图');
+            defaultMap = defaultFallback;
           }
         } catch (e) {
-          console.error('后端地图接口不可用', e);
+          console.warn('后端地图接口不可用，降级为默认地图', e);
+          defaultMap = defaultFallback;
         }
+
+        applyAndDraw();
       }
 
       function draw() {
         container.querySelectorAll('.node').forEach(n => n.remove());
         svg.innerHTML = '';
 
-        // 1. 绘制连线
         defaultMap.edges.forEach(edge => {
           const fromNode = getNodeById(edge.from);
           const toNode = getNodeById(edge.to);
@@ -88,8 +134,6 @@
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
             line.setAttribute("x1", `${fromNode.x}%`); line.setAttribute("y1", `${fromNode.y}%`);
             line.setAttribute("x2", `${toNode.x}%`); line.setAttribute("y2", `${toNode.y}%`);
-            
-            // 如果当前节点指向可点击节点，高亮连线
             if (edge.from === currentNodeId && nextNodeIds.includes(edge.to)) {
               line.setAttribute("stroke", "#e74c3c"); 
               line.setAttribute("stroke-width", "4");
@@ -101,14 +145,11 @@
           }
         });
 
-        // 2. 绘制节点
         defaultMap.nodes.forEach(node => {
           const div = document.createElement('div');
           div.className = 'node';
           div.style.left = `${node.x - 3}%`; 
           div.style.top = `${node.y - 3}%`;
-          
-          // 处理图标为空的情况
           const iconHtml = node.icon ? `<span class="icon">${node.icon}</span>` : '';
           div.innerHTML = `${iconHtml}<span class="label">${node.label}</span>`;
 
@@ -122,7 +163,6 @@
           } else {
             div.classList.add('disabled');
           }
-
           container.appendChild(div);
         });
       }
@@ -134,12 +174,13 @@
           window.location.href = `chest.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
         } else if (node.type === 'shop') {
           window.location.href = `merchant.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
+        } else if (node.type === 'campfire') {
+          window.location.href = `campfire.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
         } else if (node.type === 'question') {
           alert('问号事件尚未开放，敬请期待！');
         }
       }
 
-      // ✅ 启动加载
       loadMapData();
 
       const returnBtn = document.createElement('button');

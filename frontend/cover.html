@@ -17,10 +17,12 @@
     .char-btn.active { border-color: #e74c3c; background: rgba(231, 76, 60, 0.3); color: white; box-shadow: 0 0 25px #e74c3c; }
     .char-btn.disabled { opacity: 0.4; cursor: not-allowed; border-color: #333; background: rgba(20, 20, 40, 0.6); }
     .char-btn .char-icon { font-size: 36px; margin-bottom: 4px; }
-    .start-game-btn { position: absolute; bottom: 40px; right: 40px; background: #e74c3c; color: white; border: none; padding: 18px 36px; font-size: 22px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 5; letter-spacing: 2px; }
-    .start-game-btn:hover { background: #ff5e4d; transform: translateY(-3px); box-shadow: 0 8px 25px rgba(231, 76, 60, 0.5); }
-    .start-game-btn:disabled { background: #555; color: #aaa; cursor: not-allowed; box-shadow: none; transform: none; }
-    @media (max-width: 600px) { #cover-screen h1 { font-size: 2em; } .btn { padding: 12px 30px; font-size: 18px; } .char-btn { width: 70px; height: 70px; } .start-game-btn { bottom: 30px; right: 20px; padding: 14px 28px; font-size: 18px; } }
+    .start-game-btn, .test-btn { position: absolute; right: 40px; background: #e74c3c; color: white; border: none; padding: 18px 36px; font-size: 22px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 5; letter-spacing: 2px; }
+    .start-game-btn { bottom: 40px; }
+    .test-btn { bottom: 120px; background: #3498db; }
+    .start-game-btn:hover, .test-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(231, 76, 60, 0.5); }
+    .start-game-btn:disabled, .test-btn:disabled { background: #555; color: #aaa; cursor: not-allowed; box-shadow: none; transform: none; }
+    @media (max-width: 600px) { #cover-screen h1 { font-size: 2em; } .btn { padding: 12px 30px; font-size: 18px; } .char-btn { width: 70px; height: 70px; } .start-game-btn, .test-btn { right: 20px; padding: 14px 28px; font-size: 18px; } .test-btn { bottom: 100px; } .start-game-btn { bottom: 30px; } }
   </style>
 </head>
 <body>
@@ -38,6 +40,7 @@
         <span class="char-icon">❓</span><span>???</span>
       </div>
     </div>
+    <button class="test-btn" id="test-btn" disabled>开始测试</button>
     <button class="start-game-btn" id="start-game-btn" disabled>开始游戏</button>
   </div>
 
@@ -49,6 +52,7 @@
       const char1Btn = document.getElementById('char1-btn');
       const char2Btn = document.getElementById('char2-btn');
       const startBtn = document.getElementById('start-game-btn');
+      const testBtn = document.getElementById('test-btn');
 
       let selectedCharacter = null;
       const characterBackgrounds = {
@@ -61,26 +65,43 @@
         charScreen.style.display = 'flex';
       });
 
-      char1Btn.addEventListener('click', () => {
-        [char1Btn].forEach(b => b.classList.remove('active'));
-        char1Btn.classList.add('active');
-        selectedCharacter = '1';
-        charScreen.style.backgroundImage = `url('${characterBackgrounds['1']}')`;
+      function selectChar(charId) {
+        selectedCharacter = charId;
+        document.querySelectorAll('.char-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('char' + charId + '-btn').classList.add('active');
+        charScreen.style.backgroundImage = `url('${characterBackgrounds[charId]}')`;
         startBtn.disabled = false;
-      });
+        testBtn.disabled = false;
+      }
 
-      char2Btn.addEventListener('click', (e) => { alert('角色2尚未开放，敬请期待！'); });
+      char1Btn.addEventListener('click', () => selectChar('1'));
+      char2Btn.addEventListener('click', () => alert('角色2尚未开放，敬请期待！'));
 
-      // ✅ 修改：从后端获取角色初始数据
+      function setDefaultPlayerData(charId) {
+        localStorage.setItem('char', charId);
+        localStorage.setItem('playerHP', '70');
+        localStorage.setItem('maxHP', '70');
+        localStorage.setItem('gold', '0');
+        localStorage.setItem('relics', '[]');
+        const startingDeck = [
+          { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
+          { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
+          { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
+          { name: '防御', cost: 1, damage: 0, block: 5, type: 'SKILL' },
+          { name: '防御', cost: 1, damage: 0, block: 5, type: 'SKILL' }
+        ];
+        localStorage.setItem('deck', JSON.stringify(startingDeck));
+        localStorage.setItem('visitedNodes', '["start"]');
+      }
+
+      // 开始游戏（调用后端）
       startBtn.addEventListener('click', async () => {
         if (!selectedCharacter) { alert('请先选择一个角色！'); return; }
-
+        startBtn.disabled = true;
         try {
           const resp = await fetch(`/api/character/${selectedCharacter}`);
           if (!resp.ok) throw new Error('获取角色数据失败');
-          
           const charData = await resp.json();
-          
           localStorage.setItem('char', selectedCharacter);
           localStorage.setItem('playerHP', charData.maxHp);
           localStorage.setItem('maxHP', charData.maxHp);
@@ -88,12 +109,22 @@
           localStorage.setItem('relics', '[]');
           localStorage.setItem('deck', JSON.stringify(charData.startingDeck));
           localStorage.setItem('visitedNodes', '["start"]');
-          
+          sessionStorage.setItem('mapMode', 'api');   // 使用后端地图
           window.location.href = `map.html?char=${selectedCharacter}`;
         } catch (e) {
           console.error(e);
           alert('初始化角色失败，请检查后端服务！');
+        } finally {
+          startBtn.disabled = false;
         }
+      });
+
+      // 开始测试（使用默认数据，不依赖后端）
+      testBtn.addEventListener('click', () => {
+        if (!selectedCharacter) { alert('请先选择一个角色！'); return; }
+        setDefaultPlayerData(selectedCharacter);
+        sessionStorage.setItem('mapMode', 'default');  // 使用默认地图
+        window.location.href = `map.html?char=${selectedCharacter}&currentNode=start`;
       });
 
       charScreen.style.display = 'none';
