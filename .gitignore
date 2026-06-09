@@ -25,5 +25,8 @@ Thumbs.db
 .aider*
 .aider.tags.cache.v4/
 
+# AI
+CLAUDE.md
+
 # H2 文件模式数据（目前使用内存库，此规则保留备用）
 data/
