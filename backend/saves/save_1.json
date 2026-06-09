@@ -1,8 +1,8 @@
 {
   "charId" : "1",
-  "playerHp" : 70,
-  "maxHp" : 70,
-  "gold" : 68,
+  "playerHp" : 120,
+  "maxHp" : 120,
+  "gold" : 50,
   "deck" : [ {
     "name" : "test秒杀",
     "cost" : 1,
@@ -13,16 +13,6 @@
     "applyStatusCount" : 0,
     "applyStatusTarget" : null
   }, {
-    "name" : "test秒杀+",
-    "cost" : 1,
-    "damage" : 1002,
-    "block" : 0,
-    "type" : "ATTACK",
-    "applyStatusType" : null,
-    "applyStatusCount" : 0,
-    "applyStatusTarget" : null,
-    "upgraded" : true
-  }, {
     "name" : "test秒杀",
     "cost" : 1,
     "damage" : 999,
@@ -49,26 +39,8 @@
     "applyStatusType" : null,
     "applyStatusCount" : 0,
     "applyStatusTarget" : null
-  }, {
-    "name" : "敏捷",
-    "cost" : 1,
-    "damage" : 0,
-    "block" : 0,
-    "type" : "SKILL",
-    "applyStatusType" : "DEXTERITY",
-    "applyStatusCount" : 2,
-    "applyStatusTarget" : "SELF"
-  }, {
-    "name" : "敏捷",
-    "cost" : 1,
-    "damage" : 0,
-    "block" : 0,
-    "type" : "SKILL",
-    "applyStatusType" : "DEXTERITY",
-    "applyStatusCount" : 2,
-    "applyStatusTarget" : "SELF"
   } ],
-  "relics" : [ "黑星", "黑星" ],
-  "visitedNodes" : [ "start", "n0", "n4", "n7", "n11", "n15" ],
-  "currentNode" : "n15"
+  "relics" : [ "黑星", "burning_blood", "burning_blood", "burning_blood", "red_skull", "red_skull" ],
+  "visitedNodes" : [ "start", "n0", "n2", "n7", "n11", "n15", "n20", "n23", "n27", "n32", "n35", "n39", "n42", "n47" ],
+  "currentNode" : "n47"
 }

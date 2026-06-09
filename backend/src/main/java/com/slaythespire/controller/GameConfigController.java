@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.slaythespire.repository.CardTemplate;
 import com.slaythespire.repository.GameDataRepository;
+import com.slaythespire.repository.RelicTemplate;
 
 @RestController
 @RequestMapping("/api")
@@ -42,26 +43,22 @@ public class GameConfigController {
         String[] icons      = {"👾",      "💀",    "🛒",   "🔥",       "📦",    "❓"};
         String[] labels     = {"小怪",     "精英",   "商店",  "篝火",      "宝箱",   "?"};
         
-        // 每层节点数量（0层为起点，14层为Boss）
         int[] layerSizes = new int[15];
-        layerSizes[0] = 1;           // 起点
-        layerSizes[14] = 1;          // BOSS
+        layerSizes[0] = 1;
+        layerSizes[14] = 1;
         for (int i = 1; i < 14; i++) {
-            layerSizes[i] = random.nextInt(5) + 1; // 1‑5
+            layerSizes[i] = random.nextInt(5) + 1;
         }
 
-        // 按层保存节点，方便后续连线
         List<List<Map<String, Object>>> layerNodes = new ArrayList<>();
         int nodeId = 0;
 
         for (int layer = 0; layer < 15; layer++) {
             List<Map<String, Object>> curLayer = new ArrayList<>();
             int count = layerSizes[layer];
-            // y坐标：底层靠近底部(92%)，顶层靠近顶部(8%)
             double yPercent = 8.0 + (14 - layer) * 6.0;
             for (int j = 0; j < count; j++) {
                 Map<String, Object> node = new LinkedHashMap<>();
-                // 固定 ID 以匹配前端
                 String id;
                 if (layer == 0) {
                     id = "start";
@@ -72,7 +69,7 @@ public class GameConfigController {
                     nodeId++;
                 }
                 node.put("id", id);
-                // 确定类型与图标
+                
                 String type, icon, label;
                 if (layer == 0) {
                     type = "start"; icon = "🛡️"; label = "起点";
@@ -87,7 +84,6 @@ public class GameConfigController {
                 node.put("type", type);
                 node.put("icon", icon);
                 node.put("label", label);
-                // x均匀分布，避免重叠
                 double xPercent = 100.0 * (j + 1) / (count + 1);
                 node.put("x", xPercent);
                 node.put("y", yPercent);
@@ -98,30 +94,24 @@ public class GameConfigController {
             layerNodes.add(curLayer);
         }
 
-        // 构造层间连线（保证无交叉）
         for (int layer = 0; layer < 14; layer++) {
             List<Map<String, Object>> fromLayer = layerNodes.get(layer);
             List<Map<String, Object>> toLayer   = layerNodes.get(layer + 1);
             int nFrom = fromLayer.size();
             int nTo   = toLayer.size();
             
-            // 标记下层节点是否已被连接
             boolean[] connected = new boolean[nTo];
             int prevIdx = -1;
             
-            // 第一遍：为每个上层节点分配一个下层节点，连接关系保持非递减，避免线条交叉
             for (int i = 0; i < nFrom; i++) {
-                // 为了视觉效果，尽量让连接不出现“回头”的情况
                 int minIdx = Math.max(0, prevIdx);
                 int maxIdx = nTo - 1;
                 int targetIdx;
                 if (prevIdx >= maxIdx) {
                     targetIdx = maxIdx;
                 } else {
-                    // 随机在允许范围内选择，但不能小于 prevIdx
                     targetIdx = minIdx + random.nextInt(maxIdx - minIdx + 1);
                 }
-                // 创建边
                 Map<String, Object> fromNode = fromLayer.get(i);
                 Map<String, Object> toNode   = toLayer.get(targetIdx);
                 Map<String, String> edge = new LinkedHashMap<>();
@@ -133,16 +123,11 @@ public class GameConfigController {
                 prevIdx = targetIdx;
             }
 
-            // 第二遍：为尚未被连接的下层节点补充连接
-            // 为了保证线条依然不交叉，从与它“附近”的上层节点中选择连边
             for (int j = 0; j < nTo; j++) {
                 if (!connected[j]) {
-                    // 按比例计算出与其最匹配的上层节点索引
                     int candidate = Math.min(nFrom - 1, Math.max(0, (int) Math.floor(j * nFrom / (double) nTo)));
-                    // 确保 candidate 不超过上层节点数，并确认这条边尚未存在
-                    // 若 candidate 与 j 的连接已经存在，则尝试相邻索引
                     int tries = 0;
-                    int finalj=j;
+                    int finalj = j;
                     int finalCandidate = candidate;
                     while (tries < 5) {
                         boolean duplicate = edges.stream()
@@ -151,7 +136,6 @@ public class GameConfigController {
                         if (!duplicate) {
                             break;
                         }
-                        // 尝试左右偏移
                         if (candidate > 0 && (tries % 2 == 0)) candidate--;
                         else if (candidate < nFrom - 1) candidate++;
                         tries++;
@@ -171,9 +155,13 @@ public class GameConfigController {
         return mapData;
     }
 
+    /**
+     * 商店数据
+     */
     @GetMapping("/shop")
     public Map<String, Object> getShopData(@RequestParam(defaultValue = "1") String charParam) {
         Map<String, Object> shop = new LinkedHashMap<>();
+        
         List<CardTemplate> allCards = dataRepo.getAllCards();
         List<Map<String, Object>> shopCards = new ArrayList<>();
         Set<String> usedIds = new HashSet<>();
@@ -183,6 +171,7 @@ public class GameConfigController {
             if (!usedIds.contains(tpl.getId())) {
                 usedIds.add(tpl.getId());
                 Map<String, Object> cardMap = new LinkedHashMap<>();
+                cardMap.put("id", tpl.getId());
                 cardMap.put("name", tpl.getName());
                 cardMap.put("cost", tpl.getCost());
                 cardMap.put("damage", tpl.getDamage());
@@ -199,14 +188,31 @@ public class GameConfigController {
             attempts++;
         }
         shop.put("cards", shopCards);
+
+        List<RelicTemplate> allRelics = dataRepo.getAllRelics();
         List<Map<String, Object>> shopRelics = new ArrayList<>();
-        shopRelics.add(createRelic("古老金币", 100));
-        shopRelics.add(createRelic("治愈药水", 50));
+        Set<String> usedRelicIds = new HashSet<>();
+        int relicAttempts = 0;
+        while (shopRelics.size() < 2 && relicAttempts < 10 && !allRelics.isEmpty()) {
+            RelicTemplate tpl = allRelics.get(random.nextInt(allRelics.size()));
+            if (!usedRelicIds.contains(tpl.getId())) {
+                usedRelicIds.add(tpl.getId());
+                Map<String, Object> relicMap = new LinkedHashMap<>();
+                relicMap.put("id", tpl.getId());
+                relicMap.put("name", tpl.getName());
+                relicMap.put("price", 100 + random.nextInt(50));
+                shopRelics.add(relicMap);
+            }
+            relicAttempts++;
+        }
         shop.put("relics", shopRelics);
         shop.put("deleteCost", 75);
         return shop;
     }
 
+    /**
+     * 角色初始数据
+     */
     @GetMapping("/character/{charId}")
     public Map<String, Object> getCharacterInfo(@PathVariable String charId) {
         Map<String, Object> info = new LinkedHashMap<>();
@@ -241,9 +247,20 @@ public class GameConfigController {
         return info;
     }
 
-    private Map<String, Object> createRelic(String name, int price) {
-        Map<String, Object> relic = new LinkedHashMap<>();
-        relic.put("name", name); relic.put("price", price);
-        return relic;
+    /**
+     * ✅ 新增：获取所有遗物配置（供前端将 ID 翻译为中文名和描述）
+     */
+    @GetMapping("/relics")
+    public List<Map<String, Object>> getAllRelics() {
+        List<RelicTemplate> allRelics = dataRepo.getAllRelics();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (RelicTemplate tpl : allRelics) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("id", tpl.getId());
+            map.put("name", tpl.getName());
+            map.put("description", tpl.getDescription());
+            result.add(map);
+        }
+        return result;
     }
 }

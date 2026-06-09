@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>商店</title>
-  <script src="save_helper.js"></script> <!-- ✅ 引入存档助手 -->
+  <script src="save_helper.js"></script>
   <style>
     body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
     h2 { color: #f1c40f; margin: 20px 0; }
@@ -35,26 +35,23 @@
   <button class="skip-btn" id="skip-btn">跳过 →</button>
 
   <script>
-    // ✅ 使用 async IIFE 包装，支持异步读写存档
     (async function() {
       const params = new URLSearchParams(window.location.search);
       const char = params.get('char') || '1';
       const currentNode = params.get('currentNode') || 'start';
       const nextNode = params.get('nextNode') || currentNode;
 
-      // 1. 从后端加载最新存档
       let saveData = await loadSaveData(char);
       let gold = saveData.gold;
       
       const updateGoldDisplay = () => document.getElementById('gold-amount').textContent = gold;
       updateGoldDisplay();
 
-      // ✅ 核心：扣除金币并保存到后端
       const spendGold = async (amount) => {
         if (gold >= amount) {
           gold -= amount;
           saveData.gold = gold;
-          await saveSaveData(saveData); // 写入后端
+          await saveSaveData(saveData);
           updateGoldDisplay();
           if (window.updateStatusBar) window.updateStatusBar();
           return true;
@@ -75,20 +72,17 @@
       }
 
       function renderShop(shopData) {
-        // --- 购买卡牌 ---
         const buyCardsDiv = document.getElementById('buy-cards');
         buyCardsDiv.innerHTML = '';
         shopData.cards.forEach(card => {
           const div = document.createElement('div');
           div.className = 'shop-item';
-          div.innerHTML = `<div><strong>${card.name}</strong></div><div>🗡️ ${card.damage || 0} 🛡️ ${card.block || 0}</div><div>⚡ ${card.cost}</div><div class="price">${card.price} 💰</div>`;
+          div.innerHTML = `<div><strong>${card.name}</strong></div><div>🗡️ ${card.damage || 0} 🛡️ ${card.block || 0}</div><div> ${card.cost}</div><div class="price">${card.price} 💰</div>`;
           
           div.addEventListener('click', async () => {
             if (div.classList.contains('sold')) return;
             if (await spendGold(card.price)) {
-              // 重新读取最新存档防止并发覆盖
-              saveData = await loadSaveData(char); 
-              // 将卡牌完整信息（包括状态效果）加入卡组
+              saveData = await loadSaveData(char);
               saveData.deck.push({ 
                 name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
                 applyStatusType: card.applyStatusType, applyStatusCount: card.applyStatusCount, applyStatusTarget: card.applyStatusTarget
@@ -101,7 +95,7 @@
           buyCardsDiv.appendChild(div);
         });
 
-        // --- 购买遗物 ---
+        // ✅ 购买遗物：确保存储 relic.id
         const buyRelicsDiv = document.getElementById('buy-relics');
         buyRelicsDiv.innerHTML = '';
         shopData.relics.forEach(relic => {
@@ -113,8 +107,9 @@
             if (relicDiv.classList.contains('sold')) return;
             if (await spendGold(relic.price)) {
               saveData = await loadSaveData(char);
-              // 假设后端返回的 relic 有 id 字段，如果没有则用 name
-              saveData.relics.push(relic.id || relic.name); 
+              // ✅ 核心修改：优先使用 relic.id，如果没有则使用 relic.name
+              const relicId = relic.id || relic.name;
+              saveData.relics.push(relicId);
               await saveSaveData(saveData);
               alert(`购买成功：${relic.name}`);
               relicDiv.classList.add('sold');
@@ -123,7 +118,6 @@
           buyRelicsDiv.appendChild(relicDiv);
         });
 
-        // --- 删除卡牌 ---
         const deleteDiv = document.getElementById('delete-cards');
         deleteDiv.innerHTML = '';
         const deleteCost = shopData.deleteCost || 75;
@@ -140,12 +134,11 @@
             span.addEventListener('click', async () => {
               if (await spendGold(deleteCost)) {
                 saveData = await loadSaveData(char);
-                // 根据索引删除卡牌
                 if (index < saveData.deck.length) {
                     saveData.deck.splice(index, 1);
                     await saveSaveData(saveData);
                     alert(`删除了 ${card.name}`);
-                    location.reload(); // 删除后刷新页面重新渲染列表
+                    location.reload();
                 }
               }
             });
@@ -162,7 +155,6 @@
     })();
   </script>
 
-  <!-- ✅ 将 status_bar.js 放在 body 最底部 -->
   <script src="status_bar.js"></script>
 </body>
 </html>

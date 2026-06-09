@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>遗物</title>
-  <!-- ✅ 引入存档助手 -->
   <script src="save_helper.js"></script>
   <style>
     body {
@@ -16,16 +15,20 @@
     }
     h2 { color: #f1c40f; margin: 30px 0 20px; }
     .relic-list {
-      width: 400px; max-width: 90%;
-      display: flex; flex-direction: column; gap: 10px;
+      width: 450px; max-width: 90%;
+      display: flex; flex-direction: column; gap: 15px;
     }
     .relic-item {
-      background: #16213e; border-radius: 8px; padding: 12px 18px;
-      display: flex; align-items: center; gap: 12px;
+      background: #16213e; border-radius: 8px; padding: 15px 20px;
+      display: flex; align-items: flex-start; gap: 15px;
       border-left: 4px solid #e67e22;
       font-size: 16px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
-    .relic-icon { font-size: 24px; }
+    .relic-icon { font-size: 32px; flex-shrink: 0; margin-top: 2px;}
+    .relic-info { flex: 1; }
+    .relic-name { font-weight: bold; font-size: 18px; color: #f1c40f; margin-bottom: 5px;}
+    .relic-desc { font-size: 14px; color: #bdc3c7; line-height: 1.4;}
     .empty { color: #aaa; margin-top: 40px; font-size: 18px; }
     .back-btn {
       margin-top: 30px;
@@ -44,33 +47,63 @@
   <button class="back-btn" onclick="history.back()">返回</button>
 
   <script>
-    // ✅ 使用 async 函数从后端读取存档
     (async function() {
       const params = new URLSearchParams(window.location.search);
       const char = params.get('char') || '1';
       
-      // 从后端加载最新存档
+      // 1. 获取所有遗物配置字典 (ID -> {name, description})
+      let relicDict = {};
+      try {
+        const resp = await fetch('/api/relics');
+        if (resp.ok) {
+          const list = await resp.json();
+          list.forEach(r => relicDict[r.id] = r);
+        }
+      } catch (e) { 
+        console.warn('获取遗物配置失败', e); 
+      }
+
+      // 2. 从后端加载最新存档
       const saveData = await loadSaveData(char);
       const relics = saveData.relics || [];
       
-      const list = document.getElementById('relic-list');
+      const listDiv = document.getElementById('relic-list');
       if (relics.length === 0) {
-        list.innerHTML = '<div class="empty">暂无遗物</div>';
+        listDiv.innerHTML = '<div class="empty">暂无遗物，去打怪或开宝箱吧！</div>';
         return;
       }
       
-      list.innerHTML = ''; // 清空"加载中"提示
+      // 3. 渲染遗物列表
+      listDiv.innerHTML = ''; 
       relics.forEach(relicId => {
         const div = document.createElement('div');
         div.className = 'relic-item';
-        // 显示遗物 ID（如果后端有配置映射，这里可以改成中文名）
-        div.innerHTML = `<span class="relic-icon">📿</span> ${relicId}`;
-        list.appendChild(div);
+        
+        // 根据 ID 查找中文名和描述
+        const relicInfo = relicDict[relicId];
+        if (relicInfo) {
+          div.innerHTML = `
+            <span class="relic-icon">📿</span> 
+            <div class="relic-info">
+              <div class="relic-name">${relicInfo.name}</div>
+              <div class="relic-desc">${relicInfo.description || '神秘的遗物，效果未知。'}</div>
+            </div>
+          `;
+        } else {
+          // 兜底：如果字典里没有（可能是旧存档的脏数据），直接显示 ID
+          div.innerHTML = `
+            <span class="relic-icon">❓</span> 
+            <div class="relic-info">
+              <div class="relic-name">未知遗物</div>
+              <div class="relic-desc">ID: ${relicId}</div>
+            </div>
+          `;
+        }
+        listDiv.appendChild(div);
       });
     })();
   </script>
 
-  <!-- ✅ 将 status_bar.js 放在 body 最底部，防止 DOM 未加载报错 -->
   <script src="status_bar.js"></script>
 </body>
 </html>

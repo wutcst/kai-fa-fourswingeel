@@ -2,6 +2,7 @@ package com.slaythespire.controller;
 
 import com.slaythespire.repository.CardTemplate;
 import com.slaythespire.repository.GameDataRepository;
+import com.slaythespire.repository.RelicTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ public class RewardController {
         Map<String, Object> reward = new LinkedHashMap<>();
         
         int gold = 0;
-        String relic = null;
+        Map<String, Object> relic = null; // ✅ 修改为 Map 以包含 id 和 name
         
         switch (nodeType.toLowerCase()) {
             case "elite":
@@ -39,11 +40,12 @@ public class RewardController {
             case "monster":
             default:
                 gold = 15 + random.nextInt(15); 
+                relic = null; // 普通小怪通常不给遗物
                 break;
         }
         
         reward.put("gold", gold);
-        reward.put("relic", relic);
+        reward.put("relic", relic); // ✅ 放入包含 id 和 name 的 Map 对象
         reward.put("cards", generateCardPool(3));
         
         return reward;
@@ -79,9 +81,6 @@ public class RewardController {
         return pool;
     }
 
-    /**
-     * ✅ 核心修复：将 CardTemplate 完整转换为前端需要的 Map 格式（包含状态配置）
-     */
     private Map<String, Object> cardToMap(CardTemplate tpl) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("name", tpl.getName());
@@ -89,20 +88,38 @@ public class RewardController {
         map.put("damage", tpl.getDamage());
         map.put("block", tpl.getBlock());
         map.put("type", tpl.getType().name());
-        
-        // 补全状态配置字段
         map.put("applyStatusType", tpl.getApplyStatusType());
         map.put("applyStatusCount", tpl.getApplyStatusCount());
         map.put("applyStatusTarget", tpl.getApplyStatusTarget());
-        
         return map;
     }
 
-    private String getRandomRelic(String tier) {
-        List<String> commonRelics = Arrays.asList("燃烧之血", "红头骨", "黑星");
-        List<String> rareRelics = Arrays.asList("虚空蛋", "贤者之石", "滑鼠胶带");
-        return "rare".equals(tier) 
-            ? rareRelics.get(random.nextInt(rareRelics.size())) 
-            : commonRelics.get(random.nextInt(commonRelics.size()));
+    /**
+     * ✅ 核心修复：从配置中读取真实遗物，并返回包含 id 和 name 的 Map
+     */
+    private Map<String, Object> getRandomRelic(String tier) {
+        List<RelicTemplate> allRelics = dataRepo.getAllRelics();
+        if (allRelics.isEmpty()) return null;
+
+        // 根据稀有度筛选 (假设 relics.json 中有 rarity 字段，如 "COMMON", "RARE")
+        List<RelicTemplate> filtered = new ArrayList<>();
+        for (RelicTemplate tpl : allRelics) {
+            if (tier.equalsIgnoreCase(tpl.getRarity())) {
+                filtered.add(tpl);
+            }
+        }
+
+        // 如果没有匹配稀有度的，就从所有遗物中随机
+        if (filtered.isEmpty()) {
+            filtered = allRelics;
+        }
+
+        RelicTemplate chosen = filtered.get(random.nextInt(filtered.size()));
+        
+        // ✅ 构造返回给前端的对象
+        Map<String, Object> relicMap = new LinkedHashMap<>();
+        relicMap.put("id", chosen.getId());     // 前端需要这个 ID 存入存档
+        relicMap.put("name", chosen.getName()); // 前端需要这个 Name 用于显示
+        return relicMap;
     }
 }
