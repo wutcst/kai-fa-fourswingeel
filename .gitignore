@@ -10,6 +10,8 @@ frontend/build/
 backend/src/main/resources/static/
 npm-debug.log*
 
+backend/target/
+
 # IDE
 .vscode/
 .idea/
