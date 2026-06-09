@@ -4,14 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>杀戮尖塔 - 地图</title>
+  <script src="save_helper.js"></script> <!-- 引入存档助手 -->
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a1a; color: #e0e0e0; overflow: hidden; height: 100vh; width: 100vw; padding-top: 40px; }
-    #map-container { position: relative; width: 100%; height: calc(100% - 40px); display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a1a; color: #e0e0e0; overflow-y: auto; height: 100vh; width: 100vw; padding-top: 40px; }
+    #map-container { position: relative; width: 100%; height: 1500px; }
     svg#lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
     .node { position: absolute; width: 60px; height: 60px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; font-size: 12px; font-weight: bold; text-transform: uppercase; color: white; border: 3px solid #444; background: rgba(20, 20, 40, 0.9); backdrop-filter: blur(4px); z-index: 2; }
     .node.current { border-color: #f1c40f; box-shadow: 0 0 20px #f1c40f; background: rgba(241, 196, 15, 0.3); color: #fff; }
-    .node.clickable { border-color: #e74c3c; animation: pulse 1.5s infinite; }
+    .node.clickable { border-color: #e74c3c; animation: pulse 1.5s infinite; cursor: pointer; }
     .node.visited { opacity: 0.5; cursor: default; border-color: #555; background: rgba(20, 20, 40, 0.4); }
     @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
     .node .icon { font-size: 28px; }
@@ -22,7 +23,8 @@
   </style>
 </head>
 <body>
-  <script src="status_bar.js"></script>
+  <!-- 注意：这里移除了顶部的 status_bar.js，防止 DOM 未加载报错 -->
+  
   <div id="map-container">
     <svg id="lines"></svg>
   </div>
@@ -31,19 +33,26 @@
   </div>
 
   <script>
-    (function() {
+    // ✅ 使用 async IIFE 包装，支持从后端异步读取存档
+    (async function() {
       const params = new URLSearchParams(window.location.search);
-      let currentNodeId = params.get('currentNode') || 'start';
       const charParam = params.get('char') || '1';
-
-      let visitedNodes = JSON.parse(localStorage.getItem('visitedNodes') || '["start"]');
+      
+      // 1. 从后端加载最新存档
+      const saveData = await loadSaveData(charParam);
+      
+      // 如果 URL 传入了 currentNode (例如从其他页面跳转回来)，则更新存档
+      let currentNodeId = params.get('currentNode') || saveData.currentNode || 'start';
+      let visitedNodes = saveData.visitedNodes || ['start'];
+      
       if (!visitedNodes.includes(currentNodeId)) {
         visitedNodes.push(currentNodeId);
-        localStorage.setItem('visitedNodes', JSON.stringify(visitedNodes));
+        saveData.visitedNodes = visitedNodes;
+        saveData.currentNode = currentNodeId;
+        await saveSaveData(saveData); // 同步进度到后端
       }
       
-      // ✅ 如果这是新的一局（只有起点被访问），强制重置初始遗物状态
-      if (currentNodeId === 'start' && visitedNodes.length === 1 && visitedNodes[0] === 'start') {
+      if (currentNodeId === 'start' && visitedNodes.length === 1) {
           localStorage.removeItem('startRelicDone');
       }
 
@@ -51,174 +60,136 @@
       const svg = document.getElementById('lines');
       const currentLabel = document.getElementById('current-node-label');
 
-      let defaultMap = { nodes: [], edges: [] };
+      let mapData = { nodes: [], edges: [] };
       let nextNodeIds = [];
-      let currentNode = null;
 
-      function getNodeById(id) { return defaultMap.nodes.find(n => n.id === id); }
-      function getNextNodes(fromId) { return defaultMap.edges.filter(e => e.from === fromId).map(e => e.to); }
+      function getNodeById(id) { return mapData.nodes.find(n => n.id === id); }
+      function getNextNodes(fromId) { return mapData.edges.filter(e => e.from === fromId).map(e => e.to); }
 
-      // 默认地图（包含所有节点：起点、小怪、精英、篝火、宝箱、商店、问号、BOSS）
-      const defaultFallback = {
-        nodes: [
-          { id: 'start', type: 'start', label: '起点', x: 50, y: 90, icon: '🛡️' },
-          { id: 'm1', type: 'monster', label: '小怪', x: 25, y: 70, icon: '👾' },
-          { id: 'e1', type: 'elite', label: '精英', x: 50, y: 70, icon: '💀' },
-          { id: 'm2', type: 'monster', label: '小怪', x: 75, y: 70, icon: '👾' },
-          { id: 'campfire1', type: 'campfire', label: '篝火', x: 35, y: 50, icon: '🔥' },
-          { id: 'm3', type: 'monster', label: '小怪', x: 25, y: 50, icon: '👾' },
-          { id: 'chest1', type: 'chest', label: '宝箱', x: 50, y: 50, icon: '📦' },
-          { id: 'shop1', type: 'shop', label: '商店', x: 75, y: 50, icon: '🛒' },
-          { id: 'q1', type: 'question', label: '?', x: 90, y: 50, icon: '❓' },
-          { id: 'e2', type: 'elite', label: '精英', x: 37.5, y: 30, icon: '💀' },
-          { id: 'm4', type: 'monster', label: '小怪', x: 62.5, y: 30, icon: '👾' },
-          { id: 'boss', type: 'boss', label: 'BOSS', x: 50, y: 10, icon: '👑' }
-        ],
-        edges: [
-          { from: 'start', to: 'm1' }, { from: 'start', to: 'e1' }, { from: 'start', to: 'm2' },
-          { from: 'm1', to: 'campfire1' }, { from: 'e1', to: 'campfire1' },
-          { from: 'm1', to: 'm3' }, { from: 'e1', to: 'chest1' }, { from: 'm2', to: 'shop1' },
-          { from: 'campfire1', to: 'e2' },
-          { from: 'm3', to: 'e2' }, { from: 'chest1', to: 'e2' }, { from: 'chest1', to: 'm4' },
-          { from: 'shop1', to: 'e2' }, { from: 'shop1', to: 'm4' },
-          { from: 'q1', to: 'm4' },
-          { from: 'e2', to: 'boss' }, { from: 'm4', to: 'boss' }
-        ]
-      };
-
-      function applyAndDraw() {
-        if (defaultMap.nodes.length > 0) {
-          nextNodeIds = getNextNodes(currentNodeId).filter(id => !visitedNodes.includes(id));
-          currentNode = getNodeById(currentNodeId);
-          if (currentNode) currentLabel.textContent = currentNode.label || currentNode.id;
-          draw();
+      // 2. 加载地图数据 (优先使用 cover.html 缓存的 sessionStorage)
+      const storedData = sessionStorage.getItem('mapData');
+      if (storedData) {
+        try {
+          mapData = JSON.parse(storedData);
+        } catch (e) {
+          console.warn('解析已保存地图失败，重新加载');
         }
       }
 
-      async function loadMapData() {
-        const mapMode = sessionStorage.getItem('mapMode');
-        if (mapMode === 'default') {
-          console.log('本局使用默认地图（含篝火等）');
-          defaultMap = defaultFallback;
-          applyAndDraw();
-          return;
-        }
-
+      // 如果 sessionStorage 没有，则请求后端
+      if (!mapData.nodes || mapData.nodes.length === 0) {
         try {
           const resp = await fetch('/api/map');
           if (resp.ok) {
             const data = await resp.json();
             if (data && Array.isArray(data.nodes) && data.nodes.length > 0) {
-              defaultMap = data;
-            } else {
-              console.warn('后端地图数据无效，使用默认地图');
-              defaultMap = defaultFallback;
+              mapData = data;
+              sessionStorage.setItem('mapData', JSON.stringify(data)); // 缓存起来
             }
-          } else {
-            console.warn('后端地图接口返回错误，使用默认地图');
-            defaultMap = defaultFallback;
           }
         } catch (e) {
-          console.warn('后端地图接口不可用，使用默认地图', e);
-          defaultMap = defaultFallback;
+          console.warn('后端地图接口不可用');
         }
-
-        applyAndDraw();
       }
 
-      function draw() {
-        container.querySelectorAll('.node').forEach(n => n.remove());
-        svg.innerHTML = '';
+      // 3. 渲染地图
+      nextNodeIds = getNextNodes(currentNodeId).filter(id => !visitedNodes.includes(id));
+      const currentNode = getNodeById(currentNodeId);
+      if (currentNode) currentLabel.textContent = currentNode.label || currentNode.id;
 
-        // 绘制连线
-        defaultMap.edges.forEach(edge => {
-          const fromNode = getNodeById(edge.from);
-          const toNode = getNodeById(edge.to);
-          if (fromNode && toNode) {
-            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            line.setAttribute("x1", `${fromNode.x}%`);
-            line.setAttribute("y1", `${fromNode.y}%`);
-            line.setAttribute("x2", `${toNode.x}%`);
-            line.setAttribute("y2", `${toNode.y}%`);
-            if (edge.from === currentNodeId && nextNodeIds.includes(edge.to)) {
-              line.setAttribute("stroke", "#e74c3c");
-              line.setAttribute("stroke-width", "4");
-            } else {
-              line.setAttribute("stroke", "#555");
-              line.setAttribute("stroke-width", "2");
-            }
-            svg.appendChild(line);
+      container.querySelectorAll('.node').forEach(n => n.remove());
+      svg.innerHTML = '';
+
+      // 绘制连线
+      mapData.edges.forEach(edge => {
+        const fromNode = getNodeById(edge.from);
+        const toNode = getNodeById(edge.to);
+        if (fromNode && toNode) {
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", `${fromNode.x}%`);
+          line.setAttribute("y1", `${fromNode.y}%`);
+          line.setAttribute("x2", `${toNode.x}%`);
+          line.setAttribute("y2", `${toNode.y}%`);
+          
+          // 当前节点到下一节点的连线高亮
+          if (edge.from === currentNodeId && nextNodeIds.includes(edge.to)) {
+            line.setAttribute("stroke", "#e74c3c");
+            line.setAttribute("stroke-width", "4");
+          } else {
+            line.setAttribute("stroke", "#555");
+            line.setAttribute("stroke-width", "2");
           }
-        });
+          svg.appendChild(line);
+        }
+      });
 
-        // 绘制节点
-        defaultMap.nodes.forEach(node => {
-          const div = document.createElement('div');
-          div.className = 'node';
-          div.style.left = `${node.x - 3}%`;
-          div.style.top = `${node.y - 3}%`;
-          const iconHtml = node.icon ? `<span class="icon">${node.icon}</span>` : '';
-          div.innerHTML = `${iconHtml}<span class="label">${node.label}</span>`;
+      // 绘制节点
+      mapData.nodes.forEach(node => {
+        const div = document.createElement('div');
+        div.className = 'node';
+        div.style.left = `${node.x - 3}%`;
+        div.style.top = `${node.y - 3}%`;
+        const iconHtml = node.icon ? `<span class="icon">${node.icon}</span>` : '';
+        div.innerHTML = `${iconHtml}<span class="label">${node.label}</span>`;
 
-          if (node.id === currentNodeId) {
-            div.classList.add('current');
-            // 起点在当前节点时允许点击
-            if (node.type === 'start') {
-              div.classList.add('clickable');
-              div.addEventListener('click', () => handleNodeClick(node));
-            }
-          } else if (nextNodeIds.includes(node.id)) {
+        if (node.id === currentNodeId) {
+          div.classList.add('current');
+          // 起点在当前节点时允许再次点击（为了选初始遗物）
+          if (node.type === 'start') {
             div.classList.add('clickable');
             div.addEventListener('click', () => handleNodeClick(node));
-          } else if (visitedNodes.includes(node.id)) {
-            div.classList.add('visited');
-          } else {
-            div.classList.add('disabled');
           }
+        } else if (nextNodeIds.includes(node.id)) {
+          div.classList.add('clickable');
+          div.addEventListener('click', () => handleNodeClick(node));
+        } else if (visitedNodes.includes(node.id)) {
+          div.classList.add('visited');
+        }
 
-          container.appendChild(div);
-        });
-      }
+        container.appendChild(div);
+      });
 
+      // 4. 节点点击跳转逻辑
       function handleNodeClick(node) {
+        const baseParams = `char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
+        
         if (node.type === 'monster' || node.type === 'elite' || node.type === 'boss') {
-          window.location.href = `fight.html?from=map&prevNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}&nodeType=${node.type}&char=${charParam}`;
+          window.location.href = `fight.html?from=map&${baseParams}&nodeType=${node.type}`;
         } else if (node.type === 'start') {
-          // 起点：检查是否已选择初始遗物
           if (localStorage.getItem('startRelicDone') === 'true') {
             alert('你已经选择过初始遗物了！');
             return;
           }
-          window.location.href = `start.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}`;
+          window.location.href = `start.html?${baseParams}`;
         } else if (node.type === 'chest') {
-          window.location.href = `chest.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
+          window.location.href = `chest.html?${baseParams}`;
         } else if (node.type === 'shop') {
-          window.location.href = `merchant.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
+          window.location.href = `merchant.html?${baseParams}`;
         } else if (node.type === 'campfire') {
-          window.location.href = `campfire.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
+          window.location.href = `campfire.html?${baseParams}`;
         } else if (node.type === 'question') {
           const rand = Math.random();
           if (rand < 0.2) {
-            // 20% 进入战斗（普通小怪）
-            window.location.href = `fight.html?from=map&prevNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}&nodeType=monster&char=${charParam}`;
+            window.location.href = `fight.html?from=map&${baseParams}&nodeType=monster`;
           } else if (rand < 0.9) {
-            // 70% 进入问号事件页面
-            window.location.href = `question.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
+            window.location.href = `question.html?${baseParams}`;
           } else {
-            // 10% 进入宝箱
-            window.location.href = `chest.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
+            window.location.href = `chest.html?${baseParams}`;
           }
         }
       }
 
-      loadMapData();
-
+      // 5. 返回封面按钮
       const returnBtn = document.createElement('button');
       returnBtn.className = 'btn-return';
       returnBtn.textContent = '返回封面';
       returnBtn.onclick = () => { window.location.href = `cover.html?char=${charParam}`; };
       document.body.appendChild(returnBtn);
+
     })();
   </script>
+
+  <!-- ✅ 将 status_bar.js 放在 body 最底部，彻底解决 DOM 未加载报错 -->
+  <script src="status_bar.js"></script>
 </body>
 </html>

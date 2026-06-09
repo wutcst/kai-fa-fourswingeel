@@ -4,17 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>遗物</title>
+  <!-- ✅ 引入存档助手 -->
+  <script src="save_helper.js"></script>
   <style>
     body {
-      margin: 0; padding-top: 50px; /* 为状态栏留空 */
+      margin: 0; padding-top: 50px;
       background: #1a1a2e; color: #e0e0e0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex; flex-direction: column; align-items: center;
       min-height: 100vh;
     }
-    h2 {
-      color: #f1c40f; margin: 30px 0 20px;
-    }
+    h2 { color: #f1c40f; margin: 30px 0 20px; }
     .relic-list {
       width: 400px; max-width: 90%;
       display: flex; flex-direction: column; gap: 10px;
@@ -25,45 +25,52 @@
       border-left: 4px solid #e67e22;
       font-size: 16px;
     }
-    .relic-icon {
-      font-size: 24px;
-    }
-    .empty {
-      color: #aaa; margin-top: 40px; font-size: 18px;
-    }
+    .relic-icon { font-size: 24px; }
+    .empty { color: #aaa; margin-top: 40px; font-size: 18px; }
     .back-btn {
       margin-top: 30px;
       background: #e74c3c; color: white; border: none;
       padding: 10px 24px; font-size: 16px; border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s;
+      cursor: pointer; transition: all 0.3s;
     }
     .back-btn:hover { background: #c0392b; transform: translateY(-2px); }
   </style>
 </head>
 <body>
-  <script src="status_bar.js"></script>
   <h2>📿 已获得的遗物</h2>
   <div class="relic-list" id="relic-list">
-    <!-- 动态生成 -->
+    <div class="empty">加载中...</div>
   </div>
   <button class="back-btn" onclick="history.back()">返回</button>
 
   <script>
-    (function() {
-      const relics = JSON.parse(localStorage.getItem('relics') || '[]');
+    // ✅ 使用 async 函数从后端读取存档
+    (async function() {
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      
+      // 从后端加载最新存档
+      const saveData = await loadSaveData(char);
+      const relics = saveData.relics || [];
+      
       const list = document.getElementById('relic-list');
       if (relics.length === 0) {
         list.innerHTML = '<div class="empty">暂无遗物</div>';
         return;
       }
-      relics.forEach(name => {
+      
+      list.innerHTML = ''; // 清空"加载中"提示
+      relics.forEach(relicId => {
         const div = document.createElement('div');
         div.className = 'relic-item';
-        div.innerHTML = `<span class="relic-icon">📿</span> ${name}`;
+        // 显示遗物 ID（如果后端有配置映射，这里可以改成中文名）
+        div.innerHTML = `<span class="relic-icon">📿</span> ${relicId}`;
         list.appendChild(div);
       });
     })();
   </script>
+
+  <!-- ✅ 将 status_bar.js 放在 body 最底部，防止 DOM 未加载报错 -->
+  <script src="status_bar.js"></script>
 </body>
 </html>

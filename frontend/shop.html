@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>商店</title>
+  <script src="save_helper.js"></script> <!-- ✅ 引入存档助手 -->
   <style>
     body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
     h2 { color: #f1c40f; margin: 20px 0; }
@@ -24,7 +25,6 @@
   </style>
 </head>
 <body>
-  <script src="status_bar.js"></script>
   <h2>🛒 商 店</h2>
   <div class="gold-display">💰 金币：<span id="gold-amount">0</span></div>
 
@@ -35,32 +35,35 @@
   <button class="skip-btn" id="skip-btn">跳过 →</button>
 
   <script>
-    (function() {
+    // ✅ 使用 async IIFE 包装，支持异步读写存档
+    (async function() {
       const params = new URLSearchParams(window.location.search);
       const char = params.get('char') || '1';
       const currentNode = params.get('currentNode') || 'start';
       const nextNode = params.get('nextNode') || currentNode;
 
-      let gold = parseInt(localStorage.getItem('gold') || '0');
+      // 1. 从后端加载最新存档
+      let saveData = await loadSaveData(char);
+      let gold = saveData.gold;
+      
       const updateGoldDisplay = () => document.getElementById('gold-amount').textContent = gold;
       updateGoldDisplay();
 
-      const syncGold = () => {
-        gold = parseInt(localStorage.getItem('gold') || '0');
-        updateGoldDisplay();
-        if (window.updateStatusBar) window.updateStatusBar();
-      };
-
-      const spendGold = (amount) => {
+      // ✅ 核心：扣除金币并保存到后端
+      const spendGold = async (amount) => {
         if (gold >= amount) {
           gold -= amount;
-          localStorage.setItem('gold', gold);
-          syncGold();
+          saveData.gold = gold;
+          await saveSaveData(saveData); // 写入后端
+          updateGoldDisplay();
+          if (window.updateStatusBar) window.updateStatusBar();
           return true;
-        } else { alert('金币不足！'); return false; }
+        } else { 
+          alert('金币不足！'); 
+          return false; 
+        }
       };
 
-      // ✅ 从后端获取商店数据
       async function loadShopData() {
         try {
           const resp = await fetch(`/api/shop?char=${encodeURIComponent(char)}`);
@@ -72,18 +75,25 @@
       }
 
       function renderShop(shopData) {
+        // --- 购买卡牌 ---
         const buyCardsDiv = document.getElementById('buy-cards');
         buyCardsDiv.innerHTML = '';
         shopData.cards.forEach(card => {
           const div = document.createElement('div');
           div.className = 'shop-item';
-          div.innerHTML = `<div><strong>${card.name}</strong></div><div>🗡️ ${card.damage} ️ ${card.block}</div><div> ${card.cost}</div><div class="price">${card.price} 💰</div>`;
-          div.addEventListener('click', () => {
+          div.innerHTML = `<div><strong>${card.name}</strong></div><div>🗡️ ${card.damage || 0} 🛡️ ${card.block || 0}</div><div>⚡ ${card.cost}</div><div class="price">${card.price} 💰</div>`;
+          
+          div.addEventListener('click', async () => {
             if (div.classList.contains('sold')) return;
-            if (spendGold(card.price)) {
-              const deck = JSON.parse(localStorage.getItem('deck') || '[]');
-              deck.push({ name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type });
-              localStorage.setItem('deck', JSON.stringify(deck));
+            if (await spendGold(card.price)) {
+              // 重新读取最新存档防止并发覆盖
+              saveData = await loadSaveData(char); 
+              // 将卡牌完整信息（包括状态效果）加入卡组
+              saveData.deck.push({ 
+                name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
+                applyStatusType: card.applyStatusType, applyStatusCount: card.applyStatusCount, applyStatusTarget: card.applyStatusTarget
+              });
+              await saveSaveData(saveData);
               alert(`购买成功：${card.name}`);
               div.classList.add('sold');
             }
@@ -91,18 +101,21 @@
           buyCardsDiv.appendChild(div);
         });
 
+        // --- 购买遗物 ---
         const buyRelicsDiv = document.getElementById('buy-relics');
         buyRelicsDiv.innerHTML = '';
         shopData.relics.forEach(relic => {
           const relicDiv = document.createElement('div');
           relicDiv.className = 'shop-item';
           relicDiv.innerHTML = `<div>📿 ${relic.name}</div><div class="price">${relic.price} 💰</div>`;
-          relicDiv.addEventListener('click', () => {
+          
+          relicDiv.addEventListener('click', async () => {
             if (relicDiv.classList.contains('sold')) return;
-            if (spendGold(relic.price)) {
-              const relics = JSON.parse(localStorage.getItem('relics') || '[]');
-              relics.push(relic.name);
-              localStorage.setItem('relics', JSON.stringify(relics));
+            if (await spendGold(relic.price)) {
+              saveData = await loadSaveData(char);
+              // 假设后端返回的 relic 有 id 字段，如果没有则用 name
+              saveData.relics.push(relic.id || relic.name); 
+              await saveSaveData(saveData);
               alert(`购买成功：${relic.name}`);
               relicDiv.classList.add('sold');
             }
@@ -110,26 +123,30 @@
           buyRelicsDiv.appendChild(relicDiv);
         });
 
+        // --- 删除卡牌 ---
         const deleteDiv = document.getElementById('delete-cards');
         deleteDiv.innerHTML = '';
         const deleteCost = shopData.deleteCost || 75;
         document.getElementById('delete-title').textContent = `删除卡牌 (${deleteCost} 金币)`;
         
-        const deck = JSON.parse(localStorage.getItem('deck') || '[]');
-        if (deck.length === 0) {
+        if (saveData.deck.length === 0) {
           deleteDiv.innerHTML = '<p style="color:#aaa;">卡组为空</p>';
         } else {
-          deck.forEach((card, index) => {
+          saveData.deck.forEach((card, index) => {
             const span = document.createElement('span');
             span.className = 'delete-item';
             span.innerHTML = `${card.name} <span class="delete-cost">-${deleteCost}💰</span>`;
-            span.addEventListener('click', () => {
-              if (spendGold(deleteCost)) {
-                const currentDeck = JSON.parse(localStorage.getItem('deck') || '[]');
-                currentDeck.splice(index, 1);
-                localStorage.setItem('deck', JSON.stringify(currentDeck));
-                alert(`删除了 ${card.name}`);
-                location.reload();
+            
+            span.addEventListener('click', async () => {
+              if (await spendGold(deleteCost)) {
+                saveData = await loadSaveData(char);
+                // 根据索引删除卡牌
+                if (index < saveData.deck.length) {
+                    saveData.deck.splice(index, 1);
+                    await saveSaveData(saveData);
+                    alert(`删除了 ${card.name}`);
+                    location.reload(); // 删除后刷新页面重新渲染列表
+                }
               }
             });
             deleteDiv.appendChild(span);
@@ -144,5 +161,8 @@
       });
     })();
   </script>
+
+  <!-- ✅ 将 status_bar.js 放在 body 最底部 -->
+  <script src="status_bar.js"></script>
 </body>
 </html>

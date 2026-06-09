@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>篝火</title>
+  <script src="save_helper.js"></script>
   <style>
     body {
-      margin: 0; padding-top: 50px;
+      margin: 0; padding-top: 50px; /* 为状态栏留空 */
       background: #1a1a2e; color: #e0e0e0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex; flex-direction: column; align-items: center;
-      min-height: 100vh;
-      position: relative;
+      min-height: 100vh; position: relative;
     }
     .campfire-bg {
       width: 100%; height: 300px;
@@ -19,39 +19,18 @@
       display: flex; align-items: center; justify-content: center;
       position: relative;
     }
-    .fire {
-      font-size: 120px;
-      text-shadow: 0 0 50px #ff6600, 0 0 100px #ff3300;
-      animation: flicker 1s infinite alternate;
-    }
-    @keyframes flicker {
-      from { opacity: 0.9; transform: scale(1); }
-      to { opacity: 1; transform: scale(1.05); }
-    }
-    .character {
-      position: absolute; bottom: 10px; right: 30px;
-      font-size: 80px;
-    }
-    .actions {
-      margin-top: 30px; display: flex; flex-direction: column; gap: 20px; align-items: center;
-    }
-    .btn {
-      padding: 12px 30px; font-size: 18px; border: none; border-radius: 8px;
-      cursor: pointer; transition: all 0.3s; background: #e67e22; color: white;
-    }
+    .fire { font-size: 120px; text-shadow: 0 0 50px #ff6600, 0 0 100px #ff3300; animation: flicker 1s infinite alternate; }
+    @keyframes flicker { from { opacity: 0.9; transform: scale(1); } to { opacity: 1; transform: scale(1.05); } }
+    .character { position: absolute; bottom: 10px; right: 30px; font-size: 80px; }
+    .actions { margin-top: 30px; display: flex; flex-direction: column; gap: 20px; align-items: center; }
+    .btn { padding: 12px 30px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; background: #e67e22; color: white; }
     .btn:hover:not(:disabled) { background: #d35400; transform: translateY(-2px); }
     .btn:disabled { background: #555; color: #aaa; cursor: not-allowed; transform: none; }
-    .skip-btn {
-      position: absolute; bottom: 30px; right: 30px;
-      background: #e74c3c; padding: 12px 24px;
-    }
-    .hp-info {
-      margin: 20px; font-size: 18px;
-    }
+    .skip-btn { position: absolute; bottom: 30px; right: 30px; background: #e74c3c; padding: 12px 24px; }
+    .hp-info { margin: 20px; font-size: 18px; }
   </style>
 </head>
 <body>
-  <script src="status_bar.js"></script>
   <div class="campfire-bg">
     <div class="fire">🔥</div>
     <div class="character" id="char-icon">🦾</div>
@@ -64,7 +43,7 @@
   <button class="btn skip-btn" id="skip-btn">跳过 →</button>
 
   <script>
-    (function() {
+    (async function() {
       const params = new URLSearchParams(window.location.search);
       const char = params.get('char') || '1';
       const currentNode = params.get('currentNode') || 'start';
@@ -73,59 +52,46 @@
       const charIcons = { '1': '🦾', '2': '❓' };
       document.getElementById('char-icon').textContent = charIcons[char] || '🦾';
 
-      let playerHp = parseInt(localStorage.getItem('playerHP') || '70');
-      let maxHp = parseInt(localStorage.getItem('maxHP') || '70');
-      document.getElementById('hp-display').textContent = `${playerHp}/${maxHp}`;
+      // 从后端加载最新存档
+      let saveData = await loadSaveData(char);
+      document.getElementById('hp-display').textContent = `${saveData.playerHp}/${saveData.maxHp}`;
 
-      // 检查是否已执行过操作
       const campfireAction = sessionStorage.getItem('campfireAction');
       const sleepBtn = document.getElementById('sleep-btn');
       const forgeBtn = document.getElementById('forge-btn');
 
-      function disableAll() {
-        sleepBtn.disabled = true;
-        forgeBtn.disabled = true;
-      }
+      function disableAll() { sleepBtn.disabled = true; forgeBtn.disabled = true; }
 
-      if (campfireAction === 'sleep') {
-        sleepBtn.disabled = true;
-        forgeBtn.disabled = true;
-        sleepBtn.textContent = '😴 已休息';
-      } else if (campfireAction === 'forge') {
-        forgeBtn.disabled = true;
-        sleepBtn.disabled = true;
-        forgeBtn.textContent = '🔨 已锻造';
-      }
+      if (campfireAction === 'sleep') { disableAll(); sleepBtn.textContent = '😴 已休息'; } 
+      else if (campfireAction === 'forge') { disableAll(); forgeBtn.textContent = '🔨 已锻造'; }
 
-      // 睡觉
-      sleepBtn.addEventListener('click', () => {
+      sleepBtn.addEventListener('click', async () => {
         if (campfireAction) return;
-        // 恢复30点，不超过最大值
-        const heal = Math.min(30, maxHp - playerHp);
-        playerHp += heal;
-        localStorage.setItem('playerHP', playerHp);
-        if (window.updateStatusBar) window.updateStatusBar();
-        document.getElementById('hp-display').textContent = `${playerHp}/${maxHp}`;
+        saveData = await loadSaveData(char);
+        const heal = Math.min(30, saveData.maxHp - saveData.playerHp);
+        saveData.playerHp += heal;
+        await saveSaveData(saveData);
+        
+        document.getElementById('hp-display').textContent = `${saveData.playerHp}/${saveData.maxHp}`;
         alert(`恢复了 ${heal} 点生命！`);
         sessionStorage.setItem('campfireAction', 'sleep');
         disableAll();
         sleepBtn.textContent = '😴 已休息';
       });
 
-      // 锻造
       forgeBtn.addEventListener('click', () => {
         if (campfireAction) return;
-        // 跳转到锻造页面，完成后会回来
         window.location.href = `forge.html?char=${char}&currentNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}`;
       });
 
-      // 跳过：离开篝火，进入地图下一节点（nextNode）
       document.getElementById('skip-btn').addEventListener('click', () => {
-        // 清除篝火状态，以便下次进入新篝火
         sessionStorage.removeItem('campfireAction');
         window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
       });
     })();
   </script>
+
+  <!-- ✅ 放在 body 最底部 -->
+  <script src="status_bar.js"></script>
 </body>
 </html>

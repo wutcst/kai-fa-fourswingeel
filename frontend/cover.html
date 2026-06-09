@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>杀戮尖塔克隆 - 角色选择</title>
+  <script src="save_helper.js"></script> <!-- 引入存档助手 -->
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0d0d1a; color: #e0e0e0; overflow: hidden; height: 100vh; width: 100vw; }
@@ -77,56 +78,97 @@
       char1Btn.addEventListener('click', () => selectChar('1'));
       char2Btn.addEventListener('click', () => alert('角色2尚未开放，敬请期待！'));
 
-      function setDefaultPlayerData(charId) {
-        localStorage.setItem('char', charId);
-        localStorage.setItem('playerHP', '70');
-        localStorage.setItem('maxHP', '70');
-        localStorage.setItem('gold', '0');
-        localStorage.setItem('relics', '[]');
-        const startingDeck = [
-          { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
-          { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
-          { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
-          { name: '防御', cost: 1, damage: 0, block: 5, type: 'SKILL' },
-          { name: '防御', cost: 1, damage: 0, block: 5, type: 'SKILL' }
-        ];
-        localStorage.setItem('deck', JSON.stringify(startingDeck));
-        localStorage.setItem('visitedNodes', '["start"]');
+      // ✅ 辅助函数：获取随机地图并存到 sessionStorage (保证同一局地图不变)
+      async function fetchAndStoreMap() {
+        try {
+          const mapResp = await fetch('/api/map');
+          if (mapResp.ok) {
+            const mapText = await mapResp.text();
+            sessionStorage.setItem('mapData', mapText);
+          } else {
+            console.warn('地图接口返回错误');
+          }
+        } catch (e) {
+          console.warn('无法获取地图', e);
+        }
       }
 
-      // 开始游戏（调用后端）
+      // ✅ 开始游戏：初始化后端存档 + 获取随机地图
       startBtn.addEventListener('click', async () => {
         if (!selectedCharacter) { alert('请先选择一个角色！'); return; }
         startBtn.disabled = true;
         try {
+          // 1. 获取角色初始数据
           const resp = await fetch(`/api/character/${selectedCharacter}`);
           if (!resp.ok) throw new Error('获取角色数据失败');
           const charData = await resp.json();
-          localStorage.setItem('char', selectedCharacter);
-          localStorage.setItem('playerHP', charData.maxHp);
-          localStorage.setItem('maxHP', charData.maxHp);
-          localStorage.setItem('gold', charData.gold);
-          localStorage.setItem('relics', '[]');
-          localStorage.setItem('deck', JSON.stringify(charData.startingDeck));
-          localStorage.setItem('visitedNodes', '["start"]');
-          localStorage.removeItem('startRelicDone');   // 重置起点遗物状态
+          
+          // 2. 构造初始存档并写入后端
+          const saveData = {
+            charId: selectedCharacter,
+            playerHp: charData.maxHp,
+            maxHp: charData.maxHp,
+            gold: charData.gold || 0,
+            deck: charData.startingDeck,
+            relics: [],
+            visitedNodes: ['start'],
+            currentNode: 'start'
+          };
+          await fetch('/api/init', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(saveData)
+          });
+
+          // 3. 获取并存储本次随机地图
+          await fetchAndStoreMap();
+
+          // 4. 清理旧状态并跳转
+          localStorage.removeItem('startRelicDone');
           sessionStorage.setItem('mapMode', 'api');
           window.location.href = `map.html?char=${selectedCharacter}`;
         } catch (e) {
           console.error(e);
-          alert('初始化角色失败，请检查后端服务！');
+          alert('初始化角色失败：' + e.message);
         } finally {
           startBtn.disabled = false;
         }
       });
 
-      // 开始测试（使用默认数据）
-      testBtn.addEventListener('click', () => {
+      // ✅ 开始测试：使用默认数据初始化后端存档 + 获取随机地图
+      testBtn.addEventListener('click', async () => {
         if (!selectedCharacter) { alert('请先选择一个角色！'); return; }
-        setDefaultPlayerData(selectedCharacter);
-        localStorage.removeItem('startRelicDone');   // 重置起点遗物状态
-        sessionStorage.setItem('mapMode', 'default');
-        window.location.href = `map.html?char=${selectedCharacter}&currentNode=start`;
+        try {
+          const saveData = {
+            charId: selectedCharacter,
+            playerHp: 70, maxHp: 70, gold: 0,
+            deck: [
+              { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
+              { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
+              { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
+              { name: '防御', cost: 1, damage: 0, block: 5, type: 'SKILL' },
+              { name: '防御', cost: 1, damage: 0, block: 5, type: 'SKILL' }
+            ],
+            relics: [],
+            visitedNodes: ['start'],
+            currentNode: 'start'
+          };
+          
+          await fetch('/api/init', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(saveData)
+          });
+
+          await fetchAndStoreMap();
+
+          localStorage.removeItem('startRelicDone');
+          sessionStorage.setItem('mapMode', 'api'); 
+          window.location.href = `map.html?char=${selectedCharacter}&currentNode=start`;
+        } catch (e) {
+          console.error(e);
+          alert('初始化测试失败：' + e.message);
+        }
       });
 
       charScreen.style.display = 'none';

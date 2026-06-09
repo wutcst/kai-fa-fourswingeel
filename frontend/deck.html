@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>卡组</title>
+  <!-- ✅ 引入存档助手 -->
+  <script src="save_helper.js"></script>
   <style>
     body {
       margin: 0; padding-top: 50px;
@@ -12,11 +14,9 @@
       display: flex; flex-direction: column; align-items: center;
       min-height: 100vh;
     }
-    h2 {
-      color: #f1c40f; margin: 30px 0 20px;
-    }
+    h2 { color: #f1c40f; margin: 30px 0 20px; }
     .deck-table {
-      width: 500px; max-width: 95%;
+      width: 600px; max-width: 95%;
       border-collapse: collapse;
       background: #16213e; border-radius: 8px;
       overflow: hidden;
@@ -30,50 +30,72 @@
       padding: 10px 12px; border-bottom: 1px solid #2c3e50;
     }
     .deck-table tr:last-child td { border-bottom: none; }
-    .empty {
-      color: #aaa; margin-top: 40px; font-size: 18px;
-    }
+    .empty { color: #aaa; margin-top: 40px; font-size: 18px; }
     .back-btn {
       margin-top: 30px;
       background: #e74c3c; color: white; border: none;
       padding: 10px 24px; font-size: 16px; border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s;
+      cursor: pointer; transition: all 0.3s;
     }
     .back-btn:hover { background: #c0392b; transform: translateY(-2px); }
+    /* ✅ 新增：状态效果文字样式 */
+    .status-text { color: #f1c40f; font-size: 12px; font-weight: bold; }
   </style>
 </head>
 <body>
-  <script src="status_bar.js"></script>
   <h2>🃏 当前卡组</h2>
   <div id="deck-container">
-    <!-- 动态生成表格 -->
+    <div class="empty">加载中...</div>
   </div>
   <button class="back-btn" onclick="history.back()">返回</button>
 
   <script>
-    (function() {
-      const deck = JSON.parse(localStorage.getItem('deck') || '[]');
+    // ✅ 使用 async 函数从后端读取存档
+    (async function() {
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      
+      // 从后端加载最新存档
+      const saveData = await loadSaveData(char);
+      const deck = saveData.deck || [];
+      
       const container = document.getElementById('deck-container');
       if (deck.length === 0) {
         container.innerHTML = '<div class="empty">卡组为空</div>';
         return;
       }
+      
       // 按费用排序
       deck.sort((a, b) => a.cost - b.cost);
-      let html = '<table class="deck-table"><thead><tr><th>名称</th><th>费用</th><th>伤害</th><th>格挡</th><th>类型</th></tr></thead><tbody>';
+      
+      // ✅ 增加“附加效果”列
+      let html = '<table class="deck-table"><thead><tr><th>名称</th><th>费用</th><th>伤害</th><th>格挡</th><th>类型</th><th>附加效果</th></tr></thead><tbody>';
       deck.forEach(card => {
+        let effectText = '-';
+        if (card.applyStatusType) {
+          const statusNames = { 
+            'VULNERABLE': '易伤', 'WEAK': '虚弱', 'FRAIL': '脆弱', 
+            'STRENGTH': '力量', 'DEXTERITY': '敏捷', 'POISON': '毒', 'REGEN': '再生' 
+          };
+          const name = statusNames[card.applyStatusType] || card.applyStatusType;
+          effectText = `<span class="status-text">${name} ${card.applyStatusCount || 0}层</span>`;
+        }
+        
         html += `<tr>
           <td>${card.name}</td>
           <td>⚡ ${card.cost}</td>
           <td>${card.damage > 0 ? `🗡️ ${card.damage}` : '-'}</td>
           <td>${card.block > 0 ? `🛡️ ${card.block}` : '-'}</td>
           <td>${card.type === 'ATTACK' ? '攻击' : '技能'}</td>
+          <td>${effectText}</td>
         </tr>`;
       });
       html += '</tbody></table>';
       container.innerHTML = html;
     })();
   </script>
+
+  <!-- ✅ 将 status_bar.js 放在 body 最底部 -->
+  <script src="status_bar.js"></script>
 </body>
 </html>

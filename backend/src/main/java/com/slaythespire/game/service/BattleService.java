@@ -10,10 +10,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+/**
+ * 战斗核心服务类
+ * 采用数据驱动架构，支持遗物加载、复合卡牌（铁斩波）、毒无视格挡、状态日志收集等高级特性。
+ */
 @Service
 public class BattleService {
     private static final Logger log = LoggerFactory.getLogger(BattleService.class);
-    @Autowired private GameDataRepository dataRepo;
+    
+    @Autowired 
+    private GameDataRepository dataRepo;
 
     private Player player;
     private Enemy enemy;
@@ -23,14 +29,45 @@ public class BattleService {
     private boolean gameOver;
     private String winner;
 
-    public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, int playerHp, int playerMaxHp) {
+    /**
+     * 初始化并开启一场新战斗
+     * @param playerDeck   前端传入的玩家当前卡组
+     * @param playerRelics ✅ 新增：前端传入的玩家携带的遗物 ID 列表
+     * @param playerHp     玩家当前剩余血量
+     * @param playerMaxHp  玩家最大血量
+     */
+    public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
+        
+        // ✅ 核心新增：加载玩家携带的遗物并处理被动属性
+        if (playerRelics != null && !playerRelics.isEmpty()) {
+            for (String relicId : playerRelics) {
+                RelicTemplate tpl = dataRepo.getRelicById(relicId);
+                if (tpl != null) {
+                    GameRelic relic = new GameRelic(tpl);
+                    this.player.addRelic(relic);
+                    
+                    // 处理被动属性（例如：MAX_HP 增加最大生命值）
+                    if ("MAX_HP".equals(relic.getEffectType())) {
+                        // 注意：请确保 Player 或 Combatant 类中有 setMaxHp 方法
+                        // 如果没有，请在 Combatant.java 中添加：public void setMaxHp(int maxHp) { this.maxHp = maxHp; }
+                        this.player.setMaxHp(this.player.getMaxHp() + relic.getValue());
+                        this.player.heal(relic.getValue()); // 当前血量同步增加
+                    }
+                }
+            }
+        }
+
+        // 加载怪物
         List<EnemyTemplate> enemies = dataRepo.getAllEnemies();
         if (enemies.isEmpty()) throw new IllegalStateException("怪物配置为空");
         this.enemy = new Enemy(enemies.get(0), dataRepo);
         
+        // 构建牌堆
         this.drawPile = buildDeckFromPlayerData(playerDeck);
         Collections.shuffle(drawPile);
+        
+        // 初始化回合上下文
         this.hand = new ArrayList<>();
         this.discardPile = new ArrayList<>();
         this.energy = 3;
@@ -38,11 +75,16 @@ public class BattleService {
         this.gameOver = false;
         this.winner = null;
         
+        // 玩家回合开始（清空格挡等）并抽初始手牌
         player.onTurnStart(); 
         drawCards(5);
+        
         return getCurrentState();
     }
 
+    /**
+     * 根据玩家存档数据构建牌堆，兜底逻辑从配置读取初始牌组
+     */
     private List<Card> buildDeckFromPlayerData(List<Map<String, Object>> playerDeck) {
         List<Card> deck = new ArrayList<>();
         if (playerDeck != null && !playerDeck.isEmpty()) {
@@ -60,7 +102,7 @@ public class BattleService {
                 deck.add(card);
             }
         } else {
-            // 从配置读取初始牌组
+            // 兜底：从配置读取初始牌组
             List<String> starterIds = Arrays.asList("strike", "strike", "strike", "defend", "defend");
             for (String id : starterIds) {
                 CardTemplate tpl = dataRepo.getCardById(id);
@@ -72,6 +114,10 @@ public class BattleService {
         return deck;
     }
 
+    /**
+     * 玩家打出指定索引的卡牌
+     * ✅ 核心修复：解耦伤害与格挡逻辑，支持“攻击牌带格挡”（如铁斩波）
+     */
     public synchronized Map<String, Object> playCard(int index) {
         validateBattleActive();
         validateCardIndex(index);
@@ -89,7 +135,7 @@ public class BattleService {
             logList.add(String.format("造成 %d 点伤害，敌人 HP: %d", actualDmg, enemy.getHp()));
         }
 
-        // 2. 处理格挡（无论卡牌类型，只要有格挡就执行，支持铁斩波）
+        // 2. 处理格挡（无论卡牌类型，只要有格挡就执行）
         if (card.getBlock() > 0) {
             player.gainBlock(card.getBlock());
             logList.add(String.format("获得 %d 点格挡，当前格挡: %d", card.getBlock(), player.getBlock()));
@@ -121,12 +167,16 @@ public class BattleService {
         return getCurrentState();
     }
 
+    /**
+     * 结束玩家回合，触发怪物行动与回合结算
+     * ✅ 核心修复：严格按时序执行，收集毒/再生等状态产生的日志
+     */
     public synchronized Map<String, Object> endTurn() {
         validateBattleActive();
 
         // ================= 阶段 1：玩家回合结束 =================
         player.onTurnEnd(); 
-        logList.addAll(player.getLastTurnEndLogs()); // ✅ 收集玩家身上的毒/再生等日志
+        logList.addAll(player.getLastTurnEndLogs()); // ✅ 收集玩家身上的毒/再生/遗物日志
         
         discardPile.addAll(hand);
         hand.clear();
@@ -164,7 +214,7 @@ public class BattleService {
 
         // ================= 阶段 4：怪物回合结束 =================
         enemy.onTurnEnd(); 
-        logList.addAll(enemy.getLastTurnEndLogs()); // ✅ 收集怪物身上的毒/再生等日志
+        logList.addAll(enemy.getLastTurnEndLogs()); // ✅ 收集怪物身上的毒/再生/遗物日志
 
         // ================= 阶段 5：玩家回合开始 =================
         player.onTurnStart(); 
@@ -180,6 +230,9 @@ public class BattleService {
         return getCurrentState();
     }
 
+    /**
+     * 抽牌逻辑（支持弃牌堆洗牌重组）
+     */
     private void drawCards(int count) {
         for (int i = 0; i < count; i++) {
             if (drawPile.isEmpty()) {
@@ -192,12 +245,16 @@ public class BattleService {
         }
     }
 
+    /**
+     * 序列化当前战斗状态，供前端渲染
+     */
     private Map<String, Object> getCurrentState() {
         Map<String, Object> state = new LinkedHashMap<>();
         state.put("playerHp", player.getHp());
         state.put("playerMaxHp", player.getMaxHp());
         state.put("playerBlock", player.getBlock());
         
+        // 返回包含 name 和 color 的状态列表
         List<Map<String, Object>> playerStatusList = new ArrayList<>();
         for (StatusEffect s : player.getStatuses()) {
             Map<String, Object> info = new LinkedHashMap<>();
@@ -264,6 +321,12 @@ public class BattleService {
         return state;
     }
 
-    private void validateBattleActive() { if (gameOver) throw new IllegalStateException("战斗已经结束"); }
-    private void validateCardIndex(int index) { if (index < 0 || index >= hand.size()) throw new IllegalArgumentException("无效的卡牌编号"); }
+    // ================= 辅助校验方法 =================
+    private void validateBattleActive() { 
+        if (gameOver) throw new IllegalStateException("战斗已经结束"); 
+    }
+    
+    private void validateCardIndex(int index) { 
+        if (index < 0 || index >= hand.size()) throw new IllegalArgumentException("无效的卡牌编号"); 
+    }
 }

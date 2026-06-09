@@ -2,89 +2,60 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>锻造卡牌</title>
+  <title>锻造</title>
+  <script src="save_helper.js"></script>
   <style>
-    body {
-      margin: 0; padding-top: 50px;
-      background: #1a1a2e; color: #e0e0e0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex; flex-direction: column; align-items: center;
-      min-height: 100vh;
-    }
-    h2 { color: #f1c40f; margin: 20px; }
-    .card-list {
-      display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;
-      max-width: 600px;
-    }
-    .card {
-      width: 140px; padding: 20px; border: 2px solid #34495e;
-      border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2);
-      text-align: center; cursor: pointer; transition: all 0.3s;
-      color: white; font-weight: bold;
-    }
-    .card:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-    .card-name { font-size: 18px; margin: 10px 0; }
-    .card-cost { color: #f1c40f; }
-    .back-btn {
-      margin-top: 30px;
-      background: #e74c3c; color: white; border: none;
-      padding: 12px 24px; font-size: 16px; border-radius: 8px;
-      cursor: pointer;
-    }
-    .empty { color: #aaa; margin-top: 40px; }
+    body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; }
+    h2 { color: #f1c40f; }
+    .card-list { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 600px; margin-top: 20px; }
+    .card { width: 140px; padding: 20px; border: 2px solid #34495e; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); text-align: center; cursor: pointer; color: white; }
+    .card:hover { transform: scale(1.05); }
+    .back-btn { margin-top: 30px; background: #e74c3c; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; }
   </style>
 </head>
 <body>
-  <script src="status_bar.js"></script>
   <h2>🔨 选择一张卡牌进行锻造</h2>
   <div class="card-list" id="card-list"></div>
   <button class="back-btn" id="back-btn">返回篝火</button>
 
   <script>
-    (function() {
+    (async function() {
       const params = new URLSearchParams(window.location.search);
       const char = params.get('char') || '1';
-      const currentNode = params.get('currentNode') || 'start';
-      const nextNode = params.get('nextNode') || currentNode;
+      const nextNode = params.get('nextNode') || 'start';
 
-      const deck = JSON.parse(localStorage.getItem('deck') || '[]');
-      // 过滤出未升级的卡牌（没有 upgraded 字段或为 false）
-      const upgradeable = deck.filter(card => !card.upgraded);
-
+      let saveData = await loadSaveData(char);
+      const upgradeable = saveData.deck.filter(card => !card.upgraded);
       const listDiv = document.getElementById('card-list');
+
       if (upgradeable.length === 0) {
-        listDiv.innerHTML = '<div class="empty">没有可锻造的卡牌</div>';
+        listDiv.innerHTML = '<div>没有可锻造的卡牌</div>';
       } else {
-        upgradeable.forEach((card, index) => {
+        upgradeable.forEach(card => {
           const div = document.createElement('div');
           div.className = 'card';
-          div.innerHTML = `
-            <div class="card-name">${card.name}</div>
-            <div class="card-cost">⚡ ${card.cost}</div>
-            <div>${card.damage > 0 ? `🗡️ ${card.damage}` : ''} ${card.block > 0 ? `🛡️ ${card.block}` : ''}</div>
-          `;
-          div.addEventListener('click', () => {
-            // 执行升级：名称加“+”，伤害/格挡各+3（若有）
-            const originalIndex = deck.indexOf(card);
-            if (originalIndex === -1) return;
-            const upgraded = { ...card, upgraded: true, name: card.name + '+' };
-            if (upgraded.damage > 0) upgraded.damage += 3;
-            if (upgraded.block > 0) upgraded.block += 3;
-            deck[originalIndex] = upgraded;
-            localStorage.setItem('deck', JSON.stringify(deck));
-            alert(`【${card.name}】升级为【${upgraded.name}】！`);
-            // 设置篝火状态为已锻造
-            sessionStorage.setItem('campfireAction', 'forge');
-            // 返回篝火页面
-            window.location.href = `campfire.html?char=${char}&currentNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}`;
+          div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p>`;
+          div.addEventListener('click', async () => {
+            // 重新读取最新存档防止覆盖
+            saveData = await loadSaveData(char); 
+            const idx = saveData.deck.findIndex(c => c.name === card.name && !c.upgraded);
+            if (idx !== -1) {
+              const c = saveData.deck[idx];
+              c.upgraded = true; c.name += '+';
+              if (c.damage > 0) c.damage += 3;
+              if (c.block > 0) c.block += 3;
+              await saveSaveData(saveData);
+              alert(`升级成功！`);
+              sessionStorage.setItem('campfireAction', 'forge');
+              window.location.href = `campfire.html?char=${char}&nextNode=${encodeURIComponent(nextNode)}`;
+            }
           });
           listDiv.appendChild(div);
         });
       }
 
       document.getElementById('back-btn').addEventListener('click', () => {
-        window.location.href = `campfire.html?char=${char}&currentNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}`;
+        window.location.href = `campfire.html?char=${char}&nextNode=${encodeURIComponent(nextNode)}`;
       });
     })();
   </script>
