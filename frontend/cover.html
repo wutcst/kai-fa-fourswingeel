@@ -94,6 +94,21 @@
         localStorage.setItem('visitedNodes', '["start"]');
       }
 
+      // 辅助函数：获取地图并存到 sessionStorage
+      async function fetchAndStoreMap() {
+        try {
+          const mapResp = await fetch('/api/map');
+          if (mapResp.ok) {
+            const mapData = await mapResp.json();
+            sessionStorage.setItem('mapData', JSON.stringify(mapData));
+          } else {
+            console.warn('地图接口返回错误，将使用默认或后续请求');
+          }
+        } catch (e) {
+          console.warn('无法获取地图，将使用默认或后续请求', e);
+        }
+      }
+
       // 开始游戏（调用后端）
       startBtn.addEventListener('click', async () => {
         if (!selectedCharacter) { alert('请先选择一个角色！'); return; }
@@ -109,8 +124,12 @@
           localStorage.setItem('relics', '[]');
           localStorage.setItem('deck', JSON.stringify(charData.startingDeck));
           localStorage.setItem('visitedNodes', '["start"]');
-          localStorage.removeItem('startRelicDone');   // 重置起点遗物状态
+          localStorage.removeItem('startRelicDone');
           sessionStorage.setItem('mapMode', 'api');
+
+          // 获取并存储本次地图
+          await fetchAndStoreMap();
+
           window.location.href = `map.html?char=${selectedCharacter}`;
         } catch (e) {
           console.error(e);
@@ -120,12 +139,16 @@
         }
       });
 
-      // 开始测试（使用默认数据）
-      testBtn.addEventListener('click', () => {
+      // 开始测试（改为使用后端随机地图）
+      testBtn.addEventListener('click', async () => {
         if (!selectedCharacter) { alert('请先选择一个角色！'); return; }
         setDefaultPlayerData(selectedCharacter);
-        localStorage.removeItem('startRelicDone');   // 重置起点遗物状态
-        sessionStorage.setItem('mapMode', 'default');
+        localStorage.removeItem('startRelicDone');
+        sessionStorage.setItem('mapMode', 'api');
+
+        // 获取并存储本次地图
+        await fetchAndStoreMap();
+
         window.location.href = `map.html?char=${selectedCharacter}&currentNode=start`;
       });
 

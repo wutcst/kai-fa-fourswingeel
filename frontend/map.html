@@ -6,8 +6,8 @@
   <title>杀戮尖塔 - 地图</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a1a; color: #e0e0e0; overflow: hidden; height: 100vh; width: 100vw; padding-top: 40px; }
-    #map-container { position: relative; width: 100%; height: calc(100% - 40px); display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a1a; color: #e0e0e0; overflow-y: auto; height: 100vh; width: 100vw; padding-top: 40px; }
+    #map-container { position: relative; width: 100%; height: 1500px; }
     svg#lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
     .node { position: absolute; width: 60px; height: 60px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; font-size: 12px; font-weight: bold; text-transform: uppercase; color: white; border: 3px solid #444; background: rgba(20, 20, 40, 0.9); backdrop-filter: blur(4px); z-index: 2; }
     .node.current { border-color: #f1c40f; box-shadow: 0 0 20px #f1c40f; background: rgba(241, 196, 15, 0.3); color: #fff; }
@@ -42,7 +42,6 @@
         localStorage.setItem('visitedNodes', JSON.stringify(visitedNodes));
       }
       
-      // ✅ 如果这是新的一局（只有起点被访问），强制重置初始遗物状态
       if (currentNodeId === 'start' && visitedNodes.length === 1 && visitedNodes[0] === 'start') {
           localStorage.removeItem('startRelicDone');
       }
@@ -51,21 +50,20 @@
       const svg = document.getElementById('lines');
       const currentLabel = document.getElementById('current-node-label');
 
-      let defaultMap = { nodes: [], edges: [] };
+      let mapData = { nodes: [], edges: [] };
       let nextNodeIds = [];
       let currentNode = null;
 
-      function getNodeById(id) { return defaultMap.nodes.find(n => n.id === id); }
-      function getNextNodes(fromId) { return defaultMap.edges.filter(e => e.from === fromId).map(e => e.to); }
+      function getNodeById(id) { return mapData.nodes.find(n => n.id === id); }
+      function getNextNodes(fromId) { return mapData.edges.filter(e => e.from === fromId).map(e => e.to); }
 
-      // 默认地图（包含所有节点：起点、小怪、精英、篝火、宝箱、商店、问号、BOSS）
-      const defaultFallback = {
+      // 静态后备地图（当后端不可用时使用）
+      const staticFallback = {
         nodes: [
           { id: 'start', type: 'start', label: '起点', x: 50, y: 90, icon: '🛡️' },
           { id: 'm1', type: 'monster', label: '小怪', x: 25, y: 70, icon: '👾' },
           { id: 'e1', type: 'elite', label: '精英', x: 50, y: 70, icon: '💀' },
           { id: 'm2', type: 'monster', label: '小怪', x: 75, y: 70, icon: '👾' },
-          { id: 'campfire1', type: 'campfire', label: '篝火', x: 35, y: 50, icon: '🔥' },
           { id: 'm3', type: 'monster', label: '小怪', x: 25, y: 50, icon: '👾' },
           { id: 'chest1', type: 'chest', label: '宝箱', x: 50, y: 50, icon: '📦' },
           { id: 'shop1', type: 'shop', label: '商店', x: 75, y: 50, icon: '🛒' },
@@ -76,18 +74,17 @@
         ],
         edges: [
           { from: 'start', to: 'm1' }, { from: 'start', to: 'e1' }, { from: 'start', to: 'm2' },
-          { from: 'm1', to: 'campfire1' }, { from: 'e1', to: 'campfire1' },
-          { from: 'm1', to: 'm3' }, { from: 'e1', to: 'chest1' }, { from: 'm2', to: 'shop1' },
-          { from: 'campfire1', to: 'e2' },
+          { from: 'm1', to: 'm3' }, { from: 'm1', to: 'chest1' },
+          { from: 'e1', to: 'chest1' }, { from: 'e1', to: 'shop1' },
+          { from: 'm2', to: 'shop1' }, { from: 'm2', to: 'q1' },
           { from: 'm3', to: 'e2' }, { from: 'chest1', to: 'e2' }, { from: 'chest1', to: 'm4' },
-          { from: 'shop1', to: 'e2' }, { from: 'shop1', to: 'm4' },
-          { from: 'q1', to: 'm4' },
+          { from: 'shop1', to: 'm4' }, { from: 'q1', to: 'm4' },
           { from: 'e2', to: 'boss' }, { from: 'm4', to: 'boss' }
         ]
       };
 
       function applyAndDraw() {
-        if (defaultMap.nodes.length > 0) {
+        if (mapData.nodes.length > 0) {
           nextNodeIds = getNextNodes(currentNodeId).filter(id => !visitedNodes.includes(id));
           currentNode = getNodeById(currentNodeId);
           if (currentNode) currentLabel.textContent = currentNode.label || currentNode.id;
@@ -99,28 +96,42 @@
         const mapMode = sessionStorage.getItem('mapMode');
         if (mapMode === 'default') {
           console.log('本局使用默认地图（含篝火等）');
-          defaultMap = defaultFallback;
+          mapData = staticFallback;
           applyAndDraw();
           return;
         }
 
+        // 优先使用会话中保存的地图（由封面页初始化时生成一次）
+        const storedData = sessionStorage.getItem('mapData');
+        if (storedData) {
+          try {
+            mapData = JSON.parse(storedData);
+            console.log('使用已保存的地图');
+            applyAndDraw();
+            return;
+          } catch (e) {
+            console.warn('解析已保存地图失败，重新加载');
+          }
+        }
+
+        // 无保存地图时向后端请求
         try {
           const resp = await fetch('/api/map');
           if (resp.ok) {
             const data = await resp.json();
             if (data && Array.isArray(data.nodes) && data.nodes.length > 0) {
-              defaultMap = data;
+              mapData = data;
             } else {
-              console.warn('后端地图数据无效，使用默认地图');
-              defaultMap = defaultFallback;
+              console.warn('后端地图数据无效，使用后备地图');
+              mapData = staticFallback;
             }
           } else {
-            console.warn('后端地图接口返回错误，使用默认地图');
-            defaultMap = defaultFallback;
+            console.warn('后端地图接口返回错误，使用后备地图');
+            mapData = staticFallback;
           }
         } catch (e) {
-          console.warn('后端地图接口不可用，使用默认地图', e);
-          defaultMap = defaultFallback;
+          console.warn('后端地图接口不可用，使用后备地图', e);
+          mapData = staticFallback;
         }
 
         applyAndDraw();
@@ -130,8 +141,8 @@
         container.querySelectorAll('.node').forEach(n => n.remove());
         svg.innerHTML = '';
 
-        // 绘制连线
-        defaultMap.edges.forEach(edge => {
+        // 连线
+        mapData.edges.forEach(edge => {
           const fromNode = getNodeById(edge.from);
           const toNode = getNodeById(edge.to);
           if (fromNode && toNode) {
@@ -151,8 +162,8 @@
           }
         });
 
-        // 绘制节点
-        defaultMap.nodes.forEach(node => {
+        // 节点
+        mapData.nodes.forEach(node => {
           const div = document.createElement('div');
           div.className = 'node';
           div.style.left = `${node.x - 3}%`;
@@ -162,7 +173,6 @@
 
           if (node.id === currentNodeId) {
             div.classList.add('current');
-            // 起点在当前节点时允许点击
             if (node.type === 'start') {
               div.classList.add('clickable');
               div.addEventListener('click', () => handleNodeClick(node));
@@ -184,7 +194,6 @@
         if (node.type === 'monster' || node.type === 'elite' || node.type === 'boss') {
           window.location.href = `fight.html?from=map&prevNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}&nodeType=${node.type}&char=${charParam}`;
         } else if (node.type === 'start') {
-          // 起点：检查是否已选择初始遗物
           if (localStorage.getItem('startRelicDone') === 'true') {
             alert('你已经选择过初始遗物了！');
             return;
@@ -199,13 +208,10 @@
         } else if (node.type === 'question') {
           const rand = Math.random();
           if (rand < 0.2) {
-            // 20% 进入战斗（普通小怪）
             window.location.href = `fight.html?from=map&prevNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}&nodeType=monster&char=${charParam}`;
           } else if (rand < 0.9) {
-            // 70% 进入问号事件页面
             window.location.href = `question.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
           } else {
-            // 10% 进入宝箱
             window.location.href = `chest.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
           }
         }
