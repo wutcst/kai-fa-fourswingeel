@@ -41,6 +41,11 @@
         visitedNodes.push(currentNodeId);
         localStorage.setItem('visitedNodes', JSON.stringify(visitedNodes));
       }
+      
+      // ✅ 如果这是新的一局（只有起点被访问），强制重置初始遗物状态
+      if (currentNodeId === 'start' && visitedNodes.length === 1 && visitedNodes[0] === 'start') {
+          localStorage.removeItem('startRelicDone');
+      }
 
       const container = document.getElementById('map-container');
       const svg = document.getElementById('lines');
@@ -53,7 +58,7 @@
       function getNodeById(id) { return defaultMap.nodes.find(n => n.id === id); }
       function getNextNodes(fromId) { return defaultMap.edges.filter(e => e.from === fromId).map(e => e.to); }
 
-      // 默认地图（包含篝火）
+      // 默认地图（包含所有节点：起点、小怪、精英、篝火、宝箱、商店、问号、BOSS）
       const defaultFallback = {
         nodes: [
           { id: 'start', type: 'start', label: '起点', x: 50, y: 90, icon: '🛡️' },
@@ -91,16 +96,14 @@
       }
 
       async function loadMapData() {
-        // 检查本局地图模式
         const mapMode = sessionStorage.getItem('mapMode');
         if (mapMode === 'default') {
-          console.log('本局使用默认地图（含篝火）');
+          console.log('本局使用默认地图（含篝火等）');
           defaultMap = defaultFallback;
           applyAndDraw();
           return;
         }
 
-        // 否则尝试从后端获取
         try {
           const resp = await fetch('/api/map');
           if (resp.ok) {
@@ -108,15 +111,15 @@
             if (data && Array.isArray(data.nodes) && data.nodes.length > 0) {
               defaultMap = data;
             } else {
-              console.warn('后端地图数据无效，降级为默认地图');
+              console.warn('后端地图数据无效，使用默认地图');
               defaultMap = defaultFallback;
             }
           } else {
-            console.warn('后端地图接口返回错误，降级为默认地图');
+            console.warn('后端地图接口返回错误，使用默认地图');
             defaultMap = defaultFallback;
           }
         } catch (e) {
-          console.warn('后端地图接口不可用，降级为默认地图', e);
+          console.warn('后端地图接口不可用，使用默认地图', e);
           defaultMap = defaultFallback;
         }
 
@@ -127,34 +130,43 @@
         container.querySelectorAll('.node').forEach(n => n.remove());
         svg.innerHTML = '';
 
+        // 绘制连线
         defaultMap.edges.forEach(edge => {
           const fromNode = getNodeById(edge.from);
           const toNode = getNodeById(edge.to);
           if (fromNode && toNode) {
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            line.setAttribute("x1", `${fromNode.x}%`); line.setAttribute("y1", `${fromNode.y}%`);
-            line.setAttribute("x2", `${toNode.x}%`); line.setAttribute("y2", `${toNode.y}%`);
+            line.setAttribute("x1", `${fromNode.x}%`);
+            line.setAttribute("y1", `${fromNode.y}%`);
+            line.setAttribute("x2", `${toNode.x}%`);
+            line.setAttribute("y2", `${toNode.y}%`);
             if (edge.from === currentNodeId && nextNodeIds.includes(edge.to)) {
-              line.setAttribute("stroke", "#e74c3c"); 
+              line.setAttribute("stroke", "#e74c3c");
               line.setAttribute("stroke-width", "4");
             } else {
-              line.setAttribute("stroke", "#555"); 
+              line.setAttribute("stroke", "#555");
               line.setAttribute("stroke-width", "2");
             }
             svg.appendChild(line);
           }
         });
 
+        // 绘制节点
         defaultMap.nodes.forEach(node => {
           const div = document.createElement('div');
           div.className = 'node';
-          div.style.left = `${node.x - 3}%`; 
+          div.style.left = `${node.x - 3}%`;
           div.style.top = `${node.y - 3}%`;
           const iconHtml = node.icon ? `<span class="icon">${node.icon}</span>` : '';
           div.innerHTML = `${iconHtml}<span class="label">${node.label}</span>`;
 
           if (node.id === currentNodeId) {
             div.classList.add('current');
+            // 起点在当前节点时允许点击
+            if (node.type === 'start') {
+              div.classList.add('clickable');
+              div.addEventListener('click', () => handleNodeClick(node));
+            }
           } else if (nextNodeIds.includes(node.id)) {
             div.classList.add('clickable');
             div.addEventListener('click', () => handleNodeClick(node));
@@ -163,6 +175,7 @@
           } else {
             div.classList.add('disabled');
           }
+
           container.appendChild(div);
         });
       }
@@ -170,6 +183,13 @@
       function handleNodeClick(node) {
         if (node.type === 'monster' || node.type === 'elite' || node.type === 'boss') {
           window.location.href = `fight.html?from=map&prevNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}&nodeType=${node.type}&char=${charParam}`;
+        } else if (node.type === 'start') {
+          // 起点：检查是否已选择初始遗物
+          if (localStorage.getItem('startRelicDone') === 'true') {
+            alert('你已经选择过初始遗物了！');
+            return;
+          }
+          window.location.href = `start.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}`;
         } else if (node.type === 'chest') {
           window.location.href = `chest.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
         } else if (node.type === 'shop') {
@@ -177,7 +197,17 @@
         } else if (node.type === 'campfire') {
           window.location.href = `campfire.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
         } else if (node.type === 'question') {
-          alert('问号事件尚未开放，敬请期待！');
+          const rand = Math.random();
+          if (rand < 0.2) {
+            // 20% 进入战斗（普通小怪）
+            window.location.href = `fight.html?from=map&prevNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}&nodeType=monster&char=${charParam}`;
+          } else if (rand < 0.9) {
+            // 70% 进入问号事件页面
+            window.location.href = `question.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
+          } else {
+            // 10% 进入宝箱
+            window.location.href = `chest.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
+          }
         }
       }
 

@@ -109,7 +109,8 @@
           localStorage.setItem('relics', '[]');
           localStorage.setItem('deck', JSON.stringify(charData.startingDeck));
           localStorage.setItem('visitedNodes', '["start"]');
-          sessionStorage.setItem('mapMode', 'api');   // 使用后端地图
+          localStorage.removeItem('startRelicDone');   // 重置起点遗物状态
+          sessionStorage.setItem('mapMode', 'api');
           window.location.href = `map.html?char=${selectedCharacter}`;
         } catch (e) {
           console.error(e);
@@ -119,11 +120,12 @@
         }
       });
 
-      // 开始测试（使用默认数据，不依赖后端）
+      // 开始测试（使用默认数据）
       testBtn.addEventListener('click', () => {
         if (!selectedCharacter) { alert('请先选择一个角色！'); return; }
         setDefaultPlayerData(selectedCharacter);
-        sessionStorage.setItem('mapMode', 'default');  // 使用默认地图
+        localStorage.removeItem('startRelicDone');   // 重置起点遗物状态
+        sessionStorage.setItem('mapMode', 'default');
         window.location.href = `map.html?char=${selectedCharacter}&currentNode=start`;
       });
 
