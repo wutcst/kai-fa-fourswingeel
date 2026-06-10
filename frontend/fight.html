@@ -158,13 +158,47 @@
         async goAfterFight() {
           if (!this.state) return;
           const charParam = new URLSearchParams(window.location.search).get('char') || '1';
+
+          // === 玩家死亡 → 跳转死亡统计页面 ===
+          if (this.state.gameOver && (
+            this.state.playerHp <= 0 ||
+            this.state.winner === '敌人' ||
+            this.state.winner === 'Enemy'
+          )) {
+            try {
+              const visited = JSON.parse(localStorage.getItem('visitedNodes') || '[]');
+              const deck = JSON.parse(localStorage.getItem('deck') || '[]');
+              const relics = JSON.parse(localStorage.getItem('relics') || '[]');
+              const gold = parseInt(localStorage.getItem('gold')) || 0;
+              const deathStats = {
+                killedBy: this.state.enemyName || '未知敌人',
+                floor: Math.max(0, visited.length - 1),
+                deckSize: deck.length,
+                relicCount: relics.length,
+                gold: gold,
+                nodesVisited: visited.length,
+                battleLog: this.state.log || []
+              };
+              sessionStorage.setItem('deathStats', JSON.stringify(deathStats));
+            } catch (e) {
+              console.error('保存死亡统计数据失败:', e);
+            }
+            window.location.href = 'gameover.html';
+            return;
+          }
+
           const nodeType = new URLSearchParams(window.location.search).get('nodeType') || 'monster';
-          const prev = this.prevNodeId || 'start'; const next = this.nextNodeId || prev;
+          const prev = this.prevNodeId || 'start';
+          const next = this.nextNodeId || prev;
+
+          // 胜利 → 保存游戏进度并跳转奖励页
           const saveData = await loadSaveData(charParam);
-          saveData.playerHp = this.state.playerHp; saveData.maxHp = this.state.playerMaxHp;
+          saveData.playerHp = this.state.playerHp;
+          saveData.maxHp = this.state.playerMaxHp;
           saveData.currentNode = next;
           if (!saveData.visitedNodes.includes(next)) saveData.visitedNodes.push(next);
           await saveSaveData(saveData);
+
           if (this.isFromMap && (this.state.winner === 'player' || (this.state.gameOver && this.state.playerHp > 0))) {
             window.location.href = `reward.html?source=fight&char=${charParam}&prevNode=${prev}&nextNode=${next}&nodeType=${nodeType}&gotCard=0`;
           } else { window.location.href = `map.html?char=${charParam}&currentNode=${prev}`; }
