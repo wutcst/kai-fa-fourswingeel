@@ -39,21 +39,13 @@ public class BattleService {
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
         
-        // ✅ 核心新增：加载玩家携带的遗物并处理被动属性
+        // 加载玩家携带的遗物（被动属性如 MAX_HP 由前端在获取遗物时永久处理）
         if (playerRelics != null && !playerRelics.isEmpty()) {
             for (String relicId : playerRelics) {
                 RelicTemplate tpl = dataRepo.getRelicById(relicId);
                 if (tpl != null) {
                     GameRelic relic = new GameRelic(tpl);
                     this.player.addRelic(relic);
-                    
-                    // 处理被动属性（例如：MAX_HP 增加最大生命值）
-                    if ("MAX_HP".equals(relic.getEffectType())) {
-                        // 注意：请确保 Player 或 Combatant 类中有 setMaxHp 方法
-                        // 如果没有，请在 Combatant.java 中添加：public void setMaxHp(int maxHp) { this.maxHp = maxHp; }
-                        this.player.setMaxHp(this.player.getMaxHp() + relic.getValue());
-                        this.player.heal(relic.getValue()); // 当前血量同步增加
-                    }
                 }
             }
         }

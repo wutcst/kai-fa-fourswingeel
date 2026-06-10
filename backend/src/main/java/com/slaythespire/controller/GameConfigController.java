@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.slaythespire.game.service.RelicPoolService;
 import com.slaythespire.repository.CardTemplate;
 import com.slaythespire.repository.GameDataRepository;
 import com.slaythespire.repository.RelicTemplate;
@@ -27,7 +28,10 @@ public class GameConfigController {
 
     @Autowired
     private GameDataRepository dataRepo;
-    
+
+    @Autowired
+    private RelicPoolService relicPoolService;
+
     private final Random random = new Random();
 
     /**
@@ -159,9 +163,10 @@ public class GameConfigController {
      * 商店数据
      */
     @GetMapping("/shop")
-    public Map<String, Object> getShopData(@RequestParam(defaultValue = "1") String charParam) {
+    public Map<String, Object> getShopData(@RequestParam(defaultValue = "1") String charParam,
+                                            @RequestParam(required = false) List<String> ownedRelics) {
         Map<String, Object> shop = new LinkedHashMap<>();
-        
+
         List<CardTemplate> allCards = dataRepo.getAllCards();
         List<Map<String, Object>> shopCards = new ArrayList<>();
         Set<String> usedIds = new HashSet<>();
@@ -189,21 +194,22 @@ public class GameConfigController {
         }
         shop.put("cards", shopCards);
 
-        List<RelicTemplate> allRelics = dataRepo.getAllRelics();
+        // 商店遗物：从 RelicPoolService 按权重抽取 2 件
         List<Map<String, Object>> shopRelics = new ArrayList<>();
-        Set<String> usedRelicIds = new HashSet<>();
-        int relicAttempts = 0;
-        while (shopRelics.size() < 2 && relicAttempts < 10 && !allRelics.isEmpty()) {
-            RelicTemplate tpl = allRelics.get(random.nextInt(allRelics.size()));
-            if (!usedRelicIds.contains(tpl.getId())) {
-                usedRelicIds.add(tpl.getId());
-                Map<String, Object> relicMap = new LinkedHashMap<>();
-                relicMap.put("id", tpl.getId());
-                relicMap.put("name", tpl.getName());
-                relicMap.put("price", 100 + random.nextInt(50));
-                shopRelics.add(relicMap);
-            }
-            relicAttempts++;
+        for (int i = 0; i < 2; i++) {
+            RelicTemplate tpl = relicPoolService.drawRelic(charParam, ownedRelics);
+            if (tpl == null) break;
+            // 抽取后从 ownedRelics 排除，防止两次抽到相同遗物
+            if (ownedRelics == null) ownedRelics = new ArrayList<>();
+            ownedRelics.add(tpl.getId());
+            Map<String, Object> relicMap = new LinkedHashMap<>();
+            relicMap.put("id", tpl.getId());
+            relicMap.put("name", tpl.getName());
+            relicMap.put("price", "ring".equals(tpl.getId()) ? 0 : 100 + new Random().nextInt(50));
+            relicMap.put("effectType", tpl.getEffectType());
+            relicMap.put("value", tpl.getValue());
+            relicMap.put("rarity", tpl.getRarity());
+            shopRelics.add(relicMap);
         }
         shop.put("relics", shopRelics);
         shop.put("deleteCost", 75);
@@ -261,6 +267,9 @@ public class GameConfigController {
             map.put("id", tpl.getId());
             map.put("name", tpl.getName());
             map.put("description", tpl.getDescription());
+            map.put("effectType", tpl.getEffectType());
+            map.put("value", tpl.getValue());
+            map.put("rarity", tpl.getRarity());
             result.add(map);
         }
         return result;

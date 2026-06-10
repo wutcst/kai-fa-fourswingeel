@@ -64,10 +64,24 @@
             },
             {
               text: '冒险深入探寻 (-10❤️，获得遗物)',
-              action: (data) => {
+              action: async (data) => {
                 data.playerHp = Math.max(1, data.playerHp - 10);
-                data.relics.push('burning_blood'); // 使用后端能识别的遗物 ID
-                alert('失去 10 点生命，获得【燃烧之血】！');
+                // 从后端获取随机未拥有的遗物
+                try {
+                  const owned = (data.relics || []).join(',');
+                  const resp = await fetch(`/api/reward?nodeType=chest&ownedRelics=${owned}&charId=${char}`);
+                  if (resp.ok) {
+                    const rewardData = await resp.json();
+                    if (rewardData.relic && rewardData.relic.id) {
+                      data.relics.push(rewardData.relic.id);
+                      alert(`失去 10 点生命，获得【${rewardData.relic.name}】！`);
+                      return true;
+                    }
+                  }
+                } catch (e) { /* 静默降级 */ }
+                // 兜底：给红头骨
+                data.relics.push('red_skull');
+                alert('失去 10 点生命，获得遗物！');
                 return true;
               }
             }
@@ -135,7 +149,7 @@
         btn.addEventListener('click', async () => {
           btn.disabled = true; // 防止重复点击
           const saveData = await loadSaveData(char);
-          const result = opt.action(saveData);
+          const result = await opt.action(saveData);
           
           if (result !== false) {
             await saveSaveData(saveData);

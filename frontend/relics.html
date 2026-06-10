@@ -25,9 +25,20 @@
       font-size: 16px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
+    /* 稀有度颜色：白色/普通、蓝色/稀有、金色/传说 */
+    .relic-item.rarity-common { border-left-color: #bdc3c7; }
+    .relic-item.rarity-rare   { border-left-color: #3498db; }
+    .relic-item.rarity-special { border-left-color: #9b59b6; }
     .relic-icon { font-size: 32px; flex-shrink: 0; margin-top: 2px;}
     .relic-info { flex: 1; }
-    .relic-name { font-weight: bold; font-size: 18px; color: #f1c40f; margin-bottom: 5px;}
+    .relic-name { font-weight: bold; font-size: 18px; margin-bottom: 5px;}
+    .relic-rarity-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-left: 8px; vertical-align: middle; font-weight: normal; }
+    .rarity-common .relic-name { color: #bdc3c7; }
+    .rarity-common .relic-rarity-badge { background: #bdc3c7; color: #1a1a2e; }
+    .rarity-rare .relic-name { color: #3498db; }
+    .rarity-rare .relic-rarity-badge { background: #3498db; color: white; }
+    .rarity-special .relic-name { color: #9b59b6; }
+    .rarity-special .relic-rarity-badge { background: #9b59b6; color: white; }
     .relic-desc { font-size: 14px; color: #bdc3c7; line-height: 1.4;}
     .empty { color: #aaa; margin-top: 40px; font-size: 18px; }
     .back-btn {
@@ -82,10 +93,16 @@
         // 根据 ID 查找中文名和描述
         const relicInfo = relicDict[relicId];
         if (relicInfo) {
+          // 稀有度映射：STARTER/COMMON → common(白), RARE → rare(蓝), SPECIAL → special(紫)
+          const rarity = relicInfo.rarity || 'COMMON';
+          let rarityClass = 'common', rarityLabel = '普通';
+          if (rarity === 'RARE') { rarityClass = 'rare'; rarityLabel = '稀有'; }
+          else if (rarity === 'SPECIAL') { rarityClass = 'special'; rarityLabel = '特殊'; }
+          div.className = 'relic-item rarity-' + rarityClass;
           div.innerHTML = `
-            <span class="relic-icon">📿</span> 
+            <span class="relic-icon">📿</span>
             <div class="relic-info">
-              <div class="relic-name">${relicInfo.name}</div>
+              <div class="relic-name">${relicInfo.name}<span class="relic-rarity-badge">${rarityLabel}</span></div>
               <div class="relic-desc">${relicInfo.description || '神秘的遗物，效果未知。'}</div>
             </div>
           `;

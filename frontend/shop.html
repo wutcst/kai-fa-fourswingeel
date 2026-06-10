@@ -63,7 +63,9 @@
 
       async function loadShopData() {
         try {
-          const resp = await fetch(`/api/shop?char=${encodeURIComponent(char)}`);
+          const shopSaveData = await loadSaveData(char);
+          const owned = (shopSaveData.relics || []).join(',');
+          const resp = await fetch(`/api/shop?char=${char}&ownedRelics=${owned}`);
           if (resp.ok) {
             const shopData = await resp.json();
             renderShop(shopData);
@@ -107,9 +109,13 @@
             if (relicDiv.classList.contains('sold')) return;
             if (await spendGold(relic.price)) {
               saveData = await loadSaveData(char);
-              // ✅ 核心修改：优先使用 relic.id，如果没有则使用 relic.name
               const relicId = relic.id || relic.name;
               saveData.relics.push(relicId);
+              // MAX_HP 遗物：永久增加血上限
+              if (relic.effectType === 'MAX_HP' && relic.value > 0) {
+                saveData.maxHp = (saveData.maxHp || 70) + relic.value;
+                saveData.playerHp = Math.min((saveData.playerHp || saveData.maxHp) + relic.value, saveData.maxHp);
+              }
               await saveSaveData(saveData);
               alert(`购买成功：${relic.name}`);
               relicDiv.classList.add('sold');

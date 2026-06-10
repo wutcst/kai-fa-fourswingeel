@@ -15,27 +15,32 @@ public class RewardController {
     @Autowired
     private GameDataRepository dataRepo;
 
+    @Autowired
+    private com.slaythespire.game.service.RelicPoolService relicPoolService;
+
     private final Random random = new Random();
 
     @GetMapping("/reward")
-    public Map<String, Object> getReward(@RequestParam(defaultValue = "monster") String nodeType) {
+    public Map<String, Object> getReward(@RequestParam(defaultValue = "monster") String nodeType,
+                                          @RequestParam(required = false) List<String> ownedRelics,
+                                          @RequestParam(defaultValue = "1") String charId) {
         Map<String, Object> reward = new LinkedHashMap<>();
-        
+
         int gold = 0;
-        Map<String, Object> relic = null; // ✅ 修改为 Map 以包含 id 和 name
-        
+        Map<String, Object> relic = null;
+
         switch (nodeType.toLowerCase()) {
             case "elite":
-                gold = 40 + random.nextInt(15); 
-                relic = getRandomRelic("rare");
+                gold = 40 + random.nextInt(15);
+                relic = drawRelicMap(charId, ownedRelics, "rare");
                 break;
             case "boss":
-                gold = 100 + random.nextInt(50); 
-                relic = getRandomRelic("rare");
+                gold = 100 + random.nextInt(50);
+                relic = drawRelicMap(charId, ownedRelics, "rare");
                 break;
             case "chest":
-                gold = 30 + random.nextInt(20); 
-                relic = getRandomRelic("common");
+                gold = 30 + random.nextInt(20);
+                relic = drawRelicMap(charId, ownedRelics, "common");
                 break;
             case "monster":
             default:
@@ -94,32 +99,20 @@ public class RewardController {
         return map;
     }
 
-    /**
-     * ✅ 核心修复：从配置中读取真实遗物，并返回包含 id 和 name 的 Map
-     */
-    private Map<String, Object> getRandomRelic(String tier) {
-        List<RelicTemplate> allRelics = dataRepo.getAllRelics();
-        if (allRelics.isEmpty()) return null;
+    /** 将 RelicTemplate 转为前端需要的 Map 格式 */
+    private Map<String, Object> relicToMap(RelicTemplate tpl) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", tpl.getId());
+        map.put("name", tpl.getName());
+        map.put("effectType", tpl.getEffectType());
+        map.put("value", tpl.getValue());
+        map.put("rarity", tpl.getRarity());
+        return map;
+    }
 
-        // 根据稀有度筛选 (假设 relics.json 中有 rarity 字段，如 "COMMON", "RARE")
-        List<RelicTemplate> filtered = new ArrayList<>();
-        for (RelicTemplate tpl : allRelics) {
-            if (tier.equalsIgnoreCase(tpl.getRarity())) {
-                filtered.add(tpl);
-            }
-        }
-
-        // 如果没有匹配稀有度的，就从所有遗物中随机
-        if (filtered.isEmpty()) {
-            filtered = allRelics;
-        }
-
-        RelicTemplate chosen = filtered.get(random.nextInt(filtered.size()));
-        
-        // ✅ 构造返回给前端的对象
-        Map<String, Object> relicMap = new LinkedHashMap<>();
-        relicMap.put("id", chosen.getId());     // 前端需要这个 ID 存入存档
-        relicMap.put("name", chosen.getName()); // 前端需要这个 Name 用于显示
-        return relicMap;
+    /** 从遗物池服务抽取，并转为前端 Map */
+    private Map<String, Object> drawRelicMap(String charId, List<String> ownedRelics, String tier) {
+        RelicTemplate tpl = relicPoolService.drawRelic(charId, ownedRelics, tier);
+        return (tpl != null) ? relicToMap(tpl) : null;
     }
 }

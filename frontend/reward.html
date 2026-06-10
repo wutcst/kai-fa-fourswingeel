@@ -87,12 +87,12 @@
       const gotRelic = params.get('gotRelic') === '1';
       const gotCard = params.get('gotCard') === '1';
 
-      const isReturnVisit = params.has('gotGold') || params.has('gotRelic') || params.has('gotCard');
+      const isReturnVisit = params.get('gotGold') === '1' || params.get('gotRelic') === '1' || params.get('gotCard') === '1';
 
-      // ✅ 默认奖励也改为包含 id 的对象
+      // 后端不可用时的降级奖励
       const defaultReward = {
         gold: 50,
-        relic: { id: 'burning_blood', name: '燃烧之血' },
+        relic: null,
         cardPool: [
           { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
           { name: '防御', cost: 1, damage: 0, block: 5, type: 'SKILL' },
@@ -111,12 +111,15 @@
 
       if (!reward) {
         try {
-          const resp = await fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}`);
+          // 传已拥有的遗物 ID，避免重复获取
+          const saveDataForReward = await loadSaveData(char);
+          const owned = (saveDataForReward.relics || []).join(',');
+          const resp = await fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}&charId=${char}`);
           if (resp.ok) {
             const data = await resp.json();
             reward = {
               gold: data.gold || defaultReward.gold,
-              relic: data.relic || defaultReward.relic,
+              relic: data.hasOwnProperty('relic') ? data.relic : defaultReward.relic,
               cardPool: data.cards || defaultReward.cardPool
             };
           }
@@ -156,11 +159,15 @@
         updateUrlParam('gotGold', '1');
       }
 
-      // ✅ 核心修改：确保存储的是 relic.id
-      async function giveRelic(relicId) {
+      // ✅ 获取遗物：存储 ID，MAX_HP 类遗物永久增加血上限
+      async function giveRelic(relicId, effectType, value) {
         if (localGotRelic) return;
         const saveData = await loadSaveData(char);
-        saveData.relics.push(relicId); // 存储 ID，如 "burning_blood"
+        saveData.relics.push(relicId);
+        if (effectType === 'MAX_HP' && value > 0) {
+          saveData.maxHp = (saveData.maxHp || 70) + value;
+          saveData.playerHp = Math.min((saveData.playerHp || saveData.maxHp) + value, saveData.maxHp);
+        }
         await saveSaveData(saveData);
         localGotRelic = true;
         alert(`获得遗物！`);
@@ -193,16 +200,18 @@
       cardBtn.addEventListener('click', goToCardSelect);
       panel.appendChild(cardBtn);
 
-      if (nodeType === 'elite' || nodeType === 'chest' || nodeType === 'boss') {
+      // 遗物按钮：仅在有可用遗物且不是 null 时显示
+      if ((nodeType === 'elite' || nodeType === 'chest' || nodeType === 'boss') && reward.relic) {
         const relicBtn = document.createElement('button');
         relicBtn.className = 'reward-btn';
-        // 显示名称，但点击时存储 ID
         const relicName = reward.relic.name || reward.relic;
         const relicId = reward.relic.id || reward.relic;
+        const relicEffectType = reward.relic.effectType || null;
+        const relicValue = reward.relic.value || 0;
         relicBtn.textContent = `📿 获得 ${relicName}`;
         if (gotRelic) relicBtn.disabled = true;
         relicBtn.addEventListener('click', async () => {
-          await giveRelic(relicId); // ✅ 传递 ID
+          await giveRelic(relicId, relicEffectType, relicValue);
           relicBtn.disabled = true;
         });
         panel.appendChild(relicBtn);
