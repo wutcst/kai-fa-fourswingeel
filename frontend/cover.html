@@ -104,13 +104,14 @@
           const charData = await resp.json();
           
           // 2. 构造初始存档并写入后端
+          const startingRelicId = charData.startingRelicId || null;
           const saveData = {
             charId: selectedCharacter,
             playerHp: charData.maxHp,
             maxHp: charData.maxHp,
             gold: charData.gold || 0,
             deck: charData.startingDeck,
-            relics: [],
+            relics: startingRelicId ? [startingRelicId] : [],
             visitedNodes: ['start'],
             currentNode: 'start'
           };
@@ -149,7 +150,7 @@
               { name: '防御', cost: 1, damage: 0, block: 5, type: 'SKILL' },
               { name: '防御', cost: 1, damage: 0, block: 5, type: 'SKILL' }
             ],
-            relics: [],
+            relics: selectedCharacter === '1' ? ['burning_blood'] : [],
             visitedNodes: ['start'],
             currentNode: 'start'
           };

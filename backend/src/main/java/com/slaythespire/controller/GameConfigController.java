@@ -238,11 +238,13 @@ public class GameConfigController {
                 }
             }
             info.put("startingDeck", deck);
+            info.put("startingRelicId", "burning_blood");
         } else {
             info.put("name", "未知角色");
             info.put("maxHp", 50);
             info.put("gold", 0);
             info.put("startingDeck", Collections.emptyList());
+            info.put("startingRelicId", null);
         }
         return info;
     }

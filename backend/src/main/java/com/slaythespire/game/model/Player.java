@@ -1,7 +1,6 @@
 package com.slaythespire.game.model;
 
 import com.slaythespire.repository.GameDataRepository;
-import com.slaythespire.repository.RelicTemplate;
 
 public class Player extends Combatant {
     private int energy;
@@ -11,14 +10,6 @@ public class Player extends Combatant {
         super(hp, maxHp);
         this.dataRepo = dataRepo;
         this.energy = 3;
-        
-        // ✅ 新增：给玩家添加初始遗物"燃烧之血"
-        RelicTemplate bloodTemplate = dataRepo.getRelicById("burning_blood");
-        if (bloodTemplate != null) {
-            GameRelic bloodRelic = new GameRelic(bloodTemplate);
-            this.addRelic(bloodRelic);
-            System.out.println("✅ 玩家获得初始遗物: " + bloodRelic.getName());
-        }
     }
 
     public int getEnergy() { return energy; }

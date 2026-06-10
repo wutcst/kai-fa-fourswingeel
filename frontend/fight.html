@@ -195,6 +195,13 @@
           const saveData = await loadSaveData(charParam);
           saveData.playerHp = this.state.playerHp;
           saveData.maxHp = this.state.playerMaxHp;
+
+          // 燃烧之血：战斗胜利后恢复 6 点生命
+          const isVictory = this.state.gameOver && this.state.playerHp > 0;
+          if (isVictory && saveData.relics && saveData.relics.includes('burning_blood')) {
+            saveData.playerHp = Math.min(saveData.maxHp, saveData.playerHp + 6);
+          }
+
           saveData.currentNode = next;
           if (!saveData.visitedNodes.includes(next)) saveData.visitedNodes.push(next);
           await saveSaveData(saveData);
