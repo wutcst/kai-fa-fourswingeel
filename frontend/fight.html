@@ -6,6 +6,7 @@
   <title>杀戮尖塔 - 战斗</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #e0e0e0; margin: 0; padding: 20px; }
     #app { max-width: 900px; margin: 0 auto; margin-top: 40px; } /* margin-top 避让状态栏 */
@@ -134,21 +135,11 @@
         hand() { return this.state ? this.state.hand : []; },
         tooltipInfo() {
           if (!this.tooltipCard || !this.tooltipCard.applyStatusType) return null;
-          const map = {
-            'VULNERABLE': { name: '易伤', desc: '受到的伤害增加 50%。', decay: true },
-            'WEAK': { name: '虚弱', desc: '造成的伤害减少 25%。', decay: true },
-            'FRAIL': { name: '脆弱', desc: '获得的格挡减少 25%。', decay: true },
-            'STRENGTH': { name: '力量', desc: '每层力量使攻击伤害增加 1 点。', decay: false },
-            'DEXTERITY': { name: '敏捷', desc: '每层敏捷使获得的格挡增加 1 点。', decay: false },
-            'POISON': { name: '毒', desc: '回合结束时，造成等同于毒层数的伤害，然后减少 1 层。', decay: true },
-            'REGEN': { name: '再生', desc: '回合结束时，恢复等同于再生层数的生命，然后减少 1 层。', decay: true },
-            'REGENERATION': { name: '再生', desc: '回合结束时，恢复等同于再生层数的生命，然后减少 1 层。', decay: true }
-          };
-          return map[this.tooltipCard.applyStatusType] || null;
+          return CARD_UI.STATUS_INFO[this.tooltipCard.applyStatusType] || null;
         }
       },
       methods: {
-        getStatusName(type) { return { 'VULNERABLE': '易伤', 'WEAK': '虚弱', 'FRAIL': '脆弱', 'STRENGTH': '力量', 'DEXTERITY': '敏捷', 'POISON': '毒', 'REGEN': '再生' }[type] || type; },
+        getStatusName(type) { return CARD_UI.getStatusName(type); },
         canPlayCard(card) { return this.state && card && card.cost <= this.state.energy; },
         async newGame() {
           this.error = null; this.loading = true;
@@ -168,17 +159,7 @@
         },
         async confirmPlay() { if (this.selectedIndex >= 0) await this.playCard(this.selectedIndex); this.showCardConfirm = false; },
         cancelPlay() { this.showCardConfirm = false; },
-        getCardEffectText(card) {
-          let parts = [];
-          if (card.damage > 0) parts.push(`造成 ${card.damage} 点伤害`);
-          if (card.block > 0) parts.push(`获得 ${card.block} 点格挡`);
-          if (card.applyStatusType) {
-            const statusName = this.getStatusName(card.applyStatusType);
-            const isSelf = card.applyStatusTarget === 'SELF';
-            parts.push(`${isSelf ? '获得' : '施加'} ${card.applyStatusCount} 层${statusName}`);
-          }
-          return parts.join('，') || '无效果';
-        },
+        getCardEffectText(card) { return CARD_UI.getCardEffectText(card); },
         showTooltip(index, event) {
           const card = this.hand[index];
           if (card && card.applyStatusType) {

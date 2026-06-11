@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>选择卡牌</title>
   <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
   <style>
     body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 50px; }
     h2 { color: #f1c40f; }
@@ -30,20 +31,12 @@
       cards.forEach(card => {
         const div = document.createElement('div');
         div.className = 'card';
-        const effText = ((c) => {
-          let parts = [];
-          if (c.damage > 0) parts.push(`造成 ${c.damage} 点伤害`);
-          if (c.block > 0) parts.push(`获得 ${c.block} 点格挡`);
-          if (c.applyStatusType) {
-            const sn = { 'VULNERABLE':'易伤','WEAK':'虚弱','FRAIL':'脆弱','STRENGTH':'力量','DEXTERITY':'敏捷','POISON':'毒','REGEN':'再生','REGENERATION':'再生' }[c.applyStatusType] || c.applyStatusType;
-            parts.push(`${c.applyStatusTarget === 'SELF' ? '获得' : '施加'} ${c.applyStatusCount} 层${sn}`);
-          }
-          return parts.join('，') || '无效果';
-        })(card);
-        div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p><p style="font-size:12px;color:#ecf0f1;">${effText}</p>`;
+        div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p><p style="font-size:12px;color:#ecf0f1;">${CARD_UI.getCardEffectText(card)}</p>`;
+        CARD_UI.bindTooltip(div, card.applyStatusType);
+
         div.addEventListener('click', async () => {
           const saveData = await loadSaveData(char);
-          saveData.deck.push({ 
+          saveData.deck.push({
             name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
             applyStatusType: card.applyStatusType, applyStatusCount: card.applyStatusCount, applyStatusTarget: card.applyStatusTarget
           });
