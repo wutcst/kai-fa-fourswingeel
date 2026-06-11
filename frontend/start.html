@@ -21,6 +21,7 @@
 </head>
 <body>
   <script src="status_bar.js"></script>
+  <script src="save_helper.js"></script>
   <script src="card_ui.js"></script>
   <h2>🏕️ 选择你的初始遗物</h2>
   <div id="main-content">
@@ -28,32 +29,6 @@
   </div>
 
   <script>
-    // ✅ 通用存档读写函数 (与 question.html 保持一致)
-    async function loadSaveData(charId) {
-      try {
-        const resp = await fetch(`/api/load?charId=${charId}`);
-        if (resp.ok) return await resp.json();
-      } catch (e) { console.warn('后端不可用，降级使用本地数据'); }
-      return {
-        charId: charId, playerHp: parseInt(localStorage.getItem('playerHP')) || 70,
-        maxHp: parseInt(localStorage.getItem('maxHP')) || 70, gold: parseInt(localStorage.getItem('gold')) || 0,
-        deck: JSON.parse(localStorage.getItem('deck') || '[]'), relics: JSON.parse(localStorage.getItem('relics') || '[]'),
-        visitedNodes: JSON.parse(localStorage.getItem('visitedNodes') || '["start"]'), currentNode: 'start'
-      };
-    }
-
-    async function saveSaveData(data) {
-      try {
-        await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-        localStorage.setItem('playerHP', data.playerHp); localStorage.setItem('maxHP', data.maxHp);
-        localStorage.setItem('gold', data.gold); localStorage.setItem('deck', JSON.stringify(data.deck));
-        localStorage.setItem('relics', JSON.stringify(data.relics)); localStorage.setItem('visitedNodes', JSON.stringify(data.visitedNodes));
-        if (window.updateStatusBar) window.updateStatusBar();
-      } catch (e) { console.error('保存失败', e); }
-    }
-
-    // ✅ 使用 async IIFE 包装整个初始化逻辑
-    (async function() {
       const params = new URLSearchParams(window.location.search);
       const char = params.get('char') || '1';
       const currentNode = params.get('currentNode') || 'start';
@@ -188,7 +163,6 @@
 
       // 初始渲染
       renderRelics();
-    })();
   </script>
 </body>
 </html>
