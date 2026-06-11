@@ -12,41 +12,39 @@ import java.util.*;
 
 /**
  * 战斗核心服务类
- * 采用数据驱动架构，支持遗物加载、复合卡牌（铁斩波）、毒无视格挡、状态日志收集等高级特性。
+ * 管理抽牌堆/弃牌堆/消耗堆/手牌，处理回合生命周期
  */
 @Service
 public class BattleService {
     private static final Logger log = LoggerFactory.getLogger(BattleService.class);
-    
-    @Autowired 
+    private static final int HAND_LIMIT = 10;
+
+    @Autowired
     private GameDataRepository dataRepo;
 
     private Player player;
     private Enemy enemy;
-    private List<Card> drawPile, hand, discardPile;
+    private List<Card> drawPile, hand, discardPile, exhaustPile;
     private int energy;
     private List<String> logList;
     private boolean gameOver;
     private String winner;
 
+    // =========================== 战斗生命周期 ===========================
+
     /**
      * 初始化并开启一场新战斗
-     * @param playerDeck   前端传入的玩家当前卡组
-     * @param playerRelics ✅ 新增：前端传入的玩家携带的遗物 ID 列表
-     * @param playerHp     玩家当前剩余血量
-     * @param playerMaxHp  玩家最大血量
      */
-    public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp) {
+    public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck,
+                                                       List<String> playerRelics,
+                                                       int playerHp, int playerMaxHp) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
-        
-        // 加载玩家携带的遗物（被动属性如 MAX_HP 由前端在获取遗物时永久处理）
-        if (playerRelics != null && !playerRelics.isEmpty()) {
+
+        // 加载遗物
+        if (playerRelics != null) {
             for (String relicId : playerRelics) {
                 RelicTemplate tpl = dataRepo.getRelicById(relicId);
-                if (tpl != null) {
-                    GameRelic relic = new GameRelic(tpl);
-                    this.player.addRelic(relic);
-                }
+                if (tpl != null) player.addRelic(new GameRelic(tpl));
             }
         }
 
@@ -54,83 +52,29 @@ public class BattleService {
         List<EnemyTemplate> enemies = dataRepo.getAllEnemies();
         if (enemies.isEmpty()) throw new IllegalStateException("怪物配置为空");
         this.enemy = new Enemy(enemies.get(0), dataRepo);
-        
+
         // 构建牌堆
         this.drawPile = buildDeckFromPlayerData(playerDeck);
         Collections.shuffle(drawPile);
-        
-        // 初始化回合上下文
+
         this.hand = new ArrayList<>();
         this.discardPile = new ArrayList<>();
-        this.energy = 3;
+        this.exhaustPile = new ArrayList<>();
+        this.energy = 0;
         this.logList = new ArrayList<>();
         this.gameOver = false;
         this.winner = null;
-        
-        // 玩家回合开始（清空格挡等）并抽初始手牌
-        player.onTurnStart(); 
+
+        // 玩家回合开始 → 抽初始手牌
+        player.onTurnStart();
+        energy = 3;
         drawCards(5);
-        
+
         return getCurrentState();
     }
 
     /**
-     * 根据玩家存档数据构建牌堆
-     * 优先按模板ID加载，再覆写存档值（兼容升级后的卡牌）
-     */
-    private List<Card> buildDeckFromPlayerData(List<Map<String, Object>> playerDeck) {
-        List<Card> deck = new ArrayList<>();
-        if (playerDeck != null && !playerDeck.isEmpty()) {
-            for (Map<String, Object> cardData : playerDeck) {
-                // 优先按模板 ID 加载（新存档）
-                Card card = null;
-                String tplId = (String) cardData.get("id");
-                if (tplId != null) {
-                    CardTemplate tpl = dataRepo.getCardById(tplId);
-                    if (tpl != null) {
-                        card = new Card(tpl);
-                        // 覆写存档值（升级过的伤害/格挡/名字已变）
-                        if (cardData.containsKey("damage") && cardData.get("damage") != null)
-                            card.setDamage(((Number) cardData.get("damage")).intValue());
-                        if (cardData.containsKey("block") && cardData.get("block") != null)
-                            card.setBlock(((Number) cardData.get("block")).intValue());
-                        if (cardData.containsKey("name") && cardData.get("name") != null)
-                            card.setName((String) cardData.get("name"));
-                    }
-                }
-
-                // 降级：直接使用存档字段（旧存档或无模板）
-                if (card == null) {
-                    String name = (String) cardData.get("name");
-                    int cost = ((Number) cardData.get("cost")).intValue();
-                    int damage = cardData.get("damage") != null ? ((Number) cardData.get("damage")).intValue() : 0;
-                    int block = cardData.get("block") != null ? ((Number) cardData.get("block")).intValue() : 0;
-                    Card.CardType type = Card.CardType.valueOf((String) cardData.get("type"));
-                    card = new Card(name, cost, damage, block, type);
-                }
-
-                // 恢复状态效果字段
-                if (cardData.get("applyStatusType") != null) card.setApplyStatusType((String) cardData.get("applyStatusType"));
-                if (cardData.get("applyStatusCount") != null) card.setApplyStatusCount(((Number) cardData.get("applyStatusCount")).intValue());
-                if (cardData.get("applyStatusTarget") != null) card.setApplyStatusTarget((String) cardData.get("applyStatusTarget"));
-                deck.add(card);
-            }
-        } else {
-            // 兜底：从配置读取初始牌组
-            List<String> starterIds = Arrays.asList("strike", "strike", "strike", "defend", "defend");
-            for (String sId : starterIds) {
-                CardTemplate tpl = dataRepo.getCardById(sId);
-                if (tpl != null) {
-                    deck.add(new Card(tpl));
-                }
-            }
-        }
-        return deck;
-    }
-
-    /**
      * 玩家打出指定索引的卡牌
-     * ✅ 核心修复：解耦伤害与格挡逻辑，支持“攻击牌带格挡”（如铁斩波）
      */
     public synchronized Map<String, Object> playCard(int index) {
         validateBattleActive();
@@ -141,15 +85,15 @@ public class BattleService {
 
         energy -= card.getCost();
         logList.clear();
-        logList.add("🃏 玩家使用: " + card.getName());
+        logList.add("🃏 使用: " + card.getName());
 
-        // 1. 处理伤害（无论卡牌类型，只要有伤害就执行）
+        // 1. 造成伤害
         if (card.getDamage() > 0) {
-            int actualDmg = enemy.takeDamage(card.getDamage(), player);           
+            int actualDmg = enemy.takeDamage(card.getDamage(), player);
             logList.add(String.format("造成 %d 点伤害，敌人 HP: %d", actualDmg, enemy.getHp()));
         }
 
-        // 2. 处理格挡（无论卡牌类型，只要有格挡就执行）
+        // 2. 获得格挡
         if (card.getBlock() > 0) {
             player.gainBlock(card.getBlock());
             logList.add(String.format("获得 %d 点格挡，当前格挡: %d", card.getBlock(), player.getBlock()));
@@ -160,8 +104,8 @@ public class BattleService {
             StatusEffect status = StatusFactory.create(card.getApplyStatusType(), card.getApplyStatusCount(), dataRepo);
             if (status != null) {
                 String target = card.getApplyStatusTarget();
-                if (target == null || target.isEmpty()) target = (card.getType() == Card.CardType.ATTACK) ? "ENEMY" : "SELF";
-                
+                if (target == null || target.isEmpty())
+                    target = (card.getType() == Card.CardType.ATTACK) ? "ENEMY" : "SELF";
                 if ("ENEMY".equals(target)) {
                     enemy.addStatus(status);
                     logList.add(String.format("给敌人施加了 %d 层 %s", card.getApplyStatusCount(), status.getName()));
@@ -172,103 +116,192 @@ public class BattleService {
             }
         }
 
+        // 4. 处理卡牌去向：消耗 or 弃牌
         hand.remove(index);
-        discardPile.add(card);
+        if (card.isExhaust()) {
+            exhaustPile.add(card);
+            logList.add(card.getName() + "被消耗");
+        } else {
+            discardPile.add(card);
+        }
+
         if (!enemy.isAlive()) {
-            gameOver = true; winner = "玩家";
+            gameOver = true;
+            winner = "玩家";
             logList.add("🎉 敌人被击败！战斗胜利！");
         }
         return getCurrentState();
     }
 
     /**
-     * 结束玩家回合，触发怪物行动与回合结算
-     * ✅ 核心修复：严格按时序执行，收集毒/再生等状态产生的日志
+     * 结束玩家回合 → 敌人回合 → 玩家回合开始
      */
     public synchronized Map<String, Object> endTurn() {
         validateBattleActive();
 
-        // ================= 阶段 1：玩家回合结束 =================
-        player.onTurnEnd(); 
-        logList.addAll(player.getLastTurnEndLogs()); // ✅ 收集玩家身上的毒/再生/遗物日志
-        
-        discardPile.addAll(hand);
-        hand.clear();
-        energy = 3;
-        drawCards(5); 
-        
-        // ================= 阶段 2：怪物回合开始 =================
-        enemy.onTurnStart(); 
+        // ========== 阶段 1：玩家回合结束结算 ==========
+        // 1a. 状态效果 tick（毒/再生）
+        player.onTurnEnd();
+        logList.addAll(player.getLastTurnEndLogs());
 
-        // ================= 阶段 3：怪物执行当前意图 =================
-        int actualDmg = enemy.executeCurrentIntent(player); 
-        
+        // 1b. 处理手牌：保留留下，虚无消耗，其余进弃牌堆
+        List<Card> retained = new ArrayList<>();
+        for (Card card : hand) {
+            if (card.isEthereal()) {
+                exhaustPile.add(card);
+                logList.add(card.getName() + "因【虚无】被消耗");
+            } else if (card.isRetain()) {
+                retained.add(card);
+                logList.add(card.getName() + "因【保留】留在手牌");
+            } else {
+                discardPile.add(card);
+            }
+        }
+        hand.clear();
+        hand.addAll(retained);
+
+        // ========== 阶段 2：敌人回合 ==========
+        // 2a. 敌人回合开始
+        enemy.onTurnStart();
+
+        // 2b. 敌人执行意图
+        int actualDmg = enemy.executeCurrentIntent(player);
         if (actualDmg > 0) {
-            logList.add(String.format("⚔️ %s %s，造成 %d 点伤害。玩家 HP: %d | 格挡: %d", 
-                                    enemy.getEnemyName(), enemy.getIntentDesc(), actualDmg, player.getHp(), player.getBlock()));
+            logList.add(String.format("⚔️ %s %s，造成 %d 点伤害。玩家 HP: %d | 格挡: %d",
+                    enemy.getEnemyName(), enemy.getIntentDesc(), actualDmg, player.getHp(), player.getBlock()));
         } else {
             logList.add(String.format("🛡️ %s %s", enemy.getEnemyName(), enemy.getIntentDesc()));
         }
 
-        // 怪物施加意图附带的状态
-        IntentTemplate currentIntent = enemy.getCurrentIntentTemplate();
-        if (currentIntent != null && currentIntent.getApplyStatusType() != null) {
-            StatusEffect status = StatusFactory.create(currentIntent.getApplyStatusType(), currentIntent.getApplyStatusCount(), dataRepo);
+        // 2c. 敌人意图附带状态
+        IntentTemplate intent = enemy.getCurrentIntentTemplate();
+        if (intent != null && intent.getApplyStatusType() != null) {
+            StatusEffect status = StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo);
             if (status != null) {
-                String target = currentIntent.getApplyStatusTarget();
-                if ("ENEMY".equals(target)) {
+                if ("ENEMY".equals(intent.getApplyStatusTarget())) {
                     enemy.addStatus(status);
-                    logList.add(String.format("怪物给自己施加了 %d 层 %s", currentIntent.getApplyStatusCount(), status.getName()));
+                    logList.add(String.format("怪物给自己施加了 %d 层 %s", intent.getApplyStatusCount(), status.getName()));
                 } else {
                     player.addStatus(status);
-                    logList.add(String.format("怪物给玩家施加了 %d 层 %s", currentIntent.getApplyStatusCount(), status.getName()));
+                    logList.add(String.format("怪物给玩家施加了 %d 层 %s", intent.getApplyStatusCount(), status.getName()));
                 }
             }
         }
 
-        // ================= 阶段 4：怪物回合结束 =================
-        enemy.onTurnEnd(); 
-        logList.addAll(enemy.getLastTurnEndLogs()); // ✅ 收集怪物身上的毒/再生/遗物日志
+        // 2d. 敌人回合结束
+        enemy.onTurnEnd();
+        logList.addAll(enemy.getLastTurnEndLogs());
 
-        // ================= 阶段 5：玩家回合开始 =================
-        player.onTurnStart(); 
+        // ========== 阶段 3：玩家回合开始（下回合） ==========
+        // 3a. 清格挡、遗物触发
+        player.onTurnStart();
 
         if (!player.isAlive()) {
-            gameOver = true; winner = "敌人";
+            gameOver = true;
+            winner = "敌人";
             logList.add("💀 玩家倒下... 战斗失败。");
             return getCurrentState();
         }
 
-        // ================= 阶段 6：推进怪物意图到下一轮 =================
+        // 3b. 能量恢复 + 抽牌
+        energy = 3;
+        drawCards(5);
+
+        // 3c. 推进敌人意图
         enemy.advanceIntent();
+
         return getCurrentState();
     }
 
+    // =========================== 抽牌逻辑 ===========================
+
     /**
-     * 抽牌逻辑（支持弃牌堆洗牌重组）
+     * 抽牌：支持弃牌堆洗牌重组、手牌上限检查、状态提示
      */
     private void drawCards(int count) {
+        int drawn = 0;
         for (int i = 0; i < count; i++) {
+            // 手牌已满则停止
+            if (hand.size() >= HAND_LIMIT) {
+                logList.add("⚠️ 手牌已满（" + HAND_LIMIT + "张），停止抽牌");
+                break;
+            }
+
+            // 抽牌堆为空 → 将弃牌堆洗入
             if (drawPile.isEmpty()) {
-                if (discardPile.isEmpty()) break;
+                if (discardPile.isEmpty()) {
+                    logList.add("⚠️ 抽牌堆和弃牌堆均为空，无法继续抽牌");
+                    break;
+                }
                 drawPile.addAll(discardPile);
                 discardPile.clear();
                 Collections.shuffle(drawPile);
+                logList.add("🔄 弃牌堆洗入抽牌堆");
             }
-            if (!drawPile.isEmpty()) hand.add(drawPile.remove(0));
+
+            hand.add(drawPile.remove(0));
+            drawn++;
+        }
+        if (drawn > 0) {
+            logList.add(String.format("抽了 %d 张牌（手牌 %d/%d）", drawn, hand.size(), HAND_LIMIT));
         }
     }
 
-    /**
-     * 序列化当前战斗状态，供前端渲染
-     */
+    // =========================== 卡牌构建 ===========================
+
+    private List<Card> buildDeckFromPlayerData(List<Map<String, Object>> playerDeck) {
+        List<Card> deck = new ArrayList<>();
+        if (playerDeck == null || playerDeck.isEmpty()) {
+            List<String> starterIds = Arrays.asList("strike", "strike", "strike", "defend", "defend");
+            for (String sid : starterIds) {
+                CardTemplate tpl = dataRepo.getCardById(sid);
+                if (tpl != null) deck.add(new Card(tpl));
+            }
+            return deck;
+        }
+        for (Map<String, Object> cardData : playerDeck) {
+            Card card = null;
+            String tplId = (String) cardData.get("id");
+            if (tplId != null) {
+                CardTemplate tpl = dataRepo.getCardById(tplId);
+                if (tpl != null) {
+                    card = new Card(tpl);
+                    if (cardData.containsKey("damage") && cardData.get("damage") != null)
+                        card.setDamage(((Number) cardData.get("damage")).intValue());
+                    if (cardData.containsKey("block") && cardData.get("block") != null)
+                        card.setBlock(((Number) cardData.get("block")).intValue());
+                    if (cardData.containsKey("name") && cardData.get("name") != null)
+                        card.setName((String) cardData.get("name"));
+                }
+            }
+            if (card == null) {
+                String name = (String) cardData.get("name");
+                int cost = ((Number) cardData.get("cost")).intValue();
+                int damage = cardData.get("damage") != null ? ((Number) cardData.get("damage")).intValue() : 0;
+                int block = cardData.get("block") != null ? ((Number) cardData.get("block")).intValue() : 0;
+                Card.CardType type = Card.CardType.valueOf((String) cardData.get("type"));
+                card = new Card(name, cost, damage, block, type);
+            }
+            if (cardData.get("applyStatusType") != null)
+                card.setApplyStatusType((String) cardData.get("applyStatusType"));
+            if (cardData.get("applyStatusCount") != null)
+                card.setApplyStatusCount(((Number) cardData.get("applyStatusCount")).intValue());
+            if (cardData.get("applyStatusTarget") != null)
+                card.setApplyStatusTarget((String) cardData.get("applyStatusTarget"));
+            deck.add(card);
+        }
+        return deck;
+    }
+
+    // =========================== 状态序列化 ===========================
+
     private Map<String, Object> getCurrentState() {
         Map<String, Object> state = new LinkedHashMap<>();
         state.put("playerHp", player.getHp());
         state.put("playerMaxHp", player.getMaxHp());
         state.put("playerBlock", player.getBlock());
-        
-        // 返回包含 name 和 color 的状态列表
+
+        // 玩家状态
         List<Map<String, Object>> playerStatusList = new ArrayList<>();
         for (StatusEffect s : player.getStatuses()) {
             Map<String, Object> info = new LinkedHashMap<>();
@@ -281,23 +314,25 @@ public class BattleService {
         }
         state.put("playerStatuses", playerStatusList);
 
+        // 敌人信息
         state.put("enemyName", enemy.getEnemyName());
         state.put("enemyHp", enemy.getHp());
         state.put("enemyMaxHp", enemy.getMaxHp());
-        state.put("enemyBlock", enemy.getBlock()); 
+        state.put("enemyBlock", enemy.getBlock());
         state.put("enemyNextDamage", enemy.getNextDamage());
-        state.put("enemyNextBlock", enemy.getNextBlock()); 
+        state.put("enemyNextBlock", enemy.getNextBlock());
         state.put("enemyIntentDesc", enemy.getIntentDesc());
-        
-        IntentTemplate currentIntent = enemy.getCurrentIntentTemplate();
-        if (currentIntent != null && currentIntent.getApplyStatusType() != null) {
-            state.put("enemyIntentStatusType", currentIntent.getApplyStatusType());
-            state.put("enemyIntentStatusCount", currentIntent.getApplyStatusCount());
+
+        IntentTemplate intent = enemy.getCurrentIntentTemplate();
+        if (intent != null && intent.getApplyStatusType() != null) {
+            state.put("enemyIntentStatusType", intent.getApplyStatusType());
+            state.put("enemyIntentStatusCount", intent.getApplyStatusCount());
         } else {
             state.put("enemyIntentStatusType", null);
             state.put("enemyIntentStatusCount", 0);
         }
-        
+
+        // 敌人状态
         List<Map<String, Object>> enemyStatusList = new ArrayList<>();
         for (StatusEffect s : enemy.getStatuses()) {
             Map<String, Object> info = new LinkedHashMap<>();
@@ -310,10 +345,15 @@ public class BattleService {
         }
         state.put("enemyStatuses", enemyStatusList);
 
+        // 能量与牌堆信息
         state.put("energy", energy);
         state.put("drawPileSize", drawPile.size());
         state.put("discardPileSize", discardPile.size());
+        state.put("exhaustPileSize", exhaustPile.size());
+        state.put("handSize", hand.size());
+        state.put("handLimit", HAND_LIMIT);
 
+        // 手牌
         List<Map<String, Object>> handCards = new ArrayList<>();
         for (int i = 0; i < hand.size(); i++) {
             Card c = hand.get(i);
@@ -326,6 +366,9 @@ public class BattleService {
             cardInfo.put("type", c.getType().name());
             cardInfo.put("applyStatusType", c.getApplyStatusType());
             cardInfo.put("applyStatusCount", c.getApplyStatusCount());
+            cardInfo.put("exhaust", c.isExhaust());
+            cardInfo.put("retain", c.isRetain());
+            cardInfo.put("ethereal", c.isEthereal());
             handCards.add(cardInfo);
         }
         state.put("hand", handCards);
@@ -335,12 +378,14 @@ public class BattleService {
         return state;
     }
 
-    // ================= 辅助校验方法 =================
-    private void validateBattleActive() { 
-        if (gameOver) throw new IllegalStateException("战斗已经结束"); 
+    // =========================== 校验 ===========================
+
+    private void validateBattleActive() {
+        if (gameOver) throw new IllegalStateException("战斗已经结束");
     }
-    
-    private void validateCardIndex(int index) { 
-        if (index < 0 || index >= hand.size()) throw new IllegalArgumentException("无效的卡牌编号"); 
+
+    private void validateCardIndex(int index) {
+        if (index < 0 || index >= hand.size())
+            throw new IllegalArgumentException("无效的卡牌编号");
     }
 }

@@ -32,6 +32,10 @@
     .cost { position: absolute; top: -10px; left: -10px; background: #e74c3c; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 2px solid #c0392b; }
     .name { font-size: 16px; font-weight: bold; margin-bottom: 6px; }
     .card-effect-text { font-size: 12px; opacity: 0.95; margin: 2px 0; line-height: 1.4; color: #ecf0f1; }
+    .card-badge { position: absolute; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 3px; top: -6px; right: -6px; }
+    .badge-exhaust { background: #e74c3c; color: white; }
+    .badge-ethereal { background: #8e44ad; color: white; }
+    .badge-retain { background: #2ecc71; color: white; }
     /* 悬浮小窗 */
     .tooltip-overlay { position: fixed; z-index: 9999; pointer-events: none; max-width: 260px; background: #0d1b2a; border: 1px solid #34495e; border-radius: 8px; padding: 12px 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
     .tooltip-title { font-weight: bold; font-size: 14px; color: #f1c40f; margin-bottom: 6px; }
@@ -87,6 +91,9 @@
           <span class="cost">{{ card.cost }}</span>
           <span class="name">{{ card.name }}</span>
           <span class="card-effect-text">{{ getCardEffectText(card) }}</span>
+          <span v-if="card.exhaust" class="card-badge badge-exhaust">消耗</span>
+          <span v-if="card.ethereal" class="card-badge badge-ethereal">虚无</span>
+          <span v-if="card.retain" class="card-badge badge-retain">保留</span>
         </button>
       </div>
       <!-- 悬浮小窗：显示状态机制详情 -->
@@ -96,7 +103,9 @@
         <div class="tooltip-decay" v-if="tooltipInfo.decay">每回合结束层数减一</div>
       </div>
 
-      <div class="deck-info">抽牌堆: {{ state.drawPileSize }} | 弃牌堆: {{ state.discardPileSize }}</div>
+      <div class="deck-info">
+        手牌 {{ state.handSize }}/{{ state.handLimit }} | 抽牌堆 {{ state.drawPileSize }} | 弃牌堆 {{ state.discardPileSize }} | 消耗堆 <span style="color:#e74c3c;">{{ state.exhaustPileSize || 0 }}</span>
+      </div>
       <div class="log">
         <div class="log-title">📜 战斗日志:</div>
         <div class="log-entry" v-for="(entry, i) in state.log" :key="i">{{ entry }}</div>
