@@ -26,6 +26,9 @@ public class RelicPoolService {
         TIER_WEIGHTS.put("RARE", 30);
     }
 
+    /** 稀有度降级链（从高到低），用于指定稀有度抽取时空了自动降级 */
+    private static final List<String> TIER_FALLBACK = Arrays.asList("RARE", "COMMON");
+
     /**
      * 按权重随机抽取遗物（用于商店等不限定稀有度的场景）
      * 先按权重ROLL稀有度，再从该稀有度中随机选一件
@@ -66,11 +69,28 @@ public class RelicPoolService {
 
     /**
      * 指定稀有度抽取（用于奖励等限定场景）
+     * 如果该稀有度已空，按 TIER_FALLBACK 降级到更低稀有度
      */
     public RelicTemplate drawRelic(String charId, List<String> ownedRelicIds, String tier) {
-        List<RelicTemplate> pool = buildPool(charId, ownedRelicIds, tier);
-        if (pool.isEmpty()) return dataRepo.getRelicById("ring");
-        return pool.get(random.nextInt(pool.size()));
+        String targetTier = tier.toUpperCase();
+        int startIndex = TIER_FALLBACK.indexOf(targetTier);
+        if (startIndex < 0) {
+            // 不在降级链中（如 STARTER、SPECIAL），直接尝试给定稀有度
+            List<RelicTemplate> pool = buildPool(charId, ownedRelicIds, targetTier);
+            if (pool.isEmpty()) return dataRepo.getRelicById("ring");
+            return pool.get(random.nextInt(pool.size()));
+        }
+
+        // 从目标稀有度开始，逐级降级尝试
+        for (int i = startIndex; i < TIER_FALLBACK.size(); i++) {
+            List<RelicTemplate> pool = buildPool(charId, ownedRelicIds, TIER_FALLBACK.get(i));
+            if (!pool.isEmpty()) {
+                return pool.get(random.nextInt(pool.size()));
+            }
+        }
+
+        // 全部已空 → 给头环
+        return dataRepo.getRelicById("ring");
     }
 
     /**

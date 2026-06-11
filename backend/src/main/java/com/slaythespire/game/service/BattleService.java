@@ -75,19 +75,41 @@ public class BattleService {
     }
 
     /**
-     * 根据玩家存档数据构建牌堆，兜底逻辑从配置读取初始牌组
+     * 根据玩家存档数据构建牌堆
+     * 优先按模板ID加载，再覆写存档值（兼容升级后的卡牌）
      */
     private List<Card> buildDeckFromPlayerData(List<Map<String, Object>> playerDeck) {
         List<Card> deck = new ArrayList<>();
         if (playerDeck != null && !playerDeck.isEmpty()) {
             for (Map<String, Object> cardData : playerDeck) {
-                String name = (String) cardData.get("name");
-                int cost = ((Number) cardData.get("cost")).intValue();
-                int damage = cardData.get("damage") != null ? ((Number) cardData.get("damage")).intValue() : 0;
-                int block = cardData.get("block") != null ? ((Number) cardData.get("block")).intValue() : 0;
-                Card.CardType type = Card.CardType.valueOf((String) cardData.get("type"));
-                
-                Card card = new Card(name, cost, damage, block, type);
+                // 优先按模板 ID 加载（新存档）
+                Card card = null;
+                String tplId = (String) cardData.get("id");
+                if (tplId != null) {
+                    CardTemplate tpl = dataRepo.getCardById(tplId);
+                    if (tpl != null) {
+                        card = new Card(tpl);
+                        // 覆写存档值（升级过的伤害/格挡/名字已变）
+                        if (cardData.containsKey("damage") && cardData.get("damage") != null)
+                            card.setDamage(((Number) cardData.get("damage")).intValue());
+                        if (cardData.containsKey("block") && cardData.get("block") != null)
+                            card.setBlock(((Number) cardData.get("block")).intValue());
+                        if (cardData.containsKey("name") && cardData.get("name") != null)
+                            card.setName((String) cardData.get("name"));
+                    }
+                }
+
+                // 降级：直接使用存档字段（旧存档或无模板）
+                if (card == null) {
+                    String name = (String) cardData.get("name");
+                    int cost = ((Number) cardData.get("cost")).intValue();
+                    int damage = cardData.get("damage") != null ? ((Number) cardData.get("damage")).intValue() : 0;
+                    int block = cardData.get("block") != null ? ((Number) cardData.get("block")).intValue() : 0;
+                    Card.CardType type = Card.CardType.valueOf((String) cardData.get("type"));
+                    card = new Card(name, cost, damage, block, type);
+                }
+
+                // 恢复状态效果字段
                 if (cardData.get("applyStatusType") != null) card.setApplyStatusType((String) cardData.get("applyStatusType"));
                 if (cardData.get("applyStatusCount") != null) card.setApplyStatusCount(((Number) cardData.get("applyStatusCount")).intValue());
                 if (cardData.get("applyStatusTarget") != null) card.setApplyStatusTarget((String) cardData.get("applyStatusTarget"));
@@ -96,10 +118,10 @@ public class BattleService {
         } else {
             // 兜底：从配置读取初始牌组
             List<String> starterIds = Arrays.asList("strike", "strike", "strike", "defend", "defend");
-            for (String id : starterIds) {
-                CardTemplate tpl = dataRepo.getCardById(id);
+            for (String sId : starterIds) {
+                CardTemplate tpl = dataRepo.getCardById(sId);
                 if (tpl != null) {
-                    deck.add(new Card(tpl)); 
+                    deck.add(new Card(tpl));
                 }
             }
         }

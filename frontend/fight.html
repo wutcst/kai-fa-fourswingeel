@@ -6,6 +6,7 @@
   <title>杀戮尖塔 - 战斗</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #e0e0e0; margin: 0; padding: 20px; }
     #app { max-width: 900px; margin: 0 auto; margin-top: 40px; } /* margin-top 避让状态栏 */
@@ -28,10 +29,14 @@
     .card-btn.disabled { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); transform: scale(0.95); }
     .card-btn.attack { border-left: 5px solid #e74c3c; } .card-btn.skill { border-left: 5px solid #3498db; }
     .card-btn:not(.disabled):hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 12px 24px rgba(0,0,0,0.4); z-index: 10; }
-    .cost { position: absolute; top: -10px; left: -10px; background: #e74c3c; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
-    .name { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
-    .effect { font-size: 12px; opacity: 0.9; margin: 2px 0; }
-    .status-effect-text { color: #f1c40f; font-weight: bold; font-size: 11px; margin-top: 4px; }
+    .cost { position: absolute; top: -10px; left: -10px; background: #e74c3c; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 2px solid #c0392b; }
+    .name { font-size: 16px; font-weight: bold; margin-bottom: 6px; }
+    .card-effect-text { font-size: 12px; opacity: 0.95; margin: 2px 0; line-height: 1.4; color: #ecf0f1; }
+    /* 悬浮小窗 */
+    .tooltip-overlay { position: fixed; z-index: 9999; pointer-events: none; max-width: 260px; background: #0d1b2a; border: 1px solid #34495e; border-radius: 8px; padding: 12px 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+    .tooltip-title { font-weight: bold; font-size: 14px; color: #f1c40f; margin-bottom: 6px; }
+    .tooltip-desc { font-size: 12px; color: #bdc3c7; line-height: 1.5; margin-bottom: 4px; }
+    .tooltip-decay { font-size: 11px; color: #e67e22; }
     .deck-info { text-align: center; color: #bdc3c7; margin-bottom: 12px; }
     .log { background: #0f3460; padding: 12px; border-radius: 8px; max-height: 200px; overflow-y: auto; }
     .log-title { font-weight: bold; margin-bottom: 8px; color: #3498db; }
@@ -78,14 +83,19 @@
       </div>
       <div class="energy">⚡ 能量: {{ state.energy }}</div>
       <div class="hand">
-        <button v-for="(card, index) in hand" :key="index" @click="previewCard(index)" :disabled="!canPlayCard(card) || state.gameOver" :class="['card-btn', { 'disabled': !canPlayCard(card), 'attack': card.type === 'ATTACK', 'skill': card.type === 'SKILL' }]">
+        <button v-for="(card, index) in hand" :key="index" @click="previewCard(index)" :disabled="!canPlayCard(card) || state.gameOver" :class="['card-btn', { 'disabled': !canPlayCard(card), 'attack': card.type === 'ATTACK', 'skill': card.type === 'SKILL' }]" @mouseenter="showTooltip(index, $event)" @mouseleave="hideTooltip">
           <span class="cost">{{ card.cost }}</span>
           <span class="name">{{ card.name }}</span>
-          <span class="effect" v-if="card.damage > 0">伤害: {{ card.damage }}</span>
-          <span class="effect" v-if="card.block > 0">格挡: {{ card.block }}</span>
-          <span class="effect status-effect-text" v-if="card.applyStatusType">{{ getStatusName(card.applyStatusType) }}: {{ card.applyStatusCount }}</span>
+          <span class="card-effect-text">{{ getCardEffectText(card) }}</span>
         </button>
       </div>
+      <!-- 悬浮小窗：显示状态机制详情 -->
+      <div v-if="tooltipCard && tooltipInfo" class="tooltip-overlay" :style="{ left: tooltipX + 'px', top: tooltipY + 'px' }">
+        <div class="tooltip-title">{{ tooltipInfo.name }}</div>
+        <div class="tooltip-desc">{{ tooltipInfo.desc }}</div>
+        <div class="tooltip-decay" v-if="tooltipInfo.decay">每回合结束层数减一</div>
+      </div>
+
       <div class="deck-info">抽牌堆: {{ state.drawPileSize }} | 弃牌堆: {{ state.discardPileSize }}</div>
       <div class="log">
         <div class="log-title">📜 战斗日志:</div>
@@ -102,10 +112,7 @@
         <h3>确认打出卡牌?</h3>
         <p v-if="selectedCard">
           <strong>{{ selectedCard.name }}</strong><br>
-          消耗能量: {{ selectedCard.cost }}<br>
-          <span v-if="selectedCard.damage > 0">造成 {{ selectedCard.damage }} 点伤害</span>
-          <span v-if="selectedCard.block > 0">获得 {{ selectedCard.block }} 点格挡</span>
-          <span v-if="selectedCard.applyStatusType" style="color: #f1c40f; display: block; margin-top: 5px;">附带效果: {{ getStatusName(selectedCard.applyStatusType) }} {{ selectedCard.applyStatusCount }} 层</span>
+          <span style="color: #ecf0f1; font-size: 14px;">{{ getCardEffectText(selectedCard) }}</span>
         </p>
         <div class="modal-actions">
           <button class="btn-confirm" @click="confirmPlay">确认打出</button>
@@ -118,15 +125,21 @@
   <script>
     const API_BASE = '/api/game';
     const app = Vue.createApp({
-      data() { return { state: null, loading: false, error: null, showCardConfirm: false, selectedCard: null, selectedIndex: -1, isFromMap: false, prevNodeId: null, nextNodeId: null }; },
+      data() { return { state: null, loading: false, error: null, showCardConfirm: false, selectedCard: null, selectedIndex: -1, isFromMap: false, prevNodeId: null, nextNodeId: null, tooltipCard: null, tooltipX: 0, tooltipY: 0 }; },
       mounted() {
         const params = new URLSearchParams(window.location.search);
         if (params.get('from') === 'map') { this.isFromMap = true; this.prevNodeId = params.get('prevNode') || 'start'; this.nextNodeId = params.get('nextNode'); }
         this.newGame();
       },
-      computed: { hand() { return this.state ? this.state.hand : []; } },
+      computed: {
+        hand() { return this.state ? this.state.hand : []; },
+        tooltipInfo() {
+          if (!this.tooltipCard || !this.tooltipCard.applyStatusType) return null;
+          return CARD_UI.STATUS_INFO[this.tooltipCard.applyStatusType] || null;
+        }
+      },
       methods: {
-        getStatusName(type) { return { 'VULNERABLE': '易伤', 'WEAK': '虚弱', 'FRAIL': '脆弱', 'STRENGTH': '力量', 'DEXTERITY': '敏捷', 'POISON': '毒', 'REGEN': '再生' }[type] || type; },
+        getStatusName(type) { return CARD_UI.getStatusName(type); },
         canPlayCard(card) { return this.state && card && card.cost <= this.state.energy; },
         async newGame() {
           this.error = null; this.loading = true;
@@ -146,6 +159,20 @@
         },
         async confirmPlay() { if (this.selectedIndex >= 0) await this.playCard(this.selectedIndex); this.showCardConfirm = false; },
         cancelPlay() { this.showCardConfirm = false; },
+        getCardEffectText(card) { return CARD_UI.getCardEffectText(card); },
+        showTooltip(index, event) {
+          const card = this.hand[index];
+          if (card && card.applyStatusType) {
+            this.tooltipCard = card;
+            // 计算小窗位置：鼠标右侧偏移，防溢出
+            const w = window.innerWidth;
+            const x = event.clientX;
+            const y = event.clientY;
+            this.tooltipX = (x + 280 > w) ? x - 270 : x + 15;
+            this.tooltipY = Math.min(y, window.innerHeight - 120);
+          }
+        },
+        hideTooltip() { this.tooltipCard = null; },
         async playCard(index) {
           this.error = null;
           try { const resp = await fetch(`${API_BASE}/play?index=${index}`, { method: 'POST' }); this.state = await resp.json(); } catch (e) { this.error = '打出卡牌失败'; }

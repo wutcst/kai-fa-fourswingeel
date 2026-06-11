@@ -88,6 +88,7 @@ public class RewardController {
 
     private Map<String, Object> cardToMap(CardTemplate tpl) {
         Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", tpl.getId());
         map.put("name", tpl.getName());
         map.put("cost", tpl.getCost());
         map.put("damage", tpl.getDamage());

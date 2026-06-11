@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>选择卡牌</title>
   <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
   <style>
     body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 50px; }
     h2 { color: #f1c40f; }
@@ -30,11 +31,13 @@
       cards.forEach(card => {
         const div = document.createElement('div');
         div.className = 'card';
-        div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p><p>🗡️${card.damage || 0} 🛡️${card.block || 0}</p>`;
+        div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p><p style="font-size:12px;color:#ecf0f1;">${CARD_UI.getCardEffectText(card)}</p>`;
+        CARD_UI.bindTooltip(div, card.applyStatusType);
+
         div.addEventListener('click', async () => {
           const saveData = await loadSaveData(char);
-          saveData.deck.push({ 
-            name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
+          saveData.deck.push({
+            id: card.id, name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
             applyStatusType: card.applyStatusType, applyStatusCount: card.applyStatusCount, applyStatusTarget: card.applyStatusTarget
           });
           await saveSaveData(saveData);

@@ -27,6 +27,7 @@ Thumbs.db
 
 # AI
 CLAUDE.md
+.claude/
 
 # 存档文件（测试产生，不纳入版本控制）
 backend/saves/

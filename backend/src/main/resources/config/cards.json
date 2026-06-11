@@ -7,6 +7,6 @@
   { "id": "brittle_test", "name": "脆弱测试", "cost": 0, "damage": 0, "block": 0, "type": "SKILL", "applyStatusType": "FRAIL", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" },
   { "id": "inflame", "name": "力量爆发", "cost": 1, "damage": 0, "block": 0, "type": "SKILL", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "SELF" },
   { "id": "deflect", "name": "敏捷", "cost": 1, "damage": 0, "block": 0, "type": "SKILL", "applyStatusType": "DEXTERITY", "applyStatusCount": 2, "applyStatusTarget": "SELF" },
-  { "id": "regen_potion", "name": "再生药水", "cost": 1, "damage": 0, "block": 0, "type": "SKILL", "applyStatusType": "REGEN", "applyStatusCount": 5, "applyStatusTarget": "SELF" },
+  { "id": "regen_potion", "name": "自我再生", "cost": 1, "damage": 0, "block": 0, "type": "SKILL", "applyStatusType": "REGENERATION", "applyStatusCount": 5, "applyStatusTarget": "SELF" },
   { "id": "poison_dart", "name": "毒镖", "cost": 1, "damage": 4, "block": 0, "type": "ATTACK", "applyStatusType": "POISON", "applyStatusCount": 3, "applyStatusTarget": "ENEMY" }
 ]

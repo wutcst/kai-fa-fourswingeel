@@ -59,7 +59,10 @@ public class Card {
     public int getApplyStatusCount() { return applyStatusCount; }
     public String getApplyStatusTarget() { return applyStatusTarget; }
 
-    // ================= Setter 方法（用于从存档恢复状态） =================
+    // ================= Setter 方法 =================
+    public void setName(String name) { this.name = name; }
+    public void setDamage(int damage) { this.damage = damage; }
+    public void setBlock(int block) { this.block = block; }
     public void setApplyStatusType(String applyStatusType) { this.applyStatusType = applyStatusType; }
     public void setApplyStatusCount(int applyStatusCount) { this.applyStatusCount = applyStatusCount; }
     public void setApplyStatusTarget(String applyStatusTarget) { this.applyStatusTarget = applyStatusTarget; }

@@ -232,6 +232,7 @@ public class GameConfigController {
                 CardTemplate tpl = dataRepo.getCardById(id);
                 if (tpl != null) {
                     Map<String, Object> cardMap = new LinkedHashMap<>();
+                    cardMap.put("id", tpl.getId());
                     cardMap.put("name", tpl.getName());
                     cardMap.put("cost", tpl.getCost());
                     cardMap.put("damage", tpl.getDamage());

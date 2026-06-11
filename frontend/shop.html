@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>商店</title>
   <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
   <style>
     body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
     h2 { color: #f1c40f; margin: 20px 0; }
@@ -79,14 +80,16 @@
         shopData.cards.forEach(card => {
           const div = document.createElement('div');
           div.className = 'shop-item';
-          div.innerHTML = `<div><strong>${card.name}</strong></div><div>🗡️ ${card.damage || 0} 🛡️ ${card.block || 0}</div><div> ${card.cost}</div><div class="price">${card.price} 💰</div>`;
+          const effText = CARD_UI.getCardEffectText(card);
+          div.innerHTML = `<div><strong>${card.name}</strong></div><div style="font-size:12px;color:#ecf0f1;margin:4px 0;">${effText}</div><div> ⚡${card.cost}</div><div class="price">${card.price} 💰</div>`;
+          CARD_UI.bindTooltip(div, card.applyStatusType);
           
           div.addEventListener('click', async () => {
             if (div.classList.contains('sold')) return;
             if (await spendGold(card.price)) {
               saveData = await loadSaveData(char);
-              saveData.deck.push({ 
-                name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
+              saveData.deck.push({
+                id: card.id, name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
                 applyStatusType: card.applyStatusType, applyStatusCount: card.applyStatusCount, applyStatusTarget: card.applyStatusTarget
               });
               await saveSaveData(saveData);
