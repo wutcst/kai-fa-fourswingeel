@@ -21,6 +21,7 @@
 </head>
 <body>
   <script src="status_bar.js"></script>
+  <script src="card_ui.js"></script>
   <h2>🏕️ 选择你的初始遗物</h2>
   <div id="main-content">
     <div class="relic-options"></div>
@@ -131,7 +132,8 @@
           currentSaveData.deck.forEach((card, index) => {
             const div = document.createElement('div');
             div.className = 'card-btn';
-            div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div>`;
+            div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div><div style="font-size:11px;color:#ecf0f1;margin-top:4px;">${CARD_UI.getCardEffectText(card)}</div>`;
+            CARD_UI.bindTooltip(div, card.applyStatusType);
             div.addEventListener('click', () => {
               if (removed >= countToRemove) return;
               currentSaveData.deck.splice(index, 1); // 直接修改内存中的存档
@@ -162,7 +164,8 @@
           if (card.upgraded) return;
           const div = document.createElement('div');
           div.className = 'card-btn';
-          div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div>`;
+          div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div><div style="font-size:11px;color:#ecf0f1;margin-top:4px;">${CARD_UI.getCardEffectText(card)}</div>`;
+          CARD_UI.bindTooltip(div, card.applyStatusType);
           div.addEventListener('click', () => {
             const upgraded = { ...card, upgraded: true, name: card.name + '+' };
             if (upgraded.damage > 0) upgraded.damage += 3;
