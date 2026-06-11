@@ -68,26 +68,24 @@
       // 按费用排序
       deck.sort((a, b) => a.cost - b.cost);
       
-      // ✅ 增加“附加效果”列
-      let html = '<table class="deck-table"><thead><tr><th>名称</th><th>费用</th><th>伤害</th><th>格挡</th><th>类型</th><th>附加效果</th></tr></thead><tbody>';
+      let html = '<table class="deck-table"><thead><tr><th>名称</th><th>费用</th><th>类型</th><th>效果</th></tr></thead><tbody>';
       deck.forEach(card => {
-        let effectText = '-';
-        if (card.applyStatusType) {
-          const statusNames = { 
-            'VULNERABLE': '易伤', 'WEAK': '虚弱', 'FRAIL': '脆弱', 
-            'STRENGTH': '力量', 'DEXTERITY': '敏捷', 'POISON': '毒', 'REGEN': '再生' 
-          };
-          const name = statusNames[card.applyStatusType] || card.applyStatusType;
-          effectText = `<span class="status-text">${name} ${card.applyStatusCount || 0}层</span>`;
-        }
-        
+        const effText = ((c) => {
+          let parts = [];
+          if (c.damage > 0) parts.push(`造成 ${c.damage} 点伤害`);
+          if (c.block > 0) parts.push(`获得 ${c.block} 点格挡`);
+          if (c.applyStatusType) {
+            const sn = { 'VULNERABLE':'易伤','WEAK':'虚弱','FRAIL':'脆弱','STRENGTH':'力量','DEXTERITY':'敏捷','POISON':'毒','REGEN':'再生','REGENERATION':'再生' }[c.applyStatusType] || c.applyStatusType;
+            parts.push(`${c.applyStatusTarget === 'SELF' ? '获得' : '施加'} ${c.applyStatusCount} 层${sn}`);
+          }
+          return parts.join('，') || '-';
+        })(card);
+
         html += `<tr>
           <td>${card.name}</td>
           <td>⚡ ${card.cost}</td>
-          <td>${card.damage > 0 ? `🗡️ ${card.damage}` : '-'}</td>
-          <td>${card.block > 0 ? `🛡️ ${card.block}` : '-'}</td>
           <td>${card.type === 'ATTACK' ? '攻击' : '技能'}</td>
-          <td>${effectText}</td>
+          <td style="font-size:13px;color:#ecf0f1;">${effText}</td>
         </tr>`;
       });
       html += '</tbody></table>';

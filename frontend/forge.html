@@ -34,7 +34,7 @@
         upgradeable.forEach(card => {
           const div = document.createElement('div');
           div.className = 'card';
-          div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p>`;
+          div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p><p style="font-size:12px;color:#ecf0f1;">${(()=>{let p=[];if(card.damage>0)p.push('造成 '+card.damage+' 点伤害');if(card.block>0)p.push('获得 '+card.block+' 点格挡');if(card.applyStatusType){const sn={'VULNERABLE':'易伤','WEAK':'虚弱','FRAIL':'脆弱','STRENGTH':'力量','DEXTERITY':'敏捷','POISON':'毒','REGEN':'再生','REGENERATION':'再生'}[card.applyStatusType]||card.applyStatusType;p.push((card.applyStatusTarget==='SELF'?'获得':'施加')+' '+card.applyStatusCount+' 层'+sn)}return p.join('，')||'无效果';})()}</p>`;
           div.addEventListener('click', async () => {
             // 重新读取最新存档防止覆盖
             saveData = await loadSaveData(char); 

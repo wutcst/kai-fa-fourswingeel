@@ -79,7 +79,17 @@
         shopData.cards.forEach(card => {
           const div = document.createElement('div');
           div.className = 'shop-item';
-          div.innerHTML = `<div><strong>${card.name}</strong></div><div>🗡️ ${card.damage || 0} 🛡️ ${card.block || 0}</div><div> ${card.cost}</div><div class="price">${card.price} 💰</div>`;
+          const effText = ((c) => {
+            let parts = [];
+            if (c.damage > 0) parts.push(`造成 ${c.damage} 点伤害`);
+            if (c.block > 0) parts.push(`获得 ${c.block} 点格挡`);
+            if (c.applyStatusType) {
+              const sn = { 'VULNERABLE':'易伤','WEAK':'虚弱','FRAIL':'脆弱','STRENGTH':'力量','DEXTERITY':'敏捷','POISON':'毒','REGEN':'再生','REGENERATION':'再生' }[c.applyStatusType] || c.applyStatusType;
+              parts.push(`${c.applyStatusTarget === 'SELF' ? '获得' : '施加'} ${c.applyStatusCount} 层${sn}`);
+            }
+            return parts.join('，') || '无效果';
+          })(card);
+          div.innerHTML = `<div><strong>${card.name}</strong></div><div style="font-size:12px;color:#ecf0f1;margin:4px 0;">${effText}</div><div> ⚡${card.cost}</div><div class="price">${card.price} 💰</div>`;
           
           div.addEventListener('click', async () => {
             if (div.classList.contains('sold')) return;
