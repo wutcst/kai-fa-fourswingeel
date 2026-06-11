@@ -1,6 +1,12 @@
 [
-  { "id": "burning_blood", "name": "燃烧之血", "description": "回合结束时，恢复 6 点生命。", "effectType": "HEAL_END_TURN", "value": 6, "rarity": "COMMON" },
-  { "id": "red_skull", "name": "红头骨", "description": "最大生命值 +10。", "effectType": "MAX_HP", "value": 10, "rarity": "COMMON" },
-  { "id": "turtle_shell", "name": "龟壳", "description": "每次受到伤害最多失去 5 点生命。", "effectType": "DAMAGE_CAP", "value": 5, "rarity": "RARE" },
-  { "id": "ring", "name": "头环", "description": "无效果。当你拥有所有遗物时，它将作为替代奖励出现。", "effectType": "NO_EFFECT", "value": 0, "rarity": "COMMON" }
+  { "id": "burning_blood", "name": "燃烧之血", "description": "每场战斗胜利后，恢复 6 点生命。", "effectType": "NO_EFFECT", "value": 6, "rarity": "STARTER", "charId": "1" },
+  { "id": "red_skull", "name": "红头骨", "description": "最大生命值 +10。", "effectType": "MAX_HP", "value": 10, "rarity": "COMMON", "charId": null },
+
+  { "id": "iron_heart", "name": "铁之心", "description": "每回合开始时，获得 3 点格挡。", "effectType": "BLOCK_START_TURN", "value": 3, "rarity": "COMMON", "charId": null },
+  { "id": "spike_armor", "name": "尖刺护甲", "description": "每回合结束时，获得 3 点格挡。", "effectType": "BLOCK_END_TURN", "value": 3, "rarity": "COMMON", "charId": null },
+
+  { "id": "magic_shield", "name": "魔法护盾", "description": "每次受到伤害最多失去 10 点生命。", "effectType": "DAMAGE_CAP", "value": 10, "rarity": "RARE", "charId": null },
+
+  { "id": "turtle_shell", "name": "龟壳", "description": "每次受到伤害最多失去 5 点生命。", "effectType": "DAMAGE_CAP", "value": 5, "rarity": "RARE", "charId": null },
+  { "id": "ring", "name": "头环", "description": "无效果。当你拥有所有遗物时，它将作为替代奖励出现。", "effectType": "NO_EFFECT", "value": 0, "rarity": "SPECIAL", "charId": null }
 ]

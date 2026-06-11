@@ -159,14 +159,34 @@ const app = Vue.createApp({
       }
     },
 
-    // 战斗结束后的处理：同步血量，胜利进奖励页，失败回地图
+    // 战斗结束后的处理：胜利进奖励页，死亡进统计页，其余回地图
     goAfterFight() {
+      const charParam = new URLSearchParams(window.location.search).get('char') || '1';
+
+      // === 玩家死亡 → 跳转死亡统计页面 ===
+      if (this.state && this.state.gameOver && this.state.playerHp <= 0) {
+        const visited = JSON.parse(localStorage.getItem('visitedNodes') || '[]');
+        const deck = JSON.parse(localStorage.getItem('deck') || '[]');
+        const relics = JSON.parse(localStorage.getItem('relics') || '[]');
+        const deathStats = {
+          killedBy: this.state.enemyName || '未知敌人',
+          floor: Math.max(0, visited.length - 1),
+          deckSize: deck.length,
+          relicCount: relics.length,
+          gold: parseInt(localStorage.getItem('gold')) || 0,
+          nodesVisited: visited.length,
+          battleLog: this.state.log || []
+          // 未来扩展: turn, damageDealt, damageTaken, timestamp, playerLogKey
+        };
+        sessionStorage.setItem('deathStats', JSON.stringify(deathStats));
+        window.location.href = 'gameover.html';
+        return;
+      }
+
       if (this.state && this.state.playerHp !== undefined) {
         localStorage.setItem('playerHP', this.state.playerHp);
       }
       if (window.updateStatusBar) window.updateStatusBar();
-
-      const charParam = new URLSearchParams(window.location.search).get('char') || '1';
 
       if (this.isFromMap && this.state && (this.state.winner === 'player' || this.state.winner === 'Player' || (this.state.gameOver && this.state.playerHp > 0))) {
         const nodeType = new URLSearchParams(window.location.search).get('nodeType') || 'monster';

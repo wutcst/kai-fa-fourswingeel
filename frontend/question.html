@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>问号事件</title>
+  <style>
+    body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; position: relative; }
+    .event-background { width: 100%; height: 250px; display: flex; align-items: center; justify-content: center; font-size: 80px; color: white; text-shadow: 0 0 20px rgba(0,0,0,0.8); }
+    .event-text { max-width: 600px; padding: 20px; text-align: center; font-size: 18px; line-height: 1.6; background: rgba(0,0,0,0.4); border-radius: 12px; margin: 20px; }
+    .options { display: flex; gap: 30px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+    .option-btn { padding: 15px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; background: #e67e22; color: white; max-width: 250px; }
+    .option-btn:hover { background: #d35400; transform: translateY(-2px); }
+    .option-btn:disabled { background: #555; cursor: not-allowed; transform: none; }
+  </style>
+</head>
+<body>
+  <script src="status_bar.js"></script>
+  <div class="event-background" id="event-bg"></div>
+  <div class="event-text" id="event-description"></div>
+  <div class="options" id="options-container"></div>
+
+  <script>
+    // ✅ 通用存档读写函数
+    async function loadSaveData(charId) {
+      try {
+        const resp = await fetch(`/api/load?charId=${charId}`);
+        if (resp.ok) return await resp.json();
+      } catch (e) { console.warn('后端不可用，降级使用本地数据'); }
+      return {
+        charId: charId, playerHp: parseInt(localStorage.getItem('playerHP')) || 70,
+        maxHp: parseInt(localStorage.getItem('maxHP')) || 70, gold: parseInt(localStorage.getItem('gold')) || 0,
+        deck: JSON.parse(localStorage.getItem('deck') || '[]'), relics: JSON.parse(localStorage.getItem('relics') || '[]'),
+        visitedNodes: JSON.parse(localStorage.getItem('visitedNodes') || '["start"]'), currentNode: 'start'
+      };
+    }
+
+    async function saveSaveData(data) {
+      try {
+        await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        localStorage.setItem('playerHP', data.playerHp); localStorage.setItem('maxHP', data.maxHp);
+        localStorage.setItem('gold', data.gold); localStorage.setItem('deck', JSON.stringify(data.deck));
+        localStorage.setItem('relics', JSON.stringify(data.relics)); localStorage.setItem('visitedNodes', JSON.stringify(data.visitedNodes));
+        if (window.updateStatusBar) window.updateStatusBar();
+      } catch (e) { console.error('保存失败', e); }
+    }
+
+    (async function() {
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      const currentNode = params.get('currentNode') || 'start';
+      const nextNode = params.get('nextNode') || currentNode;
+
+      // 随机事件列表（action 接收 saveData 并直接修改它）
+      const events = [
+        {
+          id: 'ancient_ruins', title: '古老遗迹',
+          background: 'linear-gradient(135deg, #4a3f2e, #2e2416)', icon: '🏛️',
+          description: '你发现了一座古老的遗迹，地上散落着金币和一件遗物，但空气中弥漫着危险的气息。',
+          options: [
+            {
+              text: '小心收集金币 (+50💰)',
+              action: (data) => { data.gold += 50; alert('获得 50 金币！'); return true; }
+            },
+            {
+              text: '冒险深入探寻 (-10❤️，获得遗物)',
+              action: async (data) => {
+                data.playerHp = Math.max(1, data.playerHp - 10);
+                // 从后端获取随机未拥有的遗物
+                try {
+                  const owned = (data.relics || []).join(',');
+                  const resp = await fetch(`/api/reward?nodeType=chest&ownedRelics=${owned}&charId=${char}`);
+                  if (resp.ok) {
+                    const rewardData = await resp.json();
+                    if (rewardData.relic && rewardData.relic.id) {
+                      data.relics.push(rewardData.relic.id);
+                      alert(`失去 10 点生命，获得【${rewardData.relic.name}】！`);
+                      return true;
+                    }
+                  }
+                } catch (e) { /* 静默降级 */ }
+                // 兜底：给红头骨
+                data.relics.push('red_skull');
+                alert('失去 10 点生命，获得遗物！');
+                return true;
+              }
+            }
+          ]
+        },
+        {
+          id: 'wandering_merchant', title: '流浪商人',
+          background: 'linear-gradient(135deg, #3d5a3c, #1e3b1e)', icon: '🧑‍🌾',
+          description: '一个流浪商人出现在你面前，他愿意用生命精华交换你的金币。',
+          options: [
+            {
+              text: '购买生命精华（-30💰，+15❤️）',
+              action: (data) => {
+                if (data.gold >= 30) {
+                  data.gold -= 30;
+                  data.playerHp = Math.min(data.maxHp, data.playerHp + 15);
+                  alert('消耗 30 金币，恢复 15 点生命！');
+                  return true;
+                } else {
+                  alert('金币不足，无法购买！');
+                  return false; // 返回 false 阻止跳转
+                }
+              }
+            },
+            { text: '拒绝交易', action: () => { alert('你无视了商人，继续前行。'); return true; } }
+          ]
+        },
+        {
+          id: 'cursed_altar', title: '诅咒祭坛',
+          background: 'linear-gradient(135deg, #4a1a3a, #2e0e26)', icon: '🗿',
+          description: '你遇到一座被诅咒的祭坛，上面放着一本散发邪气的卷轴。',
+          options: [
+            {
+              text: '阅读卷轴（-5❤️，获得随机卡牌）',
+              action: (data) => {
+                data.playerHp = Math.max(1, data.playerHp - 5);
+                const randomCards = [
+                  { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
+                  { name: '防御', cost: 1, damage: 0, block: 5, type: 'SKILL' },
+                  { name: '重击', cost: 2, damage: 12, block: 0, type: 'ATTACK' }
+                ];
+                const card = randomCards[Math.floor(Math.random() * randomCards.length)];
+                data.deck.push(card);
+                alert(`失去 5 点生命，获得卡牌【${card.name}】！`);
+                return true;
+              }
+            },
+            { text: '转身离开', action: () => { alert('你安全地离开了祭坛。'); return true; } }
+          ]
+        }
+      ];
+
+      const event = events[Math.floor(Math.random() * events.length)];
+      document.getElementById('event-bg').style.background = event.background;
+      document.getElementById('event-bg').innerHTML = `<span>${event.icon}</span>`;
+      document.getElementById('event-description').textContent = event.description;
+
+      const optionsDiv = document.getElementById('options-container');
+      event.options.forEach((opt) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = opt.text;
+        
+        // ✅ 核心修改：异步处理数据读写
+        btn.addEventListener('click', async () => {
+          btn.disabled = true; // 防止重复点击
+          const saveData = await loadSaveData(char);
+          const result = await opt.action(saveData);
+          
+          if (result !== false) {
+            await saveSaveData(saveData);
+            window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
+          } else {
+            btn.disabled = false; // 如果取消（如金币不足），恢复按钮
+          }
+        });
+        optionsDiv.appendChild(btn);
+      });
+    })();
+  </script>
+</body>
+</html>

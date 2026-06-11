@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>游戏结束 - 杀戮尖塔</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0a0a1a; color: #e0e0e0;
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; margin: 0;
+    }
+    .container {
+      background: #16213e; border-radius: 16px;
+      padding: 40px 50px; max-width: 500px; width: 90%;
+      text-align: center; box-shadow: 0 0 60px rgba(231, 76, 60, 0.3);
+    }
+    h1 {
+      font-size: 48px; margin-bottom: 10px;
+      text-shadow: 0 0 30px #e74c3c;
+    }
+    .subtitle {
+      font-size: 22px; color: #e74c3c; font-weight: bold;
+      margin-bottom: 30px; letter-spacing: 2px;
+    }
+    .enemy-name {
+      font-size: 18px; color: #f39c12; margin-bottom: 30px;
+    }
+    .stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px; margin-bottom: 30px; text-align: left;
+    }
+    .stat-item {
+      background: rgba(0,0,0,0.3); padding: 12px 16px;
+      border-radius: 8px; border-left: 3px solid #e67e22;
+    }
+    .stat-item .label { font-size: 12px; color: #95a5a6; }
+    .stat-item .value { font-size: 20px; font-weight: bold; color: #f1c40f; }
+    .stat-item.full-width {
+      grid-column: 1 / -1; border-left-color: #3498db;
+    }
+    .btn {
+      padding: 14px 40px; font-size: 18px; font-weight: bold;
+      border: 2px solid #e74c3c; background: transparent;
+      color: #e74c3c; border-radius: 8px; cursor: pointer;
+      transition: all 0.3s ease; letter-spacing: 2px;
+    }
+    .btn:hover {
+      background: #e74c3c; color: white;
+      box-shadow: 0 0 25px #e74c3c; transform: scale(1.05);
+    }
+    .footer-note {
+      margin-top: 20px; font-size: 12px; color: #555;
+    }
+    /* 未来扩展：玩家日志入口 */
+    .log-section {
+      margin-top: 16px; display: none; /* 预留，暂不显示 */
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>💀</h1>
+    <div class="subtitle">你死了</div>
+    <div class="enemy-name" id="killed-by"></div>
+
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="label">到达层数</div>
+        <div class="value" id="stat-floor">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="label">卡组数量</div>
+        <div class="value" id="stat-deck">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="label">遗物</div>
+        <div class="value" id="stat-relics">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="label">金币</div>
+        <div class="value" id="stat-gold">0</div>
+      </div>
+      <div class="stat-item full-width">
+        <div class="label">节点进度</div>
+        <div class="value" id="stat-progress">0 / 0</div>
+      </div>
+    </div>
+
+    <button class="btn" id="return-btn">返回主菜单</button>
+    <div class="footer-note">⚰️ 一场英勇的尝试</div>
+
+    <!-- 预留：未来玩家日志入口 -->
+    <div class="log-section" id="log-section">
+      <hr style="border-color:#333; margin: 20px 0;">
+      <button class="btn" id="log-btn" style="font-size:14px; padding:10px 20px;">📜 查看战斗日志</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // 读取死亡统计数据（由 fight.html 死亡时写入 sessionStorage）
+      const stats = (function() {
+        try {
+          return JSON.parse(sessionStorage.getItem('deathStats'));
+        } catch (e) {
+          return null;
+        }
+      })();
+
+      if (stats) {
+        document.getElementById('killed-by').textContent = '被 ' + (stats.killedBy || '???') + ' 杀死';
+        document.getElementById('stat-floor').textContent = stats.floor || 0;
+        document.getElementById('stat-deck').textContent = stats.deckSize || 0;
+        document.getElementById('stat-relics').textContent = stats.relicCount || 0;
+        document.getElementById('stat-gold').textContent = stats.gold || 0;
+        document.getElementById('stat-progress').textContent = (stats.nodesVisited || 0) + ' / 15';
+      }
+
+      // 返回主菜单：清除游戏数据并跳转账面
+      document.getElementById('return-btn').addEventListener('click', function() {
+        // 清除本局游戏数据
+        localStorage.removeItem('playerHP');
+        localStorage.removeItem('maxHP');
+        localStorage.removeItem('gold');
+        localStorage.removeItem('deck');
+        localStorage.removeItem('relics');
+        localStorage.removeItem('visitedNodes');
+        localStorage.removeItem('startRelicDone');
+        sessionStorage.clear();
+        window.location.href = 'cover.html';
+      });
+    })();
+  </script>
+</body>
+</html>

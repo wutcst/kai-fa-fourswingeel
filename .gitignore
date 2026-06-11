@@ -10,6 +10,8 @@ frontend/build/
 backend/src/main/resources/static/
 npm-debug.log*
 
+backend/target/
+
 # IDE
 .vscode/
 .idea/
@@ -22,6 +24,12 @@ Thumbs.db
 # AI
 .aider*
 .aider.tags.cache.v4/
+
+# AI
+CLAUDE.md
+
+# 存档文件（测试产生，不纳入版本控制）
+backend/saves/
 
 # H2 文件模式数据（目前使用内存库，此规则保留备用）
 data/

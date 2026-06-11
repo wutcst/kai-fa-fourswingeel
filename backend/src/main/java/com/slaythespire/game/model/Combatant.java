@@ -3,6 +3,9 @@ package com.slaythespire.game.model;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 战斗实体基类 - 统一处理血量、格挡、状态和遗物的触发逻辑
+ */
 public abstract class Combatant {
     protected int hp;
     protected int maxHp;
@@ -24,10 +27,11 @@ public abstract class Combatant {
         }
         statuses.add(status);
     }
+    
     public void addRelic(Relic relic) { relics.add(relic); }
     public List<Relic> getRelics() { return relics; }
     public List<StatusEffect> getStatuses() { return statuses; }
-    public List<String> getLastTurnEndLogs() { return lastTurnEndLogs; } // ✅ 新增 Getter
+    public List<String> getLastTurnEndLogs() { return lastTurnEndLogs; }
 
     // ✅ 修改：增加 ignoreBlock 参数
     public int takeDamage(int rawDamage, Combatant source) {
@@ -76,6 +80,12 @@ public abstract class Combatant {
 
     public int getHp() { return hp; }
     public int getMaxHp() { return maxHp; }
+    
+    // ✅ 新增：设置最大生命值
+    public void setMaxHp(int maxHp) {
+        this.maxHp = maxHp;
+    }
+    
     public int getBlock() { return block; }
     public void clearBlock() { block = 0; }
     public void heal(int amount) { if (amount > 0) hp = Math.min(hp + amount, maxHp); }
