@@ -37,7 +37,7 @@
         div.addEventListener('click', async () => {
           const saveData = await loadSaveData(char);
           saveData.deck.push({
-            name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
+            id: card.id, name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
             applyStatusType: card.applyStatusType, applyStatusCount: card.applyStatusCount, applyStatusTarget: card.applyStatusTarget
           });
           await saveSaveData(saveData);

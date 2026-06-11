@@ -88,8 +88,8 @@
             if (div.classList.contains('sold')) return;
             if (await spendGold(card.price)) {
               saveData = await loadSaveData(char);
-              saveData.deck.push({ 
-                name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
+              saveData.deck.push({
+                id: card.id, name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
                 applyStatusType: card.applyStatusType, applyStatusCount: card.applyStatusCount, applyStatusTarget: card.applyStatusTarget
               });
               await saveSaveData(saveData);
