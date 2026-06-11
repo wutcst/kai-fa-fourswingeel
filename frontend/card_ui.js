@@ -12,7 +12,6 @@ const CARD_UI = {
     'STRENGTH':     { name: '力量',     desc: '每层力量使攻击伤害增加 1 点。',                                decay: false },
     'DEXTERITY':    { name: '敏捷',     desc: '每层敏捷使获得的格挡增加 1 点。',                              decay: false },
     'POISON':       { name: '毒',       desc: '回合结束时，造成等同于毒层数的伤害，然后减少 1 层。',           decay: true },
-    'REGEN':        { name: '再生',     desc: '回合结束时，恢复等同于再生层数的生命，然后减少 1 层。',          decay: true },
     'REGENERATION': { name: '再生',     desc: '回合结束时，恢复等同于再生层数的生命，然后减少 1 层。',          decay: true }
   },
 
@@ -29,7 +28,7 @@ const CARD_UI = {
     if (card.applyStatusType) {
       const sn = this.getStatusName(card.applyStatusType);
       const isSelf = card.applyStatusTarget === 'SELF';
-      parts.push(`${isSelf ? '获得' : '施加'} ${card.applyStatusCount} 层${sn}`);
+      parts.push(`${isSelf ? '自身获得' : '施加'} ${card.applyStatusCount} 层${sn}`);
     }
     return parts.join('，') || '无效果';
   },
