@@ -9,8 +9,12 @@
     body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 50px; }
     h2 { color: #f1c40f; }
     .card-list { display: flex; gap: 20px; margin-top: 30px; flex-wrap: wrap; justify-content: center; }
-    .card { width: 150px; padding: 20px; border: 2px solid #34495e; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); text-align: center; cursor: pointer; color: white; transition: all 0.3s; }
+    .card { width: 150px; padding: 20px; border: 2px solid #34495e; border-radius: 8px; text-align: center; cursor: pointer; color: white; transition: all 0.3s; }
     .card:hover { transform: scale(1.05); border-color: #f1c40f; }
+    .card.attack { border-left: 5px solid #e74c3c; }
+    .card.skill  { border-left: 5px solid #3498db; }
+    .card.power  { border-left: 5px solid #2ecc71; }
+    .card .card-type-label { font-size: 10px; color: #ccc; margin-top: 2px; }
     .skip { margin-top: 40px; background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
   </style>
 </head>
@@ -30,15 +34,18 @@
 
       cards.forEach(card => {
         const div = document.createElement('div');
-        div.className = 'card';
-        div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p><p style="font-size:12px;color:#ecf0f1;">${CARD_UI.getCardEffectText(card)}</p>`;
+        div.className = `card ${CARD_UI.getCardTypeClass(card)}`;
+        div.style.background = CARD_UI.getCardCharStyle(card);
+        const typeLabel = CARD_UI.getCardTypeLabel(card);
+        div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p><div class="card-type-label">${typeLabel}</div><p style="font-size:12px;color:#ecf0f1;">${CARD_UI.getCardEffectText(card)}</p>`;
         CARD_UI.bindTooltip(div, card.applyStatusType);
 
         div.addEventListener('click', async () => {
           const saveData = await loadSaveData(char);
           saveData.deck.push({
             id: card.id, name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
-            applyStatusType: card.applyStatusType, applyStatusCount: card.applyStatusCount, applyStatusTarget: card.applyStatusTarget
+            applyStatusType: card.applyStatusType, applyStatusCount: card.applyStatusCount, applyStatusTarget: card.applyStatusTarget,
+            charId: card.charId || '1'
           });
           await saveSaveData(saveData);
           alert(`获得卡牌：${card.name}`);

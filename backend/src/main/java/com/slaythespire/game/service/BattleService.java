@@ -116,9 +116,17 @@ public class BattleService {
             }
         }
 
-        // 4. 处理卡牌去向：消耗 or 弃牌
+        // 4. 抽牌（如有）
+        if (card.getDrawCount() > 0) {
+            drawCards(card.getDrawCount());
+        }
+
+        // 5. 处理卡牌去向
         hand.remove(index);
-        if (card.isExhaust()) {
+        if (card.getType() == Card.CardType.POWER) {
+            logList.add(card.getName() + "被使用（能力牌，不再出现）");
+            // 能力牌不放入任何牌堆
+        } else if (card.isExhaust()) {
             exhaustPile.add(card);
             logList.add(card.getName() + "被消耗");
         } else {
@@ -288,6 +296,14 @@ public class BattleService {
                 card.setApplyStatusCount(((Number) cardData.get("applyStatusCount")).intValue());
             if (cardData.get("applyStatusTarget") != null)
                 card.setApplyStatusTarget((String) cardData.get("applyStatusTarget"));
+            // 从存档数据中读取 drawCount（若有）
+            if (cardData.get("drawCount") != null) {
+                card.setDrawCount(((Number) cardData.get("drawCount")).intValue());
+            }
+            // ✅ 新增：读取 charId
+            if (cardData.get("charId") != null) {
+                card.setCharId((String) cardData.get("charId"));
+            }
             deck.add(card);
         }
         return deck;
@@ -369,6 +385,9 @@ public class BattleService {
             cardInfo.put("exhaust", c.isExhaust());
             cardInfo.put("retain", c.isRetain());
             cardInfo.put("ethereal", c.isEthereal());
+            // ✅ 将 drawCount 和 charId 加入手牌状态
+            cardInfo.put("drawCount", c.getDrawCount());
+            cardInfo.put("charId", c.getCharId());
             handCards.add(cardInfo);
         }
         state.put("hand", handCards);

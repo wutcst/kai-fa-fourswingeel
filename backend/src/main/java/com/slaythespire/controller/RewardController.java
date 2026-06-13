@@ -44,45 +44,50 @@ public class RewardController {
                 break;
             case "monster":
             default:
-                gold = 15 + random.nextInt(15); 
-                relic = null; // 普通小怪通常不给遗物
+                gold = 15 + random.nextInt(15);
+                relic = null;
                 break;
         }
-        
+
         reward.put("gold", gold);
-        reward.put("relic", relic); // ✅ 放入包含 id 和 name 的 Map 对象
-        reward.put("cards", generateCardPool(3));
-        
+        reward.put("relic", relic);
+        reward.put("cards", generateCardPool(3, false));
+
         return reward;
     }
 
     @GetMapping("/cardPool")
     public List<Map<String, Object>> getCardPool(@RequestParam(defaultValue = "1") String charParam) {
-        return generateCardPool(3);
+        return generateCardPool(3, false);
     }
 
-    private List<Map<String, Object>> generateCardPool(int count) {
+    private List<Map<String, Object>> generateCardPool(int count, boolean allowUpgraded) {
         List<CardTemplate> allCards = dataRepo.getAllCards();
         if (allCards.isEmpty()) return Collections.emptyList();
-        
+
+        List<CardTemplate> validCards = new ArrayList<>();
+        for (CardTemplate tpl : allCards) {
+            if (allowUpgraded || !tpl.isUpgraded()) {
+                validCards.add(tpl);
+            }
+        }
+        if (validCards.isEmpty()) return Collections.emptyList();
+
         List<Map<String, Object>> pool = new ArrayList<>();
         Set<String> usedIds = new HashSet<>();
-        
         int attempts = 0;
         while (pool.size() < count && attempts < count * 3) {
-            CardTemplate tpl = allCards.get(random.nextInt(allCards.size()));
+            CardTemplate tpl = validCards.get(random.nextInt(validCards.size()));
             if (!usedIds.contains(tpl.getId())) {
                 usedIds.add(tpl.getId());
                 pool.add(cardToMap(tpl));
             }
             attempts++;
         }
-        
         while (pool.size() < count) {
-            CardTemplate tpl = allCards.get(random.nextInt(allCards.size()));
+            CardTemplate tpl = validCards.get(random.nextInt(validCards.size()));
             pool.add(cardToMap(tpl));
         }
-        
         return pool;
     }
 
@@ -97,10 +102,10 @@ public class RewardController {
         map.put("applyStatusType", tpl.getApplyStatusType());
         map.put("applyStatusCount", tpl.getApplyStatusCount());
         map.put("applyStatusTarget", tpl.getApplyStatusTarget());
+        map.put("upgraded", tpl.isUpgraded());
         return map;
     }
 
-    /** 将 RelicTemplate 转为前端需要的 Map 格式 */
     private Map<String, Object> relicToMap(RelicTemplate tpl) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", tpl.getId());
@@ -111,7 +116,6 @@ public class RewardController {
         return map;
     }
 
-    /** 从遗物池服务抽取，并转为前端 Map */
     private Map<String, Object> drawRelicMap(String charId, List<String> ownedRelics, String tier) {
         RelicTemplate tpl = relicPoolService.drawRelic(charId, ownedRelics, tier);
         return (tpl != null) ? relicToMap(tpl) : null;

@@ -168,11 +168,17 @@ public class GameConfigController {
         Map<String, Object> shop = new LinkedHashMap<>();
 
         List<CardTemplate> allCards = dataRepo.getAllCards();
+        // 只保留普通版
+        List<CardTemplate> normalCards = new ArrayList<>();
+        for (CardTemplate tpl : allCards) {
+            if (!tpl.isUpgraded()) normalCards.add(tpl);
+        }
+
         List<Map<String, Object>> shopCards = new ArrayList<>();
         Set<String> usedIds = new HashSet<>();
         int attempts = 0;
-        while (shopCards.size() < 3 && attempts < 10 && !allCards.isEmpty()) {
-            CardTemplate tpl = allCards.get(random.nextInt(allCards.size()));
+        while (shopCards.size() < 3 && attempts < 10 && !normalCards.isEmpty()) {
+            CardTemplate tpl = normalCards.get(random.nextInt(normalCards.size()));
             if (!usedIds.contains(tpl.getId())) {
                 usedIds.add(tpl.getId());
                 Map<String, Object> cardMap = new LinkedHashMap<>();
@@ -257,7 +263,7 @@ public class GameConfigController {
     }
 
     /**
-     * ✅ 新增：获取所有遗物配置（供前端将 ID 翻译为中文名和描述）
+     * 获取所有遗物配置（供前端将 ID 翻译为中文名和描述）
      */
     @GetMapping("/relics")
     public List<Map<String, Object>> getAllRelics() {
@@ -274,5 +280,29 @@ public class GameConfigController {
             result.add(map);
         }
         return result;
+    }
+
+    // =========================== 新增：获取单张卡牌模板 ===========================
+
+    /**
+     * 根据卡牌 ID 返回模板数据
+     */
+    @GetMapping("/card/{id}")
+    public Map<String, Object> getCardById(@PathVariable String id) {
+        CardTemplate tpl = dataRepo.getCardById(id);
+        if (tpl == null) return null;
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", tpl.getId());
+        map.put("name", tpl.getName());
+        map.put("cost", tpl.getCost());
+        map.put("damage", tpl.getDamage());
+        map.put("block", tpl.getBlock());
+        map.put("type", tpl.getType().name());
+        map.put("applyStatusType", tpl.getApplyStatusType());
+        map.put("applyStatusCount", tpl.getApplyStatusCount());
+        map.put("applyStatusTarget", tpl.getApplyStatusTarget());
+        map.put("drawCount", tpl.getDrawCount());
+        map.put("upgraded", tpl.isUpgraded());
+        return map;
     }
 }

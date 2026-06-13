@@ -2,31 +2,24 @@ package com.slaythespire.game.model;
 
 import com.slaythespire.repository.CardTemplate;
 
-/**
- * 卡牌实例类 - 运行时状态与基础属性
- */
 public class Card {
     private String name;
     private int cost;
     private int damage;
     private int block;
     private CardType type;
-
-    // 效果字段
     private String applyStatusType;
     private int applyStatusCount;
     private String applyStatusTarget;
+    private boolean exhaust;
+    private boolean retain;
+    private boolean ethereal;
+    private int drawCount;
+    private boolean upgraded;
+    private String charId;
 
-    // 卡牌属性
-    private boolean exhaust;    // 消耗：使用后进入消耗堆而非弃牌堆
-    private boolean retain;     // 保留：回合结束时留在手牌，不进弃牌堆
-    private boolean ethereal;   // 虚无：回合结束时消耗
+    public enum CardType { ATTACK, SKILL, POWER }
 
-    public enum CardType { ATTACK, SKILL }
-
-    /**
-     * 基于数据模板构造卡牌实例
-     */
     public Card(CardTemplate template) {
         this.name = template.getName();
         this.cost = template.getCost();
@@ -39,17 +32,20 @@ public class Card {
         this.exhaust = template.isExhaust();
         this.retain = template.isRetain();
         this.ethereal = template.isEthereal();
+        this.drawCount = template.getDrawCount();
+        this.upgraded = template.isUpgraded();
+        this.charId = template.getCharId();
     }
 
-    /**
-     * 直接根据属性构造（用于读取玩家存档卡组）
-     */
     public Card(String name, int cost, int damage, int block, CardType type) {
         this.name = name;
         this.cost = cost;
         this.damage = damage;
         this.block = block;
         this.type = type;
+        this.drawCount = 0;
+        this.upgraded = false;
+        this.charId = "1";
     }
 
     // ================= Getter =================
@@ -64,6 +60,9 @@ public class Card {
     public boolean isExhaust() { return exhaust; }
     public boolean isRetain() { return retain; }
     public boolean isEthereal() { return ethereal; }
+    public int getDrawCount() { return drawCount; }
+    public boolean isUpgraded() { return upgraded; }
+    public String getCharId() { return charId; }
 
     // ================= Setter =================
     public void setName(String name) { this.name = name; }
@@ -75,4 +74,7 @@ public class Card {
     public void setExhaust(boolean exhaust) { this.exhaust = exhaust; }
     public void setRetain(boolean retain) { this.retain = retain; }
     public void setEthereal(boolean ethereal) { this.ethereal = ethereal; }
+    public void setDrawCount(int drawCount) { this.drawCount = drawCount; }
+    public void setUpgraded(boolean upgraded) { this.upgraded = upgraded; }
+    public void setCharId(String charId) { this.charId = charId; }
 }

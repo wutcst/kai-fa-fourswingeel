@@ -9,7 +9,7 @@
   <script src="card_ui.js"></script>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #e0e0e0; margin: 0; padding: 20px; }
-    #app { max-width: 900px; margin: 0 auto; margin-top: 40px; } /* margin-top 避让状态栏 */
+    #app { max-width: 900px; margin: 0 auto; margin-top: 40px; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     h1 { margin: 0; font-size: 24px; }
     button { padding: 10px 20px; font-size: 16px; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
@@ -25,18 +25,44 @@
     .player-info .status-effects { justify-content: flex-start; } .enemy-info .status-effects { justify-content: flex-end; }
     .status-effects span { padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
     .hand { display: flex; flex-wrap: wrap; justify-content: center; margin: 16px 0; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 12px; min-height: 150px; }
-    .card-btn { padding: 12px 16px; margin: 8px; border: 2px solid #34495e; border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; cursor: pointer; transition: all 0.3s ease; display: inline-flex; flex-direction: column; align-items: center; min-width: 120px; position: relative; }
-    .card-btn.disabled { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); transform: scale(0.95); }
+    .card-btn { 
+      padding: 12px 16px; 
+      margin: 8px; 
+      border: 2px solid #34495e; 
+      border-radius: 8px; 
+      color: white; 
+      cursor: pointer; 
+      transition: all 0.3s ease; 
+      display: inline-flex; 
+      flex-direction: column; 
+      align-items: center; 
+      width: 140px;
+      min-height: 120px;
+      position: relative; 
+      box-sizing: border-box;
+    }
+    .card-btn.disabled { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%) !important; opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); transform: scale(0.95); }
     .card-btn.attack { border-left: 5px solid #e74c3c; } .card-btn.skill { border-left: 5px solid #3498db; }
+    .card-btn.power { border-left: 5px solid #2ecc71; }
     .card-btn:not(.disabled):hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 12px 24px rgba(0,0,0,0.4); z-index: 10; }
     .cost { position: absolute; top: -10px; left: -10px; background: #e74c3c; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 2px solid #c0392b; }
-    .name { font-size: 16px; font-weight: bold; margin-bottom: 6px; }
-    .card-effect-text { font-size: 12px; opacity: 0.95; margin: 2px 0; line-height: 1.4; color: #ecf0f1; }
+    .name { font-size: 16px; font-weight: bold; margin-bottom: 6px; text-align: center; width: 100%; }
+    .card-effect-text { 
+      font-size: 12px; 
+      opacity: 0.95; 
+      margin: 2px 0; 
+      line-height: 1.4; 
+      color: #ecf0f1; 
+      white-space: normal;
+      word-break: break-word;
+      text-align: center; 
+      width: 100%;
+    }
+    .card-type-label { font-size: 10px; color: #ccc; margin-top: 2px; }
     .card-badge { position: absolute; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 3px; top: -6px; right: -6px; }
     .badge-exhaust { background: #e74c3c; color: white; }
     .badge-ethereal { background: #8e44ad; color: white; }
     .badge-retain { background: #2ecc71; color: white; }
-    /* 悬浮小窗 */
     .tooltip-overlay { position: fixed; z-index: 9999; pointer-events: none; max-width: 260px; background: #0d1b2a; border: 1px solid #34495e; border-radius: 8px; padding: 12px 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
     .tooltip-title { font-weight: bold; font-size: 14px; color: #f1c40f; margin-bottom: 6px; }
     .tooltip-desc { font-size: 12px; color: #bdc3c7; line-height: 1.5; margin-bottom: 4px; }
@@ -87,22 +113,21 @@
       </div>
       <div class="energy">⚡ 能量: {{ state.energy }}</div>
       <div class="hand">
-        <button v-for="(card, index) in hand" :key="index" @click="previewCard(index)" :disabled="!canPlayCard(card) || state.gameOver" :class="['card-btn', { 'disabled': !canPlayCard(card), 'attack': card.type === 'ATTACK', 'skill': card.type === 'SKILL' }]" @mouseenter="showTooltip(index, $event)" @mouseleave="hideTooltip">
+        <button v-for="(card, index) in hand" :key="index" @click="previewCard(index)" :disabled="!canPlayCard(card) || state.gameOver" :class="['card-btn', { 'disabled': !canPlayCard(card), 'attack': card.type === 'ATTACK', 'skill': card.type === 'SKILL', 'power': card.type === 'POWER' }]" :style="getCardCharStyle(card)" @mouseenter="showTooltip(index, $event)" @mouseleave="hideTooltip">
           <span class="cost">{{ card.cost }}</span>
           <span class="name">{{ card.name }}</span>
+          <span class="card-type-label">{{ card.type === 'ATTACK' ? '攻击' : card.type === 'SKILL' ? '防御' : '能力' }}</span>
           <span class="card-effect-text">{{ getCardEffectText(card) }}</span>
           <span v-if="card.exhaust" class="card-badge badge-exhaust">消耗</span>
           <span v-if="card.ethereal" class="card-badge badge-ethereal">虚无</span>
           <span v-if="card.retain" class="card-badge badge-retain">保留</span>
         </button>
       </div>
-      <!-- 悬浮小窗：显示状态机制详情 -->
       <div v-if="tooltipCard && tooltipInfo" class="tooltip-overlay" :style="{ left: tooltipX + 'px', top: tooltipY + 'px' }">
         <div class="tooltip-title">{{ tooltipInfo.name }}</div>
         <div class="tooltip-desc">{{ tooltipInfo.desc }}</div>
         <div class="tooltip-decay" v-if="tooltipInfo.decay">每回合结束层数减一</div>
       </div>
-
       <div class="deck-info">
         手牌 {{ state.handSize }}/{{ state.handLimit }} | 抽牌堆 {{ state.drawPileSize }} | 弃牌堆 {{ state.discardPileSize }} | 消耗堆 <span style="color:#e74c3c;">{{ state.exhaustPileSize || 0 }}</span>
       </div>
@@ -130,7 +155,6 @@
       </div>
     </div>
   </div>
-
   <script>
     const API_BASE = '/api/game';
     const app = Vue.createApp({
@@ -150,6 +174,7 @@
       methods: {
         getStatusName(type) { return CARD_UI.getStatusName(type); },
         canPlayCard(card) { return this.state && card && card.cost <= this.state.energy; },
+        getCardCharStyle(card) { return CARD_UI.getCardCharStyle(card); }, // ✅ 新增
         async newGame() {
           this.error = null; this.loading = true;
           try {
@@ -173,7 +198,6 @@
           const card = this.hand[index];
           if (card && card.applyStatusType) {
             this.tooltipCard = card;
-            // 计算小窗位置：鼠标右侧偏移，防溢出
             const w = window.innerWidth;
             const x = event.clientX;
             const y = event.clientY;
@@ -195,7 +219,6 @@
           if (!this.state) return;
           const charParam = new URLSearchParams(window.location.search).get('char') || '1';
 
-          // === 玩家死亡 → 跳转死亡统计页面 ===
           if (this.state.gameOver && (
             this.state.playerHp <= 0 ||
             this.state.winner === '敌人' ||
@@ -227,12 +250,10 @@
           const prev = this.prevNodeId || 'start';
           const next = this.nextNodeId || prev;
 
-          // 胜利 → 保存游戏进度并跳转奖励页
           const saveData = await loadSaveData(charParam);
           saveData.playerHp = this.state.playerHp;
           saveData.maxHp = this.state.playerMaxHp;
 
-          // 燃烧之血：战斗胜利后恢复 6 点生命
           const isVictory = this.state.gameOver && this.state.playerHp > 0;
           if (isVictory && saveData.relics && saveData.relics.includes('burning_blood')) {
             saveData.playerHp = Math.min(saveData.maxHp, saveData.playerHp + 6);
@@ -250,8 +271,6 @@
     });
     app.mount('#app');
   </script>
-
-  <!-- ✅ 放在 Vue 脚本之后，body 最底部 -->
   <script src="status_bar.js"></script>
 </body>
 </html>

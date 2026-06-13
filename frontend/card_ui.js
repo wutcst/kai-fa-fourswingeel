@@ -1,5 +1,5 @@
 /**
- * 卡牌显示工具 — 效果文字生成 + 状态机制悬浮小窗
+ * 卡牌显示工具 — 效果文字生成 + 状态机制悬浮小窗 + 职业背景颜色
  * 所有翻卡/选卡/看卡页面共用
  */
 const CARD_UI = {
@@ -31,6 +31,48 @@ const CARD_UI = {
       parts.push(`${isSelf ? '自身获得' : '施加'} ${card.applyStatusCount} 层${sn}`);
     }
     return parts.join('，') || '无效果';
+  },
+
+  /** 获取卡牌类型中文标签 */
+  getCardTypeLabel(card) {
+    if (card.type === 'ATTACK') return '攻击';
+    if (card.type === 'SKILL')  return '防御';
+    if (card.type === 'POWER')  return '能力';
+    return '未知';
+  },
+
+  /** 获取卡牌类型对应的边框颜色类名（与 CSS 中的 .attack/.skill/.power 对应） */
+  getCardTypeClass(card) {
+    if (card.type === 'ATTACK') return 'attack';
+    if (card.type === 'SKILL')  return 'skill';
+    if (card.type === 'POWER')  return 'power';
+    return '';
+  },
+
+  /** ✅ 新增：根据职业 ID 获取背景渐变样式字符串（用于直接设置 style.background） */
+  getCardCharStyle(card) {
+    if (!card) return 'background: linear-gradient(135deg, #667eea, #764ba2);'; // 默认紫色
+    const charId = card.charId || '1';
+    if (charId === '0') {
+      return 'background: linear-gradient(135deg, #6A0DAD, #9370DB);'; // 中立（紫色）
+    }
+    // 铁甲战士（红色系）
+    return 'background: linear-gradient(135deg, #8B0000, #B22222);';
+  },
+
+  /**
+   * 为 DOM 元素绑定卡牌效果（设置背景、边框、悬浮小窗）
+   * @param {Element} el - 要绑定的元素
+   * @param {object} card - 卡牌数据对象
+   */
+  decorateCardElement(el, card) {
+    // 设置背景
+    el.style.background = this.getCardCharStyle(card);
+    // 边框类型
+    const typeClass = this.getCardTypeClass(card);
+    if (typeClass) el.classList.add(typeClass);
+    // 悬浮小窗
+    this.bindTooltip(el, card.applyStatusType);
   },
 
   /**

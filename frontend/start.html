@@ -15,7 +15,7 @@
     .relic-name { font-weight: bold; font-size: 18px; margin: 10px 0; }
     .relic-desc { font-size: 14px; color: #ccc; }
     .card-selection { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 20px; }
-    .card-btn { width: 140px; padding: 15px; border: 2px solid #34495e; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); cursor: pointer; color: white; font-weight: bold; transition: all 0.3s; text-align: center; }
+    .card-btn { width: 140px; padding: 15px; border: 2px solid #34495e; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; transition: all 0.3s; text-align: center; }
     .card-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(0,0,0,0.5); }
   </style>
 </head>
@@ -33,10 +33,8 @@
       const char = params.get('char') || '1';
       const currentNode = params.get('currentNode') || 'start';
 
-      // 1. 从后端加载存档
       const currentSaveData = await loadSaveData(char);
 
-      // 2. 检查是否已经选择过初始遗物 (UI 锁依然可以用 localStorage)
       let startDone = localStorage.getItem('startRelicDone') === 'true';
       if (startDone) {
         const visited = currentSaveData.visitedNodes || ['start'];
@@ -52,7 +50,6 @@
 
       const mainDiv = document.getElementById('main-content');
 
-      // 3. 定义初始遗物 (action 直接修改 currentSaveData)
       const starterRelics = [
         {
           id: 1, name: '净化卷轴', icon: '📜', desc: '从卡组中删除一张牌。',
@@ -107,11 +104,12 @@
           currentSaveData.deck.forEach((card, index) => {
             const div = document.createElement('div');
             div.className = 'card-btn';
+            div.style.background = CARD_UI.getCardCharStyle(card);
             div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div><div style="font-size:11px;color:#ecf0f1;margin-top:4px;">${CARD_UI.getCardEffectText(card)}</div>`;
             CARD_UI.bindTooltip(div, card.applyStatusType);
             div.addEventListener('click', () => {
               if (removed >= countToRemove) return;
-              currentSaveData.deck.splice(index, 1); // 直接修改内存中的存档
+              currentSaveData.deck.splice(index, 1);
               removed++;
               if (removed >= countToRemove) {
                 alert(`成功删除了 ${countToRemove} 张牌！`);
@@ -139,13 +137,14 @@
           if (card.upgraded) return;
           const div = document.createElement('div');
           div.className = 'card-btn';
+          div.style.background = CARD_UI.getCardCharStyle(card);
           div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div><div style="font-size:11px;color:#ecf0f1;margin-top:4px;">${CARD_UI.getCardEffectText(card)}</div>`;
           CARD_UI.bindTooltip(div, card.applyStatusType);
           div.addEventListener('click', () => {
             const upgraded = { ...card, upgraded: true, name: card.name + '+' };
             if (upgraded.damage > 0) upgraded.damage += 3;
             if (upgraded.block > 0) upgraded.block += 3;
-            currentSaveData.deck[index] = upgraded; // 直接修改内存中的存档
+            currentSaveData.deck[index] = upgraded;
             alert(`【${card.name}】升级为【${upgraded.name}】！`);
             finishStart();
           });
@@ -155,13 +154,11 @@
 
       async function finishStart() {
         localStorage.setItem('startRelicDone', 'true');
-        // ✅ 核心修改：统一保存到后端
         await saveSaveData(currentSaveData);
         alert('初始遗物选择完毕，开始冒险吧！');
         window.location.href = `map.html?char=${char}&currentNode=${currentNode}`;
       }
 
-      // 初始渲染
       renderRelics();
   </script>
 </body>
