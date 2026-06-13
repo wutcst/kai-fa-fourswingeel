@@ -51,8 +51,12 @@ public class GameDataRepository {
         return relics.stream().filter(r -> r.getId().equals(id)).findFirst().orElse(null);
     }
     
-    // ✅ 新增：根据 ID 查找卡牌模板
     public CardTemplate getCardById(String id) {
         return cards.stream().filter(c -> c.getId().equals(id)).findFirst().orElse(null);
+    }
+
+    // ✅ 新增：根据名称查找卡牌模板（用于存档旧卡牌补全 charId）
+    public CardTemplate getCardByName(String name) {
+        return cards.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null);
     }
 }

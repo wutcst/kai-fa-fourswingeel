@@ -20,11 +20,12 @@ const CARD_UI = {
     return this.STATUS_INFO[type]?.name || type;
   },
 
-  /** 根据卡牌数据生成效果描述文字 */
+  /** ✅ 根据卡牌数据生成效果描述文字（包含抽牌描述） */
   getCardEffectText(card) {
     const parts = [];
     if (card.damage > 0) parts.push(`造成 ${card.damage} 点伤害`);
     if (card.block > 0)  parts.push(`获得 ${card.block} 点格挡`);
+    if (card.drawCount > 0) parts.push(`抽 ${card.drawCount} 张牌`);
     if (card.applyStatusType) {
       const sn = this.getStatusName(card.applyStatusType);
       const isSelf = card.applyStatusTarget === 'SELF';
@@ -49,15 +50,16 @@ const CARD_UI = {
     return '';
   },
 
-  /** ✅ 新增：根据职业 ID 获取背景渐变样式字符串（用于直接设置 style.background） */
+  /** ✅ 根据职业 ID 获取背景渐变CSS字符串（纯值，不含 "background: " 前缀） */
   getCardCharStyle(card) {
-    if (!card) return 'background: linear-gradient(135deg, #667eea, #764ba2);'; // 默认紫色
-    const charId = card.charId || '1';
+    if (!card) return 'linear-gradient(135deg, #667eea, #764ba2)'; // 默认紫色
+    // 确保 charId 存在且非空，否则默认 '1'（铁甲战士）
+    const charId = (card.charId && card.charId !== '') ? card.charId : '1';
     if (charId === '0') {
-      return 'background: linear-gradient(135deg, #6A0DAD, #9370DB);'; // 中立（紫色）
+      return 'linear-gradient(135deg, #808080, #A9A9A9)'; // 中立（灰色）
     }
     // 铁甲战士（红色系）
-    return 'background: linear-gradient(135deg, #8B0000, #B22222);';
+    return 'linear-gradient(135deg, #8B0000, #B22222)';
   },
 
   /**

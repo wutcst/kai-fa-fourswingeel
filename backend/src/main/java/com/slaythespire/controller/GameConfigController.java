@@ -191,6 +191,9 @@ public class GameConfigController {
                 cardMap.put("applyStatusType", tpl.getApplyStatusType());
                 cardMap.put("applyStatusCount", tpl.getApplyStatusCount());
                 cardMap.put("applyStatusTarget", tpl.getApplyStatusTarget());
+                // ✅ 新增 charId 和 drawCount
+                cardMap.put("charId", tpl.getCharId());
+                cardMap.put("drawCount", tpl.getDrawCount());
                 int price = 50 + (tpl.getCost() * 25);
                 if (tpl.getDamage() > 10 || tpl.getBlock() > 10) price += 20;
                 cardMap.put("price", price);
@@ -247,6 +250,9 @@ public class GameConfigController {
                     cardMap.put("applyStatusType", tpl.getApplyStatusType());
                     cardMap.put("applyStatusCount", tpl.getApplyStatusCount());
                     cardMap.put("applyStatusTarget", tpl.getApplyStatusTarget());
+                    // 起始卡牌附带 charId 和 drawCount（均为默认值，但保留）
+                    cardMap.put("charId", tpl.getCharId());
+                    cardMap.put("drawCount", tpl.getDrawCount());
                     deck.add(cardMap);
                 }
             }

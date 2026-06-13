@@ -113,7 +113,7 @@
       </div>
       <div class="energy">⚡ 能量: {{ state.energy }}</div>
       <div class="hand">
-        <button v-for="(card, index) in hand" :key="index" @click="previewCard(index)" :disabled="!canPlayCard(card) || state.gameOver" :class="['card-btn', { 'disabled': !canPlayCard(card), 'attack': card.type === 'ATTACK', 'skill': card.type === 'SKILL', 'power': card.type === 'POWER' }]" :style="getCardCharStyle(card)" @mouseenter="showTooltip(index, $event)" @mouseleave="hideTooltip">
+        <button v-for="(card, index) in hand" :key="index" @click="previewCard(index)" :disabled="!canPlayCard(card) || state.gameOver" :class="['card-btn', { 'disabled': !canPlayCard(card), 'attack': card.type === 'ATTACK', 'skill': card.type === 'SKILL', 'power': card.type === 'POWER' }]" :style="{ background: getCardCharStyle(card) }" @mouseenter="showTooltip(index, $event)" @mouseleave="hideTooltip">
           <span class="cost">{{ card.cost }}</span>
           <span class="name">{{ card.name }}</span>
           <span class="card-type-label">{{ card.type === 'ATTACK' ? '攻击' : card.type === 'SKILL' ? '防御' : '能力' }}</span>
@@ -174,7 +174,7 @@
       methods: {
         getStatusName(type) { return CARD_UI.getStatusName(type); },
         canPlayCard(card) { return this.state && card && card.cost <= this.state.energy; },
-        getCardCharStyle(card) { return CARD_UI.getCardCharStyle(card); }, // ✅ 新增
+        getCardCharStyle(card) { return CARD_UI.getCardCharStyle(card); }, // 返回纯渐变字符串
         async newGame() {
           this.error = null; this.loading = true;
           try {

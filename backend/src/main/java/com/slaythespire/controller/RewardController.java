@@ -102,6 +102,10 @@ public class RewardController {
         map.put("applyStatusType", tpl.getApplyStatusType());
         map.put("applyStatusCount", tpl.getApplyStatusCount());
         map.put("applyStatusTarget", tpl.getApplyStatusTarget());
+        // ✅ 新增：返回 charId
+        map.put("charId", tpl.getCharId());
+        // ✅ 新增：返回 drawCount
+        map.put("drawCount", tpl.getDrawCount());
         map.put("upgraded", tpl.isUpgraded());
         return map;
     }
