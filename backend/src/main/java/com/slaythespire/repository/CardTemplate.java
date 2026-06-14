@@ -20,6 +20,7 @@ public class CardTemplate {
     private final int drawCount;
     private final boolean upgraded;
     private final String charId;
+    private final String rarity;
 
     @JsonCreator
     public CardTemplate(
@@ -37,7 +38,8 @@ public class CardTemplate {
             @JsonProperty("ethereal") Boolean ethereal,
             @JsonProperty("drawCount") Integer drawCount,
             @JsonProperty("upgraded") Boolean upgraded,
-            @JsonProperty("charId") String charId) {
+            @JsonProperty("charId") String charId,
+            @JsonProperty("rarity") String rarity) {
         this.id = id;
         this.name = name;
         this.cost = cost;
@@ -53,6 +55,7 @@ public class CardTemplate {
         this.drawCount = drawCount != null ? drawCount : 0;
         this.upgraded = upgraded != null ? upgraded : false;
         this.charId = charId != null ? charId : "1";
+        this.rarity = rarity != null ? rarity : "COMMON";
     }
 
     public String getId() { return id; }
@@ -70,10 +73,11 @@ public class CardTemplate {
     public int getDrawCount() { return drawCount; }
     public boolean isUpgraded() { return upgraded; }
     public String getCharId() { return charId; }
+    public String getRarity() { return rarity; }
 
     @Override
     public String toString() {
-        return String.format("CardTemplate{id='%s', name='%s', cost=%d, type=%s, upgraded=%s, charId=%s}",
-                id, name, cost, type, upgraded, charId);
+        return String.format("CardTemplate{id='%s', name='%s', cost=%d, type=%s, upgraded=%s, charId=%s, rarity=%s}",
+                id, name, cost, type, upgraded, charId, rarity);
     }
 }

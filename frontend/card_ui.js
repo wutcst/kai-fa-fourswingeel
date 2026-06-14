@@ -1,5 +1,5 @@
 /**
- * 卡牌显示工具 — 效果文字生成 + 状态机制悬浮小窗 + 职业背景颜色
+ * 卡牌显示工具 — 效果文字生成 + 状态机制悬浮小窗 + 职业背景颜色 + 稀有度边框颜色
  * 所有翻卡/选卡/看卡页面共用
  */
 const CARD_UI = {
@@ -13,6 +13,14 @@ const CARD_UI = {
     'DEXTERITY':    { name: '敏捷',     desc: '每层敏捷使获得的格挡增加 1 点。',                              decay: false },
     'POISON':       { name: '毒',       desc: '回合结束时，造成等同于毒层数的伤害，然后减少 1 层。',           decay: true },
     'REGENERATION': { name: '再生',     desc: '回合结束时，恢复等同于再生层数的生命，然后减少 1 层。',          decay: true }
+  },
+
+  /** 稀有度 → 边框颜色映射 */
+  RARITY_COLORS: {
+    'START':    '#999999',
+    'COMMON':   '#bdc3c7',
+    'UNCOMMON': '#5dade2',
+    'RARE':     '#f1c40f'
   },
 
   /** 状态类型 → 中文名 */
@@ -62,8 +70,14 @@ const CARD_UI = {
     return 'linear-gradient(135deg, #8B0000, #B22222)';
   },
 
+  /** 根据稀有度返回边框颜色值 */
+  getRarityBorderColor(card) {
+    const rarity = (card && card.rarity) ? card.rarity : 'COMMON';
+    return this.RARITY_COLORS[rarity] || '#bdc3c7';
+  },
+
   /**
-   * 为 DOM 元素绑定卡牌效果（设置背景、边框、悬浮小窗）
+   * 为 DOM 元素绑定卡牌效果（设置背景、边框类型、稀有度边框、悬浮小窗）
    * @param {Element} el - 要绑定的元素
    * @param {object} card - 卡牌数据对象
    */
@@ -73,6 +87,10 @@ const CARD_UI = {
     // 边框类型
     const typeClass = this.getCardTypeClass(card);
     if (typeClass) el.classList.add(typeClass);
+    // 稀有度边框颜色（覆盖攻击/skill/power类可能设置的左边框颜色）
+    const borderColor = this.getRarityBorderColor(card);
+    el.style.borderColor = borderColor;
+    el.style.borderWidth = '3px';
     // 悬浮小窗
     this.bindTooltip(el, card.applyStatusType);
   },

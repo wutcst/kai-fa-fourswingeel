@@ -17,6 +17,7 @@ public class Card {
     private int drawCount;
     private boolean upgraded;
     private String charId;
+    private String rarity;
 
     public enum CardType { ATTACK, SKILL, POWER }
 
@@ -35,6 +36,7 @@ public class Card {
         this.drawCount = template.getDrawCount();
         this.upgraded = template.isUpgraded();
         this.charId = template.getCharId();
+        this.rarity = template.getRarity();
     }
 
     public Card(String name, int cost, int damage, int block, CardType type) {
@@ -46,6 +48,7 @@ public class Card {
         this.drawCount = 0;
         this.upgraded = false;
         this.charId = "1";
+        this.rarity = "COMMON";
     }
 
     // ================= Getter =================
@@ -63,6 +66,7 @@ public class Card {
     public int getDrawCount() { return drawCount; }
     public boolean isUpgraded() { return upgraded; }
     public String getCharId() { return charId; }
+    public String getRarity() { return rarity; }
 
     // ================= Setter =================
     public void setName(String name) { this.name = name; }
@@ -77,4 +81,5 @@ public class Card {
     public void setDrawCount(int drawCount) { this.drawCount = drawCount; }
     public void setUpgraded(boolean upgraded) { this.upgraded = upgraded; }
     public void setCharId(String charId) { this.charId = charId; }
+    public void setRarity(String rarity) { this.rarity = rarity; }
 }

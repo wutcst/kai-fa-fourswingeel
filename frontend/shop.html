@@ -13,7 +13,7 @@
     .section { width: 500px; max-width: 95%; background: #16213e; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
     .section h3 { margin-top: 0; color: #e67e22; }
     .item-list { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
-    .shop-item { border: 2px solid #34495e; border-radius: 8px; padding: 15px; width: 120px; text-align: center; cursor: pointer; transition: all 0.3s; background: linear-gradient(135deg, #2c3e50, #34495e); color: white; }
+    .shop-item { border: 3px solid #34495e; border-radius: 8px; padding: 15px; width: 120px; text-align: center; cursor: pointer; transition: all 0.3s; background: linear-gradient(135deg, #2c3e50, #34495e); color: white; }
     .shop-item:hover:not(.sold) { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
     .shop-item.sold { opacity: 0.4; cursor: not-allowed; }
     .shop-item .price { color: #f1c40f; font-weight: bold; margin-top: 8px; }
@@ -84,8 +84,10 @@
         shopData.cards.forEach(card => {
           const div = document.createElement('div');
           div.className = `shop-item ${CARD_UI.getCardTypeClass(card)}`;
-          // 设置背景
+          // 设置背景和稀有度边框
           div.style.background = CARD_UI.getCardCharStyle(card);
+          div.style.borderColor = CARD_UI.getRarityBorderColor(card);
+          div.style.borderWidth = '3px';
           const effText = CARD_UI.getCardEffectText(card);
           const typeLabel = CARD_UI.getCardTypeLabel(card);
           div.innerHTML = `<div><strong>${card.name}</strong></div><div class="card-type-label">${typeLabel}</div><div style="font-size:12px;color:#ecf0f1;margin:4px 0;">${effText}</div><div> ⚡${card.cost}</div><div class="price">${card.price} 💰</div>`;
@@ -98,7 +100,8 @@
               saveData.deck.push({
                 id: card.id, name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
                 applyStatusType: card.applyStatusType, applyStatusCount: card.applyStatusCount, applyStatusTarget: card.applyStatusTarget,
-                charId: card.charId || '1'
+                charId: card.charId || '1',
+                rarity: card.rarity || 'COMMON'
               });
               await saveSaveData(saveData);
               alert(`购买成功：${card.name}`);

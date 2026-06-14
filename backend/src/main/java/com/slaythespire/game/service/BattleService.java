@@ -40,9 +40,11 @@ public class BattleService {
             }
         }
 
+        // ✅ 修改：从所有敌人中随机选一个，而不是永远选第一个
         List<EnemyTemplate> enemies = dataRepo.getAllEnemies();
         if (enemies.isEmpty()) throw new IllegalStateException("怪物配置为空");
-        this.enemy = new Enemy(enemies.get(0), dataRepo);
+        EnemyTemplate chosenTemplate = enemies.get(new Random().nextInt(enemies.size()));
+        this.enemy = new Enemy(chosenTemplate, dataRepo);
 
         this.drawPile = buildDeckFromPlayerData(playerDeck);
         Collections.shuffle(drawPile);
@@ -230,6 +232,9 @@ public class BattleService {
                         card.setBlock(((Number) cardData.get("block")).intValue());
                     if (cardData.containsKey("name") && cardData.get("name") != null)
                         card.setName((String) cardData.get("name"));
+                    // 若有rarity则覆盖，否则保持模板值
+                    if (cardData.containsKey("rarity") && cardData.get("rarity") != null)
+                        card.setRarity((String) cardData.get("rarity"));
                 }
             }
             if (card == null) {
@@ -240,27 +245,28 @@ public class BattleService {
                 Card.CardType type = Card.CardType.valueOf((String) cardData.get("type"));
                 card = new Card(name, cost, damage, block, type);
 
-                // ✅ 尝试通过名称补全 charId（兼容老存档）
                 if (cardData.get("charId") == null) {
                     CardTemplate templateByName = dataRepo.getCardByName(name);
                     if (templateByName != null) {
                         card.setCharId(templateByName.getCharId());
                     }
                 }
+                // 手动指定rarity为COMMON（因为没有模板）
+                card.setRarity("COMMON");
             }
-            // 覆盖字段
-            if (cardData.get("applyStatusType") != null)
+            // 从数据中复制属性（可能覆盖）
+            if (cardData.containsKey("applyStatusType"))
                 card.setApplyStatusType((String) cardData.get("applyStatusType"));
-            if (cardData.get("applyStatusCount") != null)
+            if (cardData.containsKey("applyStatusCount"))
                 card.setApplyStatusCount(((Number) cardData.get("applyStatusCount")).intValue());
-            if (cardData.get("applyStatusTarget") != null)
+            if (cardData.containsKey("applyStatusTarget"))
                 card.setApplyStatusTarget((String) cardData.get("applyStatusTarget"));
-            if (cardData.get("drawCount") != null) {
+            if (cardData.containsKey("drawCount"))
                 card.setDrawCount(((Number) cardData.get("drawCount")).intValue());
-            }
-            if (cardData.get("charId") != null) {
+            if (cardData.containsKey("charId"))
                 card.setCharId((String) cardData.get("charId"));
-            }
+            if (cardData.containsKey("rarity"))
+                card.setRarity((String) cardData.get("rarity"));
             deck.add(card);
         }
         return deck;
@@ -337,6 +343,7 @@ public class BattleService {
             cardInfo.put("ethereal", c.isEthereal());
             cardInfo.put("drawCount", c.getDrawCount());
             cardInfo.put("charId", c.getCharId());
+            cardInfo.put("rarity", c.getRarity());  // ✅ 添加稀有度
             handCards.add(cardInfo);
         }
         state.put("hand", handCards);
