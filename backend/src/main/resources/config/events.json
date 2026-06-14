@@ -1,0 +1,64 @@
+[
+  {
+    "id": "ancient_ruins",
+    "title": "古老遗迹",
+    "description": "你发现了一座古老的遗迹，地上散落着金币和一件遗物，但空气中弥漫着危险的气息。",
+    "background": "linear-gradient(135deg, #4a3f2e, #2e2416)",
+    "icon": "🏛️",
+    "options": [
+      {
+        "text": "小心收集金币 (+50💰)",
+        "effects": [
+          { "type": "GOLD", "value": 50 }
+        ]
+      },
+      {
+        "text": "冒险深入探寻 (-10❤️，获得遗物)",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -10 },
+          { "type": "ADD_RELIC", "tier": "chest" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "wandering_merchant",
+    "title": "流浪商人",
+    "description": "一个流浪商人出现在你面前，他愿意用生命精华交换你的金币。",
+    "background": "linear-gradient(135deg, #3d5a3c, #1e3b1e)",
+    "icon": "🧑‍🌾",
+    "options": [
+      {
+        "text": "购买生命精华（-30💰，+15❤️）",
+        "effects": [
+          { "type": "GOLD", "value": -30 },
+          { "type": "HP_CHANGE", "value": 15 }
+        ]
+      },
+      {
+        "text": "拒绝交易",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "cursed_altar",
+    "title": "诅咒祭坛",
+    "description": "你遇到一座被诅咒的祭坛，上面放着一本散发邪气的卷轴。",
+    "background": "linear-gradient(135deg, #4a1a3a, #2e0e26)",
+    "icon": "🗿",
+    "options": [
+      {
+        "text": "阅读卷轴（-5❤️，获得随机卡牌）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -5 },
+          { "type": "ADD_RANDOM_CARD" }
+        ]
+      },
+      {
+        "text": "转身离开",
+        "effects": []
+      }
+    ]
+  }
+]
