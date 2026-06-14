@@ -25,7 +25,7 @@ public class BattleController {
     @PostMapping("/new")
     public Map<String, Object> newBattle(@RequestBody(required = false) Map<String, Object> payload) {
         List<Map<String, Object>> playerDeck = null;
-        List<String> playerRelics = null; // ✅ 新增：接收遗物 ID 列表
+        List<String> playerRelics = null;
         int playerHp = 70;
         int playerMaxHp = 70;
 
@@ -57,9 +57,14 @@ public class BattleController {
         return battleService.newBattle(playerDeck, playerRelics, playerHp, playerMaxHp);
     }
 
+    /**
+     * 打出卡牌（支持可选的 targetIndex，多目标战斗时使用）
+     */
     @PostMapping("/play")
-    public Map<String, Object> playCard(@RequestParam int index) {
-        return battleService.playCard(index);
+    public Map<String, Object> playCard(@RequestParam int index,
+                                        @RequestParam(required = false) Integer targetIndex) {
+        // 如果前端没有传 targetIndex，则传 null，由 Service 自行选择默认目标
+        return battleService.playCard(index, targetIndex);
     }
 
     @PostMapping("/endTurn")

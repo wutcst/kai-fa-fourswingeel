@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>杀戮尖塔 - 战斗</title>
+  <title>战斗</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="save_helper.js"></script>
   <script src="card_ui.js"></script>
@@ -11,18 +11,24 @@
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #e0e0e0; margin: 0; padding: 20px; }
     #app { max-width: 900px; margin: 0 auto; margin-top: 40px; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    h1 { margin: 0; font-size: 24px; }
     button { padding: 10px 20px; font-size: 16px; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
     .btn-end { background: #f39c12; color: white; } .btn-end:hover { opacity: 0.9; transform: translateY(-2px); }
     button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .error-box { background: #c0392b; color: white; padding: 12px; border-radius: 6px; margin-bottom: 16px; }
     .status-panel { display: flex; justify-content: space-between; background: #16213e; padding: 16px; border-radius: 10px; margin-bottom: 16px; }
-    .player-info, .enemy-info { flex: 1; } .enemy-info { text-align: right; }
-    .player-info p, .enemy-info p { margin: 5px 0; }
+    .player-info { flex: 1; }
+    .enemy-area { flex: 1; display: flex; gap: 15px; flex-wrap: wrap; justify-content: flex-end; }
+    .enemy-panel { background: #0f3460; border-radius: 8px; padding: 12px; width: 160px; cursor: pointer; transition: all 0.3s; }
+    .enemy-panel:hover { transform: translateY(-4px); box-shadow: 0 6px 12px rgba(0,0,0,0.4); }
+    .enemy-panel.selected { border: 2px solid #f1c40f; }
+    .enemy-panel h4 { margin: 0 0 6px; font-size: 14px; }
+    .enemy-panel p { margin: 2px 0; font-size: 12px; }
+    .enemy-panel .status-effects { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+    .enemy-panel .status-effects span { padding: 2px 6px; border-radius: 4px; font-size: 10px; color: white; }
+    .player-info p { margin: 5px 0; }
     .energy { text-align: center; font-size: 20px; margin: 10px 0; color: #f1c40f; }
     .warning { background: #2c1b3d; color: #e67e22; padding: 10px; border-radius: 6px; margin-bottom: 12px; text-align: center; font-weight: bold; }
-    .status-effects { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; justify-content: inherit; }
-    .player-info .status-effects { justify-content: flex-start; } .enemy-info .status-effects { justify-content: flex-end; }
+    .status-effects { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; justify-content: flex-start; }
     .status-effects span { padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
     .hand { display: flex; flex-wrap: wrap; justify-content: center; margin: 16px 0; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 12px; min-height: 150px; }
     .card-btn { 
@@ -80,21 +86,12 @@
 <body>
   <div id="app">
     <div class="header">
-      <h1>⚔️ 杀戮尖塔 - 战斗</h1>
       <div>
         <button class="btn-end" @click="endTurn" :disabled="!state || state.gameOver || loading">结束回合</button>
       </div>
     </div>
     <div v-if="error" class="error-box">{{ error }}</div>
     <div v-if="state" class="game-area">
-      <div class="warning" v-if="state.enemyNextDamage > 0 || state.enemyNextBlock > 0 || state.enemyIntentStatusType">
-        ⚠️ 敌人即将行动：{{ state.enemyIntentDesc }} 
-        <span v-if="state.enemyNextDamage > 0">(造成 {{ state.enemyNextDamage }} 点伤害)</span>
-        <span v-if="state.enemyNextBlock > 0">(获得 {{ state.enemyNextBlock }} 点格挡)</span>
-        <span v-if="state.enemyIntentStatusType" style="color: #f1c40f; margin-left: 8px;">
-          并施加 {{ getStatusName(state.enemyIntentStatusType) }} {{ state.enemyIntentStatusCount }} 层
-        </span>
-      </div>
       <div class="status-panel">
         <div class="player-info">
           <h3>❤️ 玩家 {{ state.playerHp }} / {{ state.playerMaxHp }}</h3>
@@ -103,11 +100,20 @@
             <span v-for="status in state.playerStatuses" :key="status.id" :style="{ background: status.color || '#666', border: '1px solid ' + (status.color || '#666') }">{{ status.name }}: {{ status.count }}</span>
           </div>
         </div>
-        <div class="enemy-info">
-          <h3>👹 {{ state.enemyName }}: {{ state.enemyHp }} / {{ state.enemyMaxHp }}</h3>
-          <p v-if="state.enemyBlock > 0">🛡️ 格挡: {{ state.enemyBlock }}</p>
-          <div class="status-effects">
-            <span v-for="status in state.enemyStatuses" :key="status.id" :style="{ background: status.color || '#666', border: '1px solid ' + (status.color || '#666') }">{{ status.name }}: {{ status.count }}</span>
+        <div class="enemy-area">
+          <div v-for="enemy in state.enemies" :key="enemy.index" class="enemy-panel" :class="{ selected: selectedEnemyIndex === enemy.index }" @click="selectEnemy(enemy.index)">
+            <h4>👹 {{ enemy.name }}</h4>
+            <p>❤️ {{ enemy.hp }}/{{ enemy.maxHp }}</p>
+            <p v-if="enemy.block > 0">🛡️ 格挡: {{ enemy.block }}</p>
+            <p v-if="enemy.nextDamage > 0" style="color:#f39c12;">⚔️ {{ enemy.intentDesc }} ({{ enemy.nextDamage }})</p>
+            <p v-else-if="enemy.nextBlock > 0" style="color:#3498db;">🛡️ {{ enemy.intentDesc }} ({{ enemy.nextBlock }})</p>
+            <p v-else>{{ enemy.intentDesc }}</p>
+            <p v-if="enemy.intentStatusType" style="color: #f1c40f; font-size:11px;">
+              施加{{ getStatusName(enemy.intentStatusType) }} {{ enemy.intentStatusCount }} 层
+            </p>
+            <div class="status-effects">
+              <span v-for="status in enemy.statuses" :key="status.id" :style="{ background: status.color || '#666', border: '1px solid ' + (status.color || '#666') }">{{ status.name }}: {{ status.count }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -148,6 +154,12 @@
           <strong>{{ selectedCard.name }}</strong><br>
           <span style="color: #ecf0f1; font-size: 14px;">{{ getCardEffectText(selectedCard) }}</span>
         </p>
+        <div v-if="state && state.enemies && state.enemies.length > 1" style="margin-top: 10px;">
+          <label>目标敌人:</label>
+          <select v-model="selectedEnemyIndex" style="margin-left:8px; padding:4px; background:#34495e; color:white; border:none; border-radius:4px;">
+            <option v-for="enemy in state.enemies" :key="enemy.index" :value="enemy.index">{{ enemy.name }} (❤️{{ enemy.hp }})</option>
+          </select>
+        </div>
         <div class="modal-actions">
           <button class="btn-confirm" @click="confirmPlay">确认打出</button>
           <button class="btn-cancel" @click="cancelPlay">取消</button>
@@ -158,7 +170,7 @@
   <script>
     const API_BASE = '/api/game';
     const app = Vue.createApp({
-      data() { return { state: null, loading: false, error: null, showCardConfirm: false, selectedCard: null, selectedIndex: -1, isFromMap: false, prevNodeId: null, nextNodeId: null, tooltipCard: null, tooltipX: 0, tooltipY: 0 }; },
+      data() { return { state: null, loading: false, error: null, showCardConfirm: false, selectedCard: null, selectedIndex: -1, selectedEnemyIndex: 0, isFromMap: false, prevNodeId: null, nextNodeId: null, tooltipCard: null, tooltipX: 0, tooltipY: 0 }; },
       mounted() {
         const params = new URLSearchParams(window.location.search);
         if (params.get('from') === 'map') { this.isFromMap = true; this.prevNodeId = params.get('prevNode') || 'start'; this.nextNodeId = params.get('nextNode'); }
@@ -176,6 +188,7 @@
         canPlayCard(card) { return this.state && card && card.cost <= this.state.energy; },
         getCardCharStyle(card) { return CARD_UI.getCardCharStyle(card); },
         getRarityBorderColor(card) { return CARD_UI.getRarityBorderColor(card); },
+        selectEnemy(index) { this.selectedEnemyIndex = index; },
         async newGame() {
           this.error = null; this.loading = true;
           try {
@@ -184,6 +197,10 @@
             const resp = await fetch(`${API_BASE}/new`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deck: saveData.deck, relics: saveData.relics, playerHp: saveData.playerHp, playerMaxHp: saveData.maxHp }) });
             if (!resp.ok) throw new Error(`请求失败 ${resp.status}`);
             this.state = await resp.json();
+            // 初始化目标选择
+            if (this.state && this.state.enemies && this.state.enemies.length > 0) {
+              this.selectedEnemyIndex = this.state.enemies[0].index;
+            }
           } catch (e) { this.error = '无法开始战斗：' + e.message; } finally { this.loading = false; }
         },
         previewCard(index) {
@@ -192,7 +209,17 @@
           if (!this.canPlayCard(card)) { this.error = `能量不足！`; return; }
           this.selectedCard = card; this.selectedIndex = index; this.showCardConfirm = true;
         },
-        async confirmPlay() { if (this.selectedIndex >= 0) await this.playCard(this.selectedIndex); this.showCardConfirm = false; },
+        async confirmPlay() {
+          if (this.selectedIndex >= 0) {
+            // 构建请求参数（目标索引）
+            let url = `${API_BASE}/play?index=${this.selectedIndex}`;
+            if (this.state && this.state.enemies && this.state.enemies.length > 1) {
+              url += `&targetIndex=${this.selectedEnemyIndex}`;
+            }
+            await this.playCard(this.selectedIndex, url);
+          }
+          this.showCardConfirm = false;
+        },
         cancelPlay() { this.showCardConfirm = false; },
         getCardEffectText(card) { return CARD_UI.getCardEffectText(card); },
         showTooltip(index, event) {
@@ -207,9 +234,13 @@
           }
         },
         hideTooltip() { this.tooltipCard = null; },
-        async playCard(index) {
+        async playCard(index, customUrl) {
           this.error = null;
-          try { const resp = await fetch(`${API_BASE}/play?index=${index}`, { method: 'POST' }); this.state = await resp.json(); } catch (e) { this.error = '打出卡牌失败'; }
+          try {
+            const url = customUrl || `${API_BASE}/play?index=${index}`;
+            const resp = await fetch(url, { method: 'POST' });
+            this.state = await resp.json();
+          } catch (e) { this.error = '打出卡牌失败'; }
         },
         async endTurn() {
           this.error = null;
@@ -219,12 +250,7 @@
         async goAfterFight() {
           if (!this.state) return;
           const charParam = new URLSearchParams(window.location.search).get('char') || '1';
-
-          if (this.state.gameOver && (
-            this.state.playerHp <= 0 ||
-            this.state.winner === '敌人' ||
-            this.state.winner === 'Enemy'
-          )) {
+          if (this.state.gameOver && (this.state.playerHp <= 0 || this.state.winner === '敌人')) {
             try {
               const visited = JSON.parse(localStorage.getItem('visitedNodes') || '[]');
               const deck = JSON.parse(localStorage.getItem('deck') || '[]');
@@ -240,30 +266,23 @@
                 battleLog: this.state.log || []
               };
               sessionStorage.setItem('deathStats', JSON.stringify(deathStats));
-            } catch (e) {
-              console.error('保存死亡统计数据失败:', e);
-            }
+            } catch (e) { console.error('保存死亡统计数据失败:', e); }
             window.location.href = 'gameover.html';
             return;
           }
-
           const nodeType = new URLSearchParams(window.location.search).get('nodeType') || 'monster';
           const prev = this.prevNodeId || 'start';
           const next = this.nextNodeId || prev;
-
           const saveData = await loadSaveData(charParam);
           saveData.playerHp = this.state.playerHp;
           saveData.maxHp = this.state.playerMaxHp;
-
           const isVictory = this.state.gameOver && this.state.playerHp > 0;
           if (isVictory && saveData.relics && saveData.relics.includes('burning_blood')) {
             saveData.playerHp = Math.min(saveData.maxHp, saveData.playerHp + 6);
           }
-
           saveData.currentNode = next;
           if (!saveData.visitedNodes.includes(next)) saveData.visitedNodes.push(next);
           await saveSaveData(saveData);
-
           if (this.isFromMap && (this.state.winner === 'player' || (this.state.gameOver && this.state.playerHp > 0))) {
             window.location.href = `reward.html?source=fight&char=${charParam}&prevNode=${prev}&nextNode=${next}&nodeType=${nodeType}&gotCard=0`;
           } else { window.location.href = `map.html?char=${charParam}&currentNode=${prev}`; }

@@ -19,14 +19,12 @@ public class BattleService {
     private GameDataRepository dataRepo;
 
     private Player player;
-    private Enemy enemy;
+    private List<Enemy> enemies;
     private List<Card> drawPile, hand, discardPile, exhaustPile;
     private int energy;
     private List<String> logList;
     private boolean gameOver;
     private String winner;
-
-    // ============ 生命周期 ============
 
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck,
                                                        List<String> playerRelics,
@@ -40,11 +38,27 @@ public class BattleService {
             }
         }
 
-        // ✅ 修改：从所有敌人中随机选一个，而不是永远选第一个
-        List<EnemyTemplate> enemies = dataRepo.getAllEnemies();
-        if (enemies.isEmpty()) throw new IllegalStateException("怪物配置为空");
-        EnemyTemplate chosenTemplate = enemies.get(new Random().nextInt(enemies.size()));
-        this.enemy = new Enemy(chosenTemplate, dataRepo);
+        // ✅ 修改：从 enemy_groups.json 中随机选取一个阵容
+        List<EnemyGroupTemplate> groups = dataRepo.getAllEnemyGroups();
+        if (groups.isEmpty()) throw new IllegalStateException("敌方阵容配置为空");
+        EnemyGroupTemplate chosenGroup = groups.get(new Random().nextInt(groups.size()));
+        List<String> enemyIds = chosenGroup.getEnemies();
+
+        this.enemies = new ArrayList<>();
+        for (String eid : enemyIds) {
+            EnemyTemplate tpl = dataRepo.getEnemyById(eid);
+            if (tpl == null) {
+                log.warn("敌人 ID {} 未在 enemies.json 中找到，跳过", eid);
+                continue;
+            }
+            enemies.add(new Enemy(tpl, dataRepo));
+        }
+        if (enemies.isEmpty()) {
+            // 兜底：如果所有ID都无效，至少创建一个敌人
+            List<EnemyTemplate> allTemplates = dataRepo.getAllEnemies();
+            if (allTemplates.isEmpty()) throw new IllegalStateException("敌人配置为空");
+            enemies.add(new Enemy(allTemplates.get(0), dataRepo));
+        }
 
         this.drawPile = buildDeckFromPlayerData(playerDeck);
         Collections.shuffle(drawPile);
@@ -64,7 +78,7 @@ public class BattleService {
         return getCurrentState();
     }
 
-    public synchronized Map<String, Object> playCard(int index) {
+    public synchronized Map<String, Object> playCard(int index, Integer targetIndex) {
         validateBattleActive();
         validateCardIndex(index);
 
@@ -75,25 +89,31 @@ public class BattleService {
         logList.clear();
         logList.add("🃏 使用: " + card.getName());
 
+        List<Enemy> aliveEnemies = getAliveEnemies();
+        if (aliveEnemies.isEmpty()) {
+            gameOver = true;
+            winner = "玩家";
+            logList.add("所有敌人已死亡");
+            return getCurrentState();
+        }
+        Enemy target = (targetIndex != null && targetIndex >= 0 && targetIndex < aliveEnemies.size())
+                ? aliveEnemies.get(targetIndex) : aliveEnemies.get(0);
+
         if (card.getDamage() > 0) {
-            int actualDmg = enemy.takeDamage(card.getDamage(), player);
-            logList.add(String.format("造成 %d 点伤害，敌人 HP: %d", actualDmg, enemy.getHp()));
+            int actualDmg = target.takeDamage(card.getDamage(), player);
+            logList.add(String.format("对 %s 造成 %d 点伤害，HP: %d", target.getEnemyName(), actualDmg, target.getHp()));
         }
 
-        if (card.getBlock() > 0) {
-            player.gainBlock(card.getBlock());
-            logList.add(String.format("获得 %d 点格挡，当前格挡: %d", card.getBlock(), player.getBlock()));
-        }
-
+        // ✅ 先应用状态效果
         if (card.getApplyStatusType() != null && !card.getApplyStatusType().isEmpty()) {
             StatusEffect status = StatusFactory.create(card.getApplyStatusType(), card.getApplyStatusCount(), dataRepo);
             if (status != null) {
-                String target = card.getApplyStatusTarget();
-                if (target == null || target.isEmpty())
-                    target = (card.getType() == Card.CardType.ATTACK) ? "ENEMY" : "SELF";
-                if ("ENEMY".equals(target)) {
-                    enemy.addStatus(status);
-                    logList.add(String.format("给敌人施加了 %d 层 %s", card.getApplyStatusCount(), status.getName()));
+                String targetStr = card.getApplyStatusTarget();
+                if (targetStr == null || targetStr.isEmpty())
+                    targetStr = (card.getType() == Card.CardType.ATTACK) ? "ENEMY" : "SELF";
+                if ("ENEMY".equals(targetStr)) {
+                    target.addStatus(status);
+                    logList.add(String.format("给 %s 施加了 %d 层 %s", target.getEnemyName(), card.getApplyStatusCount(), status.getName()));
                 } else {
                     player.addStatus(status);
                     logList.add(String.format("给自己施加了 %d 层 %s", card.getApplyStatusCount(), status.getName()));
@@ -101,13 +121,17 @@ public class BattleService {
             }
         }
 
+        // ✅ 实时移除已死亡敌人
+        removeDeadEnemies();
+
+        // 抽牌效果
         if (card.getDrawCount() > 0) {
             drawCards(card.getDrawCount());
         }
 
         hand.remove(index);
         if (card.getType() == Card.CardType.POWER) {
-            logList.add(card.getName() + "被使用（能力牌，不再出现）");
+            logList.add(card.getName() + "被使用（能力牌）");
         } else if (card.isExhaust()) {
             exhaustPile.add(card);
             logList.add(card.getName() + "被消耗");
@@ -115,10 +139,11 @@ public class BattleService {
             discardPile.add(card);
         }
 
-        if (!enemy.isAlive()) {
+        // 检查是否所有敌人都已死亡
+        if (getAliveEnemies().isEmpty()) {
             gameOver = true;
             winner = "玩家";
-            logList.add("🎉 敌人被击败！战斗胜利！");
+            logList.add("🎉 所有敌人被击败！");
         }
         return getCurrentState();
     }
@@ -144,44 +169,75 @@ public class BattleService {
         hand.clear();
         hand.addAll(retained);
 
-        enemy.onTurnStart();
-        int actualDmg = enemy.executeCurrentIntent(player);
-        if (actualDmg > 0) {
-            logList.add(String.format("⚔️ %s %s，造成 %d 点伤害。玩家 HP: %d | 格挡: %d",
-                    enemy.getEnemyName(), enemy.getIntentDesc(), actualDmg, player.getHp(), player.getBlock()));
-        } else {
-            logList.add(String.format("🛡️ %s %s", enemy.getEnemyName(), enemy.getIntentDesc()));
-        }
+        // ✅ 确保敌人列表中只有活着的敌人
+        removeDeadEnemies();
 
-        IntentTemplate intent = enemy.getCurrentIntentTemplate();
-        if (intent != null && intent.getApplyStatusType() != null) {
-            StatusEffect status = StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo);
-            if (status != null) {
-                if ("ENEMY".equals(intent.getApplyStatusTarget())) {
-                    enemy.addStatus(status);
-                    logList.add(String.format("怪物给自己施加了 %d 层 %s", intent.getApplyStatusCount(), status.getName()));
-                } else {
-                    player.addStatus(status);
-                    logList.add(String.format("怪物给玩家施加了 %d 层 %s", intent.getApplyStatusCount(), status.getName()));
+        // 每个敌人行动
+        for (Enemy enemy : enemies) {
+            enemy.onTurnStart();
+            int actualDmg = enemy.executeCurrentIntent(player);
+            if (actualDmg > 0) {
+                logList.add(String.format("⚔️ %s %s，造成 %d 点伤害。玩家 HP: %d | 格挡: %d",
+                        enemy.getEnemyName(), enemy.getIntentDesc(), actualDmg, player.getHp(), player.getBlock()));
+            } else {
+                logList.add(String.format("🛡️ %s %s", enemy.getEnemyName(), enemy.getIntentDesc()));
+            }
+
+            IntentTemplate intent = enemy.getCurrentIntentTemplate();
+            if (intent != null && intent.getApplyStatusType() != null) {
+                StatusEffect status = StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo);
+                if (status != null) {
+                    if ("ENEMY".equals(intent.getApplyStatusTarget())) {
+                        enemy.addStatus(status);
+                        logList.add(String.format("怪物给自己施加了 %d 层 %s", intent.getApplyStatusCount(), status.getName()));
+                    } else {
+                        player.addStatus(status);
+                        logList.add(String.format("怪物给玩家施加了 %d 层 %s", intent.getApplyStatusCount(), status.getName()));
+                    }
                 }
+            }
+
+            enemy.onTurnEnd();
+            logList.addAll(enemy.getLastTurnEndLogs());
+
+            if (!enemy.isAlive()) {
+                logList.add(String.format("💀 %s 被击败！", enemy.getEnemyName()));
             }
         }
 
-        enemy.onTurnEnd();
-        logList.addAll(enemy.getLastTurnEndLogs());
+        // ✅ 再次移除刚刚行动的敌人
+        removeDeadEnemies();
 
         player.onTurnStart();
         if (!player.isAlive()) {
             gameOver = true;
             winner = "敌人";
-            logList.add("💀 玩家倒下... 战斗失败。");
+            logList.add("💀 玩家倒下...");
             return getCurrentState();
         }
 
         energy = 3;
         drawCards(5);
-        enemy.advanceIntent();
+        for (Enemy enemy : enemies) {
+            enemy.advanceIntent();
+        }
         return getCurrentState();
+    }
+
+    // ✅ 从 enemies 列表中移除所有已死亡的敌人
+    private void removeDeadEnemies() {
+        if (enemies == null) return;
+        enemies.removeIf(e -> !e.isAlive());
+    }
+
+    private List<Enemy> getAliveEnemies() {
+        List<Enemy> alive = new ArrayList<>();
+        if (enemies != null) {
+            for (Enemy e : enemies) {
+                if (e.isAlive()) alive.add(e);
+            }
+        }
+        return alive;
     }
 
     private void drawCards(int count) {
@@ -193,7 +249,7 @@ public class BattleService {
             }
             if (drawPile.isEmpty()) {
                 if (discardPile.isEmpty()) {
-                    logList.add("⚠️ 抽牌堆和弃牌堆均为空，无法继续抽牌");
+                    logList.add("⚠️ 抽牌堆和弃牌堆均为空");
                     break;
                 }
                 drawPile.addAll(discardPile);
@@ -232,7 +288,6 @@ public class BattleService {
                         card.setBlock(((Number) cardData.get("block")).intValue());
                     if (cardData.containsKey("name") && cardData.get("name") != null)
                         card.setName((String) cardData.get("name"));
-                    // 若有rarity则覆盖，否则保持模板值
                     if (cardData.containsKey("rarity") && cardData.get("rarity") != null)
                         card.setRarity((String) cardData.get("rarity"));
                 }
@@ -244,17 +299,14 @@ public class BattleService {
                 int block = cardData.get("block") != null ? ((Number) cardData.get("block")).intValue() : 0;
                 Card.CardType type = Card.CardType.valueOf((String) cardData.get("type"));
                 card = new Card(name, cost, damage, block, type);
-
                 if (cardData.get("charId") == null) {
                     CardTemplate templateByName = dataRepo.getCardByName(name);
                     if (templateByName != null) {
                         card.setCharId(templateByName.getCharId());
                     }
                 }
-                // 手动指定rarity为COMMON（因为没有模板）
                 card.setRarity("COMMON");
             }
-            // 从数据中复制属性（可能覆盖）
             if (cardData.containsKey("applyStatusType"))
                 card.setApplyStatusType((String) cardData.get("applyStatusType"));
             if (cardData.containsKey("applyStatusCount"))
@@ -290,34 +342,72 @@ public class BattleService {
         }
         state.put("playerStatuses", playerStatusList);
 
-        state.put("enemyName", enemy.getEnemyName());
-        state.put("enemyHp", enemy.getHp());
-        state.put("enemyMaxHp", enemy.getMaxHp());
-        state.put("enemyBlock", enemy.getBlock());
-        state.put("enemyNextDamage", enemy.getNextDamage());
-        state.put("enemyNextBlock", enemy.getNextBlock());
-        state.put("enemyIntentDesc", enemy.getIntentDesc());
+        // 敌人列表（仅存活敌人）
+        List<Map<String, Object>> enemyList = new ArrayList<>();
+        for (int i = 0; i < enemies.size(); i++) {
+            Enemy e = enemies.get(i);
+            Map<String, Object> eMap = new LinkedHashMap<>();
+            eMap.put("index", i);
+            eMap.put("name", e.getEnemyName());
+            eMap.put("hp", e.getHp());
+            eMap.put("maxHp", e.getMaxHp());
+            eMap.put("block", e.getBlock());
+            eMap.put("nextDamage", e.getNextDamage());
+            eMap.put("nextBlock", e.getNextBlock());
+            eMap.put("intentDesc", e.getIntentDesc());
+            IntentTemplate intent = e.getCurrentIntentTemplate();
+            if (intent != null && intent.getApplyStatusType() != null) {
+                eMap.put("intentStatusType", intent.getApplyStatusType());
+                eMap.put("intentStatusCount", intent.getApplyStatusCount());
+            } else {
+                eMap.put("intentStatusType", null);
+                eMap.put("intentStatusCount", 0);
+            }
+            List<Map<String, Object>> statuses = new ArrayList<>();
+            for (StatusEffect s : e.getStatuses()) {
+                Map<String, Object> info = new LinkedHashMap<>();
+                info.put("id", s.getId());
+                info.put("count", s.getCount());
+                info.put("name", s.getName());
+                StatusTemplate tpl = dataRepo.getStatusById(s.getId());
+                if (tpl != null) info.put("color", tpl.getColor());
+                statuses.add(info);
+            }
+            eMap.put("statuses", statuses);
+            enemyList.add(eMap);
+        }
+        state.put("enemies", enemyList);
 
-        IntentTemplate intent = enemy.getCurrentIntentTemplate();
-        if (intent != null && intent.getApplyStatusType() != null) {
-            state.put("enemyIntentStatusType", intent.getApplyStatusType());
-            state.put("enemyIntentStatusCount", intent.getApplyStatusCount());
+        // 兼容旧字段（仅第一个敌人）
+        if (!enemies.isEmpty()) {
+            Enemy first = enemies.get(0);
+            state.put("enemyName", first.getEnemyName());
+            state.put("enemyHp", first.getHp());
+            state.put("enemyMaxHp", first.getMaxHp());
+            state.put("enemyBlock", first.getBlock());
+            state.put("enemyNextDamage", first.getNextDamage());
+            state.put("enemyNextBlock", first.getNextBlock());
+            state.put("enemyIntentDesc", first.getIntentDesc());
+            IntentTemplate intent = first.getCurrentIntentTemplate();
+            state.put("enemyIntentStatusType", intent != null ? intent.getApplyStatusType() : null);
+            state.put("enemyIntentStatusCount", intent != null ? intent.getApplyStatusCount() : 0);
+            List<Map<String, Object>> firstStatuses = new ArrayList<>();
+            for (StatusEffect s : first.getStatuses()) {
+                Map<String, Object> info = new LinkedHashMap<>();
+                info.put("id", s.getId());
+                info.put("count", s.getCount());
+                info.put("name", s.getName());
+                StatusTemplate tpl = dataRepo.getStatusById(s.getId());
+                if (tpl != null) info.put("color", tpl.getColor());
+                firstStatuses.add(info);
+            }
+            state.put("enemyStatuses", firstStatuses);
         } else {
-            state.put("enemyIntentStatusType", null);
-            state.put("enemyIntentStatusCount", 0);
+            state.put("enemyName", "");
+            state.put("enemyHp", 0);
+            state.put("enemyMaxHp", 0);
+            state.put("enemyStatuses", new ArrayList<>());
         }
-
-        List<Map<String, Object>> enemyStatusList = new ArrayList<>();
-        for (StatusEffect s : enemy.getStatuses()) {
-            Map<String, Object> info = new LinkedHashMap<>();
-            info.put("id", s.getId());
-            info.put("count", s.getCount());
-            info.put("name", s.getName());
-            StatusTemplate tpl = dataRepo.getStatusById(s.getId());
-            if (tpl != null) info.put("color", tpl.getColor());
-            enemyStatusList.add(info);
-        }
-        state.put("enemyStatuses", enemyStatusList);
 
         state.put("energy", energy);
         state.put("drawPileSize", drawPile.size());
@@ -343,7 +433,7 @@ public class BattleService {
             cardInfo.put("ethereal", c.isEthereal());
             cardInfo.put("drawCount", c.getDrawCount());
             cardInfo.put("charId", c.getCharId());
-            cardInfo.put("rarity", c.getRarity());  // ✅ 添加稀有度
+            cardInfo.put("rarity", c.getRarity());
             handCards.add(cardInfo);
         }
         state.put("hand", handCards);

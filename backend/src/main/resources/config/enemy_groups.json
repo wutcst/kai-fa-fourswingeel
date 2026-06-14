@@ -1,0 +1,17 @@
+[
+  {
+    "id": "single_cultist",
+    "name": "单个邪教徒",
+    "enemies": ["cultist"]
+  },
+  {
+    "id": "single_slime",
+    "name": "单个史莱姆",
+    "enemies": ["slime"]
+  },
+  {
+    "id": "double_slime",
+    "name": "两只史莱姆",
+    "enemies": ["slime", "slime"]
+  }
+]
