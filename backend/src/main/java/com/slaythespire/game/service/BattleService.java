@@ -38,7 +38,7 @@ public class BattleService {
             }
         }
 
-        // ✅ 修改：从 enemy_groups.json 中随机选取一个阵容
+        // ✅ 从 enemy_groups.json 中随机选取一个阵容
         List<EnemyGroupTemplate> groups = dataRepo.getAllEnemyGroups();
         if (groups.isEmpty()) throw new IllegalStateException("敌方阵容配置为空");
         EnemyGroupTemplate chosenGroup = groups.get(new Random().nextInt(groups.size()));
@@ -54,7 +54,6 @@ public class BattleService {
             enemies.add(new Enemy(tpl, dataRepo));
         }
         if (enemies.isEmpty()) {
-            // 兜底：如果所有ID都无效，至少创建一个敌人
             List<EnemyTemplate> allTemplates = dataRepo.getAllEnemies();
             if (allTemplates.isEmpty()) throw new IllegalStateException("敌人配置为空");
             enemies.add(new Enemy(allTemplates.get(0), dataRepo));
@@ -72,6 +71,9 @@ public class BattleService {
         this.winner = null;
 
         player.onTurnStart();
+        // ✅ 新增：收集玩家首回合开始时的状态日志（如“仪式”触发）
+        logList.addAll(player.getLastTurnStartLogs()); 
+        
         energy = 3;
         drawCards(5);
 
@@ -101,8 +103,6 @@ public class BattleService {
 
         // ================= 🛠️ 新增：处理卡牌的格挡效果 =================
         if (card.getBlock() > 0) {
-            // 调用您 Player 类中已有的增加格挡方法（内部应已包含敏捷加成逻辑）
-            // 如果您的方法名叫 gainBlock，请将其替换为 player.gainBlock(card.getBlock());
             player.gainBlock(card.getBlock()); 
             logList.add(String.format("🛡️ 获得 %d 点格挡，当前格挡: %d", card.getBlock(), player.getBlock()));
         }
@@ -184,6 +184,9 @@ public class BattleService {
         // 每个敌人行动
         for (Enemy enemy : enemies) {
             enemy.onTurnStart();
+            // ✅ 新增：收集敌人回合开始时的状态日志（如邪教徒的“仪式”触发）
+            logList.addAll(enemy.getLastTurnStartLogs()); 
+            
             int actualDmg = enemy.executeCurrentIntent(player);
             if (actualDmg > 0) {
                 logList.add(String.format("⚔️ %s %s，造成 %d 点伤害。玩家 HP: %d | 格挡: %d",
@@ -218,6 +221,9 @@ public class BattleService {
         removeDeadEnemies();
 
         player.onTurnStart();
+        // ✅ 新增：收集玩家下一回合开始时的状态日志
+        logList.addAll(player.getLastTurnStartLogs()); 
+        
         if (!player.isAlive()) {
             gameOver = true;
             winner = "敌人";
@@ -233,7 +239,6 @@ public class BattleService {
         return getCurrentState();
     }
 
-    // ✅ 从 enemies 列表中移除所有已死亡的敌人
     private void removeDeadEnemies() {
         if (enemies == null) return;
         enemies.removeIf(e -> !e.isAlive());
@@ -364,14 +369,20 @@ public class BattleService {
             eMap.put("nextDamage", e.getNextDamage());
             eMap.put("nextBlock", e.getNextBlock());
             eMap.put("intentDesc", e.getIntentDesc());
+            
             IntentTemplate intent = e.getCurrentIntentTemplate();
             if (intent != null && intent.getApplyStatusType() != null) {
                 eMap.put("intentStatusType", intent.getApplyStatusType());
                 eMap.put("intentStatusCount", intent.getApplyStatusCount());
+                // ✅ 新增：直接查询状态名称传给前端，避免前端字典缺失导致显示 ID
+                StatusTemplate statusTpl = dataRepo.getStatusById(intent.getApplyStatusType());
+                eMap.put("intentStatusName", statusTpl != null ? statusTpl.getName() : intent.getApplyStatusType());
             } else {
                 eMap.put("intentStatusType", null);
                 eMap.put("intentStatusCount", 0);
+                eMap.put("intentStatusName", null); // ✅ 新增
             }
+            
             List<Map<String, Object>> statuses = new ArrayList<>();
             for (StatusEffect s : e.getStatuses()) {
                 Map<String, Object> info = new LinkedHashMap<>();
@@ -397,9 +408,19 @@ public class BattleService {
             state.put("enemyNextDamage", first.getNextDamage());
             state.put("enemyNextBlock", first.getNextBlock());
             state.put("enemyIntentDesc", first.getIntentDesc());
+            
             IntentTemplate intent = first.getCurrentIntentTemplate();
             state.put("enemyIntentStatusType", intent != null ? intent.getApplyStatusType() : null);
             state.put("enemyIntentStatusCount", intent != null ? intent.getApplyStatusCount() : 0);
+            
+            // ✅ 新增：兼容字段的名称
+            if (intent != null && intent.getApplyStatusType() != null) {
+                StatusTemplate tpl = dataRepo.getStatusById(intent.getApplyStatusType());
+                state.put("enemyIntentStatusName", tpl != null ? tpl.getName() : intent.getApplyStatusType());
+            } else {
+                state.put("enemyIntentStatusName", null);
+            }
+            
             List<Map<String, Object>> firstStatuses = new ArrayList<>();
             for (StatusEffect s : first.getStatuses()) {
                 Map<String, Object> info = new LinkedHashMap<>();

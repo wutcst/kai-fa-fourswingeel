@@ -108,9 +108,12 @@
             <p v-if="enemy.nextDamage > 0" style="color:#f39c12;">⚔️ {{ enemy.intentDesc }} ({{ enemy.nextDamage }})</p>
             <p v-else-if="enemy.nextBlock > 0" style="color:#3498db;">🛡️ {{ enemy.intentDesc }} ({{ enemy.nextBlock }})</p>
             <p v-else>{{ enemy.intentDesc }}</p>
+            
+            <!-- ✅ 修改点：优先使用后端传来的 intentStatusName，如果没有再降级使用前端字典 -->
             <p v-if="enemy.intentStatusType" style="color: #f1c40f; font-size:11px;">
-              施加{{ getStatusName(enemy.intentStatusType) }} {{ enemy.intentStatusCount }} 层
+              施加{{ enemy.intentStatusName || getStatusName(enemy.intentStatusType) }} {{ enemy.intentStatusCount }} 层
             </p>
+
             <div class="status-effects">
               <span v-for="status in enemy.statuses" :key="status.id" :style="{ background: status.color || '#666', border: '1px solid ' + (status.color || '#666') }">{{ status.name }}: {{ status.count }}</span>
             </div>
@@ -197,7 +200,6 @@
             const resp = await fetch(`${API_BASE}/new`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deck: saveData.deck, relics: saveData.relics, playerHp: saveData.playerHp, playerMaxHp: saveData.maxHp }) });
             if (!resp.ok) throw new Error(`请求失败 ${resp.status}`);
             this.state = await resp.json();
-            // 初始化目标选择
             if (this.state && this.state.enemies && this.state.enemies.length > 0) {
               this.selectedEnemyIndex = this.state.enemies[0].index;
             }
@@ -211,7 +213,6 @@
         },
         async confirmPlay() {
           if (this.selectedIndex >= 0) {
-            // 构建请求参数（目标索引）
             let url = `${API_BASE}/play?index=${this.selectedIndex}`;
             if (this.state && this.state.enemies && this.state.enemies.length > 1) {
               url += `&targetIndex=${this.selectedEnemyIndex}`;
