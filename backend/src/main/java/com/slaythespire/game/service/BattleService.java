@@ -99,6 +99,15 @@ public class BattleService {
         Enemy target = (targetIndex != null && targetIndex >= 0 && targetIndex < aliveEnemies.size())
                 ? aliveEnemies.get(targetIndex) : aliveEnemies.get(0);
 
+        // ================= 🛠️ 新增：处理卡牌的格挡效果 =================
+        if (card.getBlock() > 0) {
+            // 调用您 Player 类中已有的增加格挡方法（内部应已包含敏捷加成逻辑）
+            // 如果您的方法名叫 gainBlock，请将其替换为 player.gainBlock(card.getBlock());
+            player.gainBlock(card.getBlock()); 
+            logList.add(String.format("🛡️ 获得 %d 点格挡，当前格挡: %d", card.getBlock(), player.getBlock()));
+        }
+        // ==========================================================
+
         if (card.getDamage() > 0) {
             int actualDmg = target.takeDamage(card.getDamage(), player);
             logList.add(String.format("对 %s 造成 %d 点伤害，HP: %d", target.getEnemyName(), actualDmg, target.getHp()));
