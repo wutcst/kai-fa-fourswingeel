@@ -19,6 +19,11 @@ public class Card {
     private String charId;
     private String rarity;
 
+    // 🆕 新增字段：自身伤害、获得能量、多段攻击次数
+    private int selfDamage;
+    private int energyGain;
+    private int multiHitCount; 
+
     public enum CardType { ATTACK, SKILL, POWER }
 
     public Card(CardTemplate template) {
@@ -37,6 +42,11 @@ public class Card {
         this.upgraded = template.isUpgraded();
         this.charId = template.getCharId();
         this.rarity = template.getRarity();
+        
+        // 🆕 从模板读取新字段
+        this.selfDamage = template.getSelfDamage();
+        this.energyGain = template.getEnergyGain();
+        this.multiHitCount = template.getMultiHitCount(); // 🆕 读取多段攻击次数
     }
 
     public Card(String name, int cost, int damage, int block, CardType type) {
@@ -49,6 +59,9 @@ public class Card {
         this.upgraded = false;
         this.charId = "1";
         this.rarity = "COMMON";
+        this.selfDamage = 0;
+        this.energyGain = 0;
+        this.multiHitCount = 1; // 🆕 默认单次攻击
     }
 
     // ================= Getter =================
@@ -67,6 +80,11 @@ public class Card {
     public boolean isUpgraded() { return upgraded; }
     public String getCharId() { return charId; }
     public String getRarity() { return rarity; }
+    
+    // 🆕 新增 Getter
+    public int getSelfDamage() { return selfDamage; }
+    public int getEnergyGain() { return energyGain; }
+    public int getMultiHitCount() { return multiHitCount; } // 🆕 
 
     // ================= Setter =================
     public void setName(String name) { this.name = name; }
@@ -82,4 +100,9 @@ public class Card {
     public void setUpgraded(boolean upgraded) { this.upgraded = upgraded; }
     public void setCharId(String charId) { this.charId = charId; }
     public void setRarity(String rarity) { this.rarity = rarity; }
+    
+    // 🆕 新增 Setter
+    public void setSelfDamage(int selfDamage) { this.selfDamage = selfDamage; }
+    public void setEnergyGain(int energyGain) { this.energyGain = energyGain; }
+    public void setMultiHitCount(int multiHitCount) { this.multiHitCount = multiHitCount; } // 🆕 
 }

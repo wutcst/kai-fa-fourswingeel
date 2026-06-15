@@ -36,22 +36,41 @@
         const div = document.createElement('div');
         div.className = `card ${CARD_UI.getCardTypeClass(card)}`;
         div.style.background = CARD_UI.getCardCharStyle(card);
+        
         // 稀有度边框颜色（覆盖class的左边框）
         const borderColor = CARD_UI.getRarityBorderColor(card);
         div.style.borderColor = borderColor;
         div.style.borderWidth = '3px';
+        
         const typeLabel = CARD_UI.getCardTypeLabel(card);
         div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p><div class="card-type-label">${typeLabel}</div><p style="font-size:12px;color:#ecf0f1;">${CARD_UI.getCardEffectText(card)}</p>`;
         CARD_UI.bindTooltip(div, card.applyStatusType);
 
         div.addEventListener('click', async () => {
           const saveData = await loadSaveData(char);
+          
+          // ✅ 核心修复：补全所有卡牌属性，确保加入卡组后效果不丢失
           saveData.deck.push({
-            id: card.id, name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type,
-            applyStatusType: card.applyStatusType, applyStatusCount: card.applyStatusCount, applyStatusTarget: card.applyStatusTarget,
+            id: card.id, 
+            name: card.name, 
+            cost: card.cost, 
+            damage: card.damage || 0, 
+            block: card.block || 0, 
+            type: card.type,
+            applyStatusType: card.applyStatusType, 
+            applyStatusCount: card.applyStatusCount || 0, 
+            applyStatusTarget: card.applyStatusTarget,
+            
+            // 🆕 补全新增的卡牌机制字段
+            drawCount: card.drawCount || 0,           // 抽牌数（如：剑柄打击）
+            selfDamage: card.selfDamage || 0,         // 自身伤害（如：放血）
+            energyGain: card.energyGain || 0,         // 获得能量（如：放血）
+            multiHitCount: card.multiHitCount || 1,   // 多段攻击次数（如：双重打击）
+            
             charId: card.charId || '1',
             rarity: card.rarity || 'COMMON'
           });
+          
           await saveSaveData(saveData);
           alert(`获得卡牌：${card.name}`);
           window.location.href = `reward.html?${query}&gotCard=1`;

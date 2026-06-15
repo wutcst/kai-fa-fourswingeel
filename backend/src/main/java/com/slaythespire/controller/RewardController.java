@@ -76,6 +76,8 @@ public class RewardController {
         List<Map<String, Object>> pool = new ArrayList<>();
         Set<String> usedIds = new HashSet<>();
         int attempts = 0;
+        
+        // 尝试生成不重复的卡牌
         while (pool.size() < count && attempts < count * 3) {
             CardTemplate tpl = validCards.get(random.nextInt(validCards.size()));
             if (!usedIds.contains(tpl.getId())) {
@@ -84,6 +86,8 @@ public class RewardController {
             }
             attempts++;
         }
+        
+        // 如果实在抽不出不重复的（比如卡池太小），则允许重复
         while (pool.size() < count) {
             CardTemplate tpl = validCards.get(random.nextInt(validCards.size()));
             pool.add(cardToMap(tpl));
@@ -91,6 +95,10 @@ public class RewardController {
         return pool;
     }
 
+    /**
+     * 将卡牌模板转换为 Map 返回给前端
+     * ✅ 已补全所有新增机制字段 (selfDamage, energyGain, multiHitCount)
+     */
     private Map<String, Object> cardToMap(CardTemplate tpl) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", tpl.getId());
@@ -99,13 +107,21 @@ public class RewardController {
         map.put("damage", tpl.getDamage());
         map.put("block", tpl.getBlock());
         map.put("type", tpl.getType().name());
+        
         map.put("applyStatusType", tpl.getApplyStatusType());
         map.put("applyStatusCount", tpl.getApplyStatusCount());
         map.put("applyStatusTarget", tpl.getApplyStatusTarget());
+        
         map.put("charId", tpl.getCharId());
         map.put("drawCount", tpl.getDrawCount());
         map.put("upgraded", tpl.isUpgraded());
-        map.put("rarity", tpl.getRarity());  // ✅ 添加稀有度
+        map.put("rarity", tpl.getRarity());  
+        
+        // 🆕 核心修复：补全自身伤害、获得能量、多段攻击字段
+        map.put("selfDamage", tpl.getSelfDamage());
+        map.put("energyGain", tpl.getEnergyGain());
+        map.put("multiHitCount", tpl.getMultiHitCount());
+        
         return map;
     }
 
