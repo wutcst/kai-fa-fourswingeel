@@ -12,7 +12,8 @@ const CARD_UI = {
     'STRENGTH':     { name: '力量',     desc: '每层力量使攻击伤害增加 1 点。',                                decay: false },
     'DEXTERITY':    { name: '敏捷',     desc: '每层敏捷使获得的格挡增加 1 点。',                              decay: false },
     'POISON':       { name: '毒',       desc: '回合结束时，造成等同于毒层数的伤害，然后减少 1 层。',           decay: true },
-    'REGENERATION': { name: '再生',     desc: '回合结束时，恢复等同于再生层数的生命，然后减少 1 层。',          decay: true }
+    'REGENERATION': { name: '再生',     desc: '回合结束时，恢复等同于再生层数的生命，然后减少 1 层。',          decay: true },
+    'RITUAL':       { name: '仪式',     desc: '回合开始时，获得 1 点力量。',                                        decay: false }
   },
 
   /** 稀有度 → 边框颜色映射 */

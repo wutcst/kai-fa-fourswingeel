@@ -5,5 +5,6 @@
   { "id": "STRENGTH", "name": "力量", "description": "每层力量使攻击伤害增加 1 点。", "effectType": "OUTGOING_DAMAGE_FLAT", "value": 1.0, "color": "#f1c40f", "decay": false },
   { "id": "DEXTERITY", "name": "敏捷", "description": "每层敏捷使获得的格挡增加 1 点。", "effectType": "OUTGOING_BLOCK_FLAT", "value": 1.0, "color": "#2ecc71", "decay": false },
   { "id": "POISON", "name": "毒", "description": "回合结束时，造成等同于毒层数的伤害，然后减少 1 层。", "effectType": "TURN_END_DAMAGE", "value": 1.0, "color": "#27ae60", "decay": true },
-  { "id": "REGENERATION", "name": "再生", "description": "回合结束时，恢复等同于再生层数的生命，然后减少 1 层。", "effectType": "TURN_END_HEAL", "value": 1.0, "color": "#8e44ad", "decay": true }
+  { "id": "REGENERATION", "name": "再生", "description": "回合结束时，恢复等同于再生层数的生命，然后减少 1 层。", "effectType": "TURN_END_HEAL", "value": 1.0, "color": "#8e44ad", "decay": true },
+    { "id": "RITUAL", "name": "仪式", "description": "回合开始时，获得 1 点力量。", "effectType": "TURN_START_GAIN_STRENGTH", "value": 1.0, "color": "#e67e22", "decay": false }
 ]
