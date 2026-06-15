@@ -28,44 +28,45 @@
     <div class="relic-options"></div>
   </div>
 
-  <script>
+    <script>
+    async function initStartRoom() {
       const params = new URLSearchParams(window.location.search);
       const char = params.get('char') || '1';
       const currentNode = params.get('currentNode') || 'start';
 
       const currentSaveData = await loadSaveData(char);
 
-      let startDone = localStorage.getItem('startRelicDone') === 'true';
-      if (startDone) {
-        const visited = currentSaveData.visitedNodes || ['start'];
-        if (visited.length === 1 && visited[0] === 'start') {
-          localStorage.removeItem('startRelicDone');
-          startDone = false;
-        } else {
-          alert('你已经选择过初始遗物了！');
-          window.location.href = `map.html?char=${char}&currentNode=${currentNode}`;
-          return;
-        }
+      // ✅ 终极修复：检查是否已经拥有初始遗物，而不是检查 visitedNodes
+      const starterRelicIds = ['neow_remove', 'neow_blood', 'neow_upgrade'];
+      const hasChosenStarterRelic = starterRelicIds.some(id => currentSaveData.relics.includes(id));
+
+      if (hasChosenStarterRelic) {
+        alert('你已经选择过初始遗物了！');
+        window.location.href = `map.html?char=${char}&currentNode=${currentNode}`;
+        return;
       }
 
       const mainDiv = document.getElementById('main-content');
 
       const starterRelics = [
         {
-          id: 1, name: '净化卷轴', icon: '📜', desc: '从卡组中删除一张牌。',
-          action: () => startRemoveCards(1)
+          id: 1, relicId: 'neow_remove',
+          name: '净化卷轴', icon: '📜', desc: '从卡组中删除一张牌。',
+          action: () => startRemoveCards(1, 'neow_remove')
         },
         {
-          id: 2, name: '血之契约', icon: '🩸', desc: '失去 10 点生命，然后从卡组中删除两张牌。',
+          id: 2, relicId: 'neow_blood',
+          name: '血之契约', icon: '🩸', desc: '失去 10 点生命，然后从卡组中删除两张牌。',
           action: () => {
             currentSaveData.playerHp = Math.max(1, currentSaveData.playerHp - 10);
             alert('你失去了 10 点生命！');
-            startRemoveCards(2);
+            startRemoveCards(2, 'neow_blood');
           }
         },
         {
-          id: 3, name: '锻造圣锤', icon: '🔨', desc: '升级卡组中的一张牌。',
-          action: () => startUpgradeCard()
+          id: 3, relicId: 'neow_upgrade',
+          name: '锻造圣锤', icon: '🔨', desc: '升级卡组中的一张牌。',
+          action: () => startUpgradeCard('neow_upgrade')
         }
       ];
 
@@ -90,9 +91,11 @@
         });
       }
 
-      function startRemoveCards(countToRemove) {
+      function startRemoveCards(countToRemove, relicId) {
         if (currentSaveData.deck.length === 0) {
-          alert('卡组为空，无法删除！'); finishStart(); return;
+          alert('卡组为空，无法删除！'); 
+          finishStart(relicId); 
+          return;
         }
 
         let removed = 0;
@@ -107,15 +110,22 @@
             div.style.background = CARD_UI.getCardCharStyle(card);
             div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div><div style="font-size:11px;color:#ecf0f1;margin-top:4px;">${CARD_UI.getCardEffectText(card)}</div>`;
             CARD_UI.bindTooltip(div, card.applyStatusType);
+            
             div.addEventListener('click', () => {
               if (removed >= countToRemove) return;
-              currentSaveData.deck.splice(index, 1);
+              
+              const realIndex = currentSaveData.deck.indexOf(card);
+              if (realIndex !== -1) {
+                currentSaveData.deck.splice(realIndex, 1);
+              }
+              
               removed++;
               if (removed >= countToRemove) {
                 alert(`成功删除了 ${countToRemove} 张牌！`);
-                finishStart();
+                finishStart(relicId);
               } else {
-                startRemoveCards(countToRemove - removed);
+                mainDiv.querySelector('h3').innerText = `点击卡牌将其删除（还需删除 ${countToRemove - removed} 张）`;
+                renderDeckForRemoval();
               }
             });
             cardListDiv.appendChild(div);
@@ -124,10 +134,12 @@
         renderDeckForRemoval();
       }
 
-      function startUpgradeCard() {
+      function startUpgradeCard(relicId) {
         const upgradeable = currentSaveData.deck.filter(card => !card.upgraded);
         if (upgradeable.length === 0) {
-          alert('没有可升级的卡牌！'); finishStart(); return;
+          alert('没有可升级的卡牌！'); 
+          finishStart(relicId); 
+          return;
         }
 
         mainDiv.innerHTML = `<h3>选择一张卡牌升级</h3><div class="card-selection" id="card-list"></div>`;
@@ -140,26 +152,42 @@
           div.style.background = CARD_UI.getCardCharStyle(card);
           div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div><div style="font-size:11px;color:#ecf0f1;margin-top:4px;">${CARD_UI.getCardEffectText(card)}</div>`;
           CARD_UI.bindTooltip(div, card.applyStatusType);
+          
           div.addEventListener('click', () => {
             const upgraded = { ...card, upgraded: true, name: card.name + '+' };
             if (upgraded.damage > 0) upgraded.damage += 3;
             if (upgraded.block > 0) upgraded.block += 3;
             currentSaveData.deck[index] = upgraded;
             alert(`【${card.name}】升级为【${upgraded.name}】！`);
-            finishStart();
+            finishStart(relicId);
           });
           cardListDiv.appendChild(div);
         });
       }
 
-      async function finishStart() {
-        localStorage.setItem('startRelicDone', 'true');
+      async function finishStart(relicId) {
+        if (relicId && !currentSaveData.relics.includes(relicId)) {
+          currentSaveData.relics.push(relicId);
+        }
+        
+        // 确保 start 节点被标记为已访问（如果 save_helper 没做的话）
+        if (!currentSaveData.visitedNodes) currentSaveData.visitedNodes = [];
+        if (!currentSaveData.visitedNodes.includes('start')) {
+          currentSaveData.visitedNodes.push('start');
+        }
+        
         await saveSaveData(currentSaveData);
         alert('初始遗物选择完毕，开始冒险吧！');
         window.location.href = `map.html?char=${char}&currentNode=${currentNode}`;
       }
 
       renderRelics();
+    }
+
+    initStartRoom().catch(err => {
+      console.error("初始化房间失败:", err);
+      alert("加载存档失败，请检查控制台。");
+    });
   </script>
 </body>
 </html>
