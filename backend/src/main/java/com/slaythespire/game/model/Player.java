@@ -1,6 +1,7 @@
 package com.slaythespire.game.model;
 
 import com.slaythespire.repository.GameDataRepository;
+import java.util.ArrayList;
 
 public class Player extends Combatant {
     private int energy;
@@ -10,8 +11,6 @@ public class Player extends Combatant {
         super(hp, maxHp);
         this.dataRepo = dataRepo;
         this.energy = 3;
-        // ✅ 修复：移除硬编码的测试遗物，初始不加载任何遗物
-        // loadStartingRelics(); 
     }
 
     public int getEnergy() { return energy; }
@@ -19,24 +18,18 @@ public class Player extends Combatant {
     public void useEnergy(int cost) { this.energy -= cost; }
 
     @Override
+    public GameDataRepository getDataRepo() { return this.dataRepo; }
+
+    @Override
     public void onTurnStart() {
         clearBlock();
-        for (Relic r : getRelics()) r.onTurnStart(this);
-    }
-    
-    // ✅ 新增：提供一个公开方法，供 BattleService 在战斗开始时动态添加初始遗物（未来扩展用）
-    public void addInitialRelic(String relicId) {
-        if (dataRepo != null) {
-            var template = dataRepo.getRelicById(relicId);
-            if (template != null) {
-                GameRelic relic = new GameRelic(template);
-                this.addRelic(relic);
-                // 处理被动属性（如加血上限）
-                if ("MAX_HP".equals(relic.getEffectType())) {
-                    this.maxHp += relic.getValue();
-                    this.hp += relic.getValue();
-                }
-            }
+        turnStartLogs.clear(); // 使用父类的 protected 字段
+        
+        // ✅ 遍历副本防止并发修改异常
+        for (StatusEffect s : new ArrayList<>(statuses)) {
+            addTurnStartLog(s.onTurnStart(this)); // 使用父类提供的方法
         }
+        
+        for (Relic r : getRelics()) r.onTurnStart(this);
     }
 }

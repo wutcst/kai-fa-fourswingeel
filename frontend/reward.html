@@ -4,43 +4,78 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>奖励</title>
+  <script src="save_helper.js"></script>
   <style>
     body {
-      background: #1a1a2e; display: flex; align-items: center;
-      justify-content: center; height: 100vh; margin: 0;
+      background: #1a1a2e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       color: #e0e0e0;
     }
     .panel {
-      background: #16213e; border-radius: 12px; padding: 30px 40px;
-      display: flex; flex-direction: column; gap: 20px;
+      background: #16213e;
+      border-radius: 12px;
+      padding: 30px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
       box-shadow: 0 0 30px rgba(0,0,0,0.5);
-      position: relative; min-width: 280px;
+      position: relative;
+      min-width: 280px;
     }
     .reward-btn {
-      background: #e67e22; color: white; border: none;
-      padding: 15px 30px; font-size: 18px; border-radius: 8px;
-      cursor: pointer; transition: all 0.3s;
+      background: #e67e22;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
     }
-    .reward-btn:hover:not(:disabled) { background: #d35400; transform: translateY(-2px); }
+    .reward-btn:hover:not(:disabled) {
+      background: #d35400;
+      transform: translateY(-2px);
+    }
     .reward-btn:disabled {
-      background: #555; color: #aaa; cursor: not-allowed; transform: none;
+      background: #555;
+      color: #aaa;
+      cursor: not-allowed;
+      transform: none;
     }
     .skip-btn {
-      position: absolute; bottom: -60px; right: 0;
-      background: #e74c3c; color: white; border: none;
-      padding: 12px 24px; font-size: 16px; border-radius: 8px;
-      cursor: pointer; transition: all 0.3s;
+      position: absolute;
+      bottom: -60px;
+      right: 0;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
     }
-    .skip-btn:hover { background: #c0392b; transform: translateY(-2px); }
-    .loading { text-align: center; color: #f1c40f; font-size: 18px; }
+    .skip-btn:hover {
+      background: #c0392b;
+      transform: translateY(-2px);
+    }
+    .loading {
+      text-align: center;
+      color: #f1c40f;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
-  <script src="status_bar.js"></script>
   <div class="panel" id="reward-panel">
     <div class="loading">正在获取奖励...</div>
   </div>
+
   <script>
     (async function() {
       const params = new URLSearchParams(window.location.search);
@@ -52,12 +87,12 @@
       const gotRelic = params.get('gotRelic') === '1';
       const gotCard = params.get('gotCard') === '1';
 
-      // 如果是返回页面（已领取过部分奖励），则从缓存恢复奖励，避免重新随机生成
-      const isReturnVisit = params.has('gotGold') || params.has('gotRelic') || params.has('gotCard');
+      const isReturnVisit = params.get('gotGold') === '1' || params.get('gotRelic') === '1' || params.get('gotCard') === '1';
 
+      // 后端不可用时的降级奖励
       const defaultReward = {
         gold: 50,
-        relic: '神秘遗物',
+        relic: null,
         cardPool: [
           { name: '打击', cost: 1, damage: 6, block: 0, type: 'ATTACK' },
           { name: '防御', cost: 1, damage: 0, block: 5, type: 'SKILL' },
@@ -67,7 +102,6 @@
 
       let reward = null;
 
-      // 如果是返回访问，尝试从 sessionStorage 恢复奖励
       if (isReturnVisit) {
         const saved = sessionStorage.getItem('rewardData');
         if (saved) {
@@ -75,15 +109,17 @@
         }
       }
 
-      // 首次进入或恢复失败时，从后端请求奖励
       if (!reward) {
         try {
-          const resp = await fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}`);
+          // 传已拥有的遗物 ID，避免重复获取
+          const saveDataForReward = await loadSaveData(char);
+          const owned = (saveDataForReward.relics || []).join(',');
+          const resp = await fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}&charId=${char}`);
           if (resp.ok) {
             const data = await resp.json();
             reward = {
               gold: data.gold || defaultReward.gold,
-              relic: data.relic || defaultReward.relic,
+              relic: data.hasOwnProperty('relic') ? data.relic : defaultReward.relic,
               cardPool: data.cards || defaultReward.cardPool
             };
           }
@@ -91,43 +127,50 @@
           console.warn('后端奖励接口不可用，使用默认奖励', e);
         }
         if (!reward) reward = defaultReward;
-        // 将本次奖励存入 sessionStorage，以便返回后还能恢复
         sessionStorage.setItem('rewardData', JSON.stringify(reward));
       }
 
       let localGotGold = gotGold;
       let localGotRelic = gotRelic;
 
-      // 更新 URL 中的 get 参数，防止刷新后状态丢失
       function updateUrlParam(key, value) {
         const url = new URL(window.location.href);
         url.searchParams.set(key, value);
         window.history.replaceState(null, '', url.toString());
       }
 
-      function goBackToMap() {
+      async function goBackToMap() {
+        const saveData = await loadSaveData(char);
+        saveData.currentNode = nextNode;
+        if (!saveData.visitedNodes.includes(nextNode)) {
+          saveData.visitedNodes.push(nextNode);
+        }
+        await saveSaveData(saveData);
         window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
       }
 
-      function giveGold(amount) {
+      async function giveGold(amount) {
         if (localGotGold) return;
-        let gold = parseInt(localStorage.getItem('gold') || '0');
-        gold += amount;
-        localStorage.setItem('gold', gold);
+        const saveData = await loadSaveData(char);
+        saveData.gold += amount;
+        await saveSaveData(saveData);
         localGotGold = true;
         alert(`获得 ${amount} 金币！`);
-        if (window.updateStatusBar) window.updateStatusBar();
         updateUrlParam('gotGold', '1');
       }
 
-      function giveRelic(relicName) {
+      // ✅ 获取遗物：存储 ID，MAX_HP 类遗物永久增加血上限
+      async function giveRelic(relicId, effectType, value) {
         if (localGotRelic) return;
-        const relics = JSON.parse(localStorage.getItem('relics') || '[]');
-        relics.push(relicName);
-        localStorage.setItem('relics', JSON.stringify(relics));
+        const saveData = await loadSaveData(char);
+        saveData.relics.push(relicId);
+        if (effectType === 'MAX_HP' && value > 0) {
+          saveData.maxHp = (saveData.maxHp || 70) + value;
+          saveData.playerHp = Math.min((saveData.playerHp || saveData.maxHp) + value, saveData.maxHp);
+        }
+        await saveSaveData(saveData);
         localGotRelic = true;
-        alert(`获得 ${relicName}！`);
-        if (window.updateStatusBar) window.updateStatusBar();
+        alert(`获得遗物！`);
         updateUrlParam('gotRelic', '1');
       }
 
@@ -140,39 +183,40 @@
       const panel = document.getElementById('reward-panel');
       panel.innerHTML = '';
 
-      // 金币按钮
       const goldBtn = document.createElement('button');
       goldBtn.className = 'reward-btn';
       goldBtn.textContent = `💰 获得金币 +${reward.gold}`;
       if (gotGold) goldBtn.disabled = true;
-      goldBtn.addEventListener('click', () => {
-        giveGold(reward.gold);
+      goldBtn.addEventListener('click', async () => {
+        await giveGold(reward.gold);
         goldBtn.disabled = true;
       });
       panel.appendChild(goldBtn);
 
-      // 卡牌按钮
       const cardBtn = document.createElement('button');
       cardBtn.className = 'reward-btn';
-      cardBtn.textContent = '🃏 选择一张卡牌';
+      cardBtn.textContent = ' 选择一张卡牌';
       if (gotCard) cardBtn.disabled = true;
       cardBtn.addEventListener('click', goToCardSelect);
       panel.appendChild(cardBtn);
 
-      // 遗物按钮
-      if (nodeType === 'elite' || nodeType === 'chest' || nodeType === 'boss') {
+      // 遗物按钮：仅在有可用遗物且不是 null 时显示
+      if ((nodeType === 'elite' || nodeType === 'chest' || nodeType === 'boss') && reward.relic) {
         const relicBtn = document.createElement('button');
         relicBtn.className = 'reward-btn';
-        relicBtn.textContent = `📿 获得 ${reward.relic}`;
+        const relicName = reward.relic.name || reward.relic;
+        const relicId = reward.relic.id || reward.relic;
+        const relicEffectType = reward.relic.effectType || null;
+        const relicValue = reward.relic.value || 0;
+        relicBtn.textContent = `📿 获得 ${relicName}`;
         if (gotRelic) relicBtn.disabled = true;
-        relicBtn.addEventListener('click', () => {
-          giveRelic(reward.relic);
+        relicBtn.addEventListener('click', async () => {
+          await giveRelic(relicId, relicEffectType, relicValue);
           relicBtn.disabled = true;
         });
         panel.appendChild(relicBtn);
       }
 
-      // 跳过按钮
       const skipBtn = document.createElement('button');
       skipBtn.className = 'skip-btn';
       skipBtn.textContent = '跳过 →';
@@ -180,5 +224,7 @@
       panel.appendChild(skipBtn);
     })();
   </script>
+  
+  <script src="status_bar.js"></script>
 </body>
 </html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>起点 - 选择初始遗物</title>
+  <style>
+    body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    h2 { color: #f1c40f; margin: 30px 0 20px; }
+    h3 { color: #e67e22; margin-bottom: 15px; }
+    .relic-options { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; max-width: 800px; }
+    .relic-card { width: 200px; padding: 20px; border: 2px solid #34495e; border-radius: 12px; background: #16213e; text-align: center; cursor: pointer; transition: all 0.3s; }
+    .relic-card:hover { border-color: #e67e22; box-shadow: 0 0 20px #e67e22; transform: translateY(-5px); }
+    .relic-icon { font-size: 40px; margin-bottom: 10px; }
+    .relic-name { font-weight: bold; font-size: 18px; margin: 10px 0; }
+    .relic-desc { font-size: 14px; color: #ccc; }
+    .card-selection { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 20px; }
+    .card-btn { width: 140px; padding: 15px; border: 2px solid #34495e; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; transition: all 0.3s; text-align: center; }
+    .card-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+  </style>
+</head>
+<body>
+  <script src="status_bar.js"></script>
+  <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
+  <h2>🏕️ 选择你的初始遗物</h2>
+  <div id="main-content">
+    <div class="relic-options"></div>
+  </div>
+
+    <script>
+    async function initStartRoom() {
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      const currentNode = params.get('currentNode') || 'start';
+
+      const currentSaveData = await loadSaveData(char);
+
+      // ✅ 终极修复：检查是否已经拥有初始遗物，而不是检查 visitedNodes
+      const starterRelicIds = ['neow_remove', 'neow_blood', 'neow_upgrade'];
+      const hasChosenStarterRelic = starterRelicIds.some(id => currentSaveData.relics.includes(id));
+
+      if (hasChosenStarterRelic) {
+        alert('你已经选择过初始遗物了！');
+        window.location.href = `map.html?char=${char}&currentNode=${currentNode}`;
+        return;
+      }
+
+      const mainDiv = document.getElementById('main-content');
+
+      const starterRelics = [
+        {
+          id: 1, relicId: 'neow_remove',
+          name: '净化卷轴', icon: '📜', desc: '从卡组中删除一张牌。',
+          action: () => startRemoveCards(1, 'neow_remove')
+        },
+        {
+          id: 2, relicId: 'neow_blood',
+          name: '血之契约', icon: '🩸', desc: '失去 10 点生命，然后从卡组中删除两张牌。',
+          action: () => {
+            currentSaveData.playerHp = Math.max(1, currentSaveData.playerHp - 10);
+            alert('你失去了 10 点生命！');
+            startRemoveCards(2, 'neow_blood');
+          }
+        },
+        {
+          id: 3, relicId: 'neow_upgrade',
+          name: '锻造圣锤', icon: '🔨', desc: '升级卡组中的一张牌。',
+          action: () => startUpgradeCard('neow_upgrade')
+        }
+      ];
+
+      function renderRelics() {
+        let html = '<div class="relic-options">';
+        starterRelics.forEach(relic => {
+          html += `<div class="relic-card" data-id="${relic.id}">
+            <div class="relic-icon">${relic.icon}</div>
+            <div class="relic-name">${relic.name}</div>
+            <div class="relic-desc">${relic.desc}</div>
+          </div>`;
+        });
+        html += '</div>';
+        mainDiv.innerHTML = html;
+
+        document.querySelectorAll('.relic-card').forEach(card => {
+          card.addEventListener('click', function() {
+            const relicId = parseInt(this.getAttribute('data-id'));
+            const relic = starterRelics.find(r => r.id === relicId);
+            if (relic) relic.action();
+          });
+        });
+      }
+
+      function startRemoveCards(countToRemove, relicId) {
+        if (currentSaveData.deck.length === 0) {
+          alert('卡组为空，无法删除！'); 
+          finishStart(relicId); 
+          return;
+        }
+
+        let removed = 0;
+        mainDiv.innerHTML = `<h3>点击卡牌将其删除（还需删除 ${countToRemove} 张）</h3><div class="card-selection" id="card-list"></div>`;
+        const cardListDiv = document.getElementById('card-list');
+
+        const renderDeckForRemoval = () => {
+          cardListDiv.innerHTML = '';
+          currentSaveData.deck.forEach((card, index) => {
+            const div = document.createElement('div');
+            div.className = 'card-btn';
+            div.style.background = CARD_UI.getCardCharStyle(card);
+            div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div><div style="font-size:11px;color:#ecf0f1;margin-top:4px;">${CARD_UI.getCardEffectText(card)}</div>`;
+            CARD_UI.bindTooltip(div, card.applyStatusType);
+            
+            div.addEventListener('click', () => {
+              if (removed >= countToRemove) return;
+              
+              const realIndex = currentSaveData.deck.indexOf(card);
+              if (realIndex !== -1) {
+                currentSaveData.deck.splice(realIndex, 1);
+              }
+              
+              removed++;
+              if (removed >= countToRemove) {
+                alert(`成功删除了 ${countToRemove} 张牌！`);
+                finishStart(relicId);
+              } else {
+                mainDiv.querySelector('h3').innerText = `点击卡牌将其删除（还需删除 ${countToRemove - removed} 张）`;
+                renderDeckForRemoval();
+              }
+            });
+            cardListDiv.appendChild(div);
+          });
+        };
+        renderDeckForRemoval();
+      }
+
+      function startUpgradeCard(relicId) {
+        const upgradeable = currentSaveData.deck.filter(card => !card.upgraded);
+        if (upgradeable.length === 0) {
+          alert('没有可升级的卡牌！'); 
+          finishStart(relicId); 
+          return;
+        }
+
+        mainDiv.innerHTML = `<h3>选择一张卡牌升级</h3><div class="card-selection" id="card-list"></div>`;
+        const cardListDiv = document.getElementById('card-list');
+        
+        currentSaveData.deck.forEach((card, index) => {
+          if (card.upgraded) return;
+          const div = document.createElement('div');
+          div.className = 'card-btn';
+          div.style.background = CARD_UI.getCardCharStyle(card);
+          div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div><div style="font-size:11px;color:#ecf0f1;margin-top:4px;">${CARD_UI.getCardEffectText(card)}</div>`;
+          CARD_UI.bindTooltip(div, card.applyStatusType);
+          
+          div.addEventListener('click', () => {
+            const upgraded = { ...card, upgraded: true, name: card.name + '+' };
+            if (upgraded.damage > 0) upgraded.damage += 3;
+            if (upgraded.block > 0) upgraded.block += 3;
+            currentSaveData.deck[index] = upgraded;
+            alert(`【${card.name}】升级为【${upgraded.name}】！`);
+            finishStart(relicId);
+          });
+          cardListDiv.appendChild(div);
+        });
+      }
+
+      async function finishStart(relicId) {
+        if (relicId && !currentSaveData.relics.includes(relicId)) {
+          currentSaveData.relics.push(relicId);
+        }
+        
+        // 确保 start 节点被标记为已访问（如果 save_helper 没做的话）
+        if (!currentSaveData.visitedNodes) currentSaveData.visitedNodes = [];
+        if (!currentSaveData.visitedNodes.includes('start')) {
+          currentSaveData.visitedNodes.push('start');
+        }
+        
+        await saveSaveData(currentSaveData);
+        alert('初始遗物选择完毕，开始冒险吧！');
+        window.location.href = `map.html?char=${char}&currentNode=${currentNode}`;
+      }
+
+      renderRelics();
+    }
+
+    initStartRoom().catch(err => {
+      console.error("初始化房间失败:", err);
+      alert("加载存档失败，请检查控制台。");
+    });
+  </script>
+</body>
+</html>

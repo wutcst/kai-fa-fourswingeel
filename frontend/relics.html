@@ -4,66 +4,123 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>遗物</title>
+  <script src="save_helper.js"></script>
   <style>
     body {
-      margin: 0; padding-top: 50px; /* 为状态栏留空 */
+      margin: 0; padding-top: 50px;
       background: #1a1a2e; color: #e0e0e0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex; flex-direction: column; align-items: center;
       min-height: 100vh;
     }
-    h2 {
-      color: #f1c40f; margin: 30px 0 20px;
-    }
+    h2 { color: #f1c40f; margin: 30px 0 20px; }
     .relic-list {
-      width: 400px; max-width: 90%;
-      display: flex; flex-direction: column; gap: 10px;
+      width: 450px; max-width: 90%;
+      display: flex; flex-direction: column; gap: 15px;
     }
     .relic-item {
-      background: #16213e; border-radius: 8px; padding: 12px 18px;
-      display: flex; align-items: center; gap: 12px;
+      background: #16213e; border-radius: 8px; padding: 15px 20px;
+      display: flex; align-items: flex-start; gap: 15px;
       border-left: 4px solid #e67e22;
       font-size: 16px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
-    .relic-icon {
-      font-size: 24px;
-    }
-    .empty {
-      color: #aaa; margin-top: 40px; font-size: 18px;
-    }
+    /* 稀有度颜色：白色/普通、蓝色/稀有、金色/传说 */
+    .relic-item.rarity-common { border-left-color: #bdc3c7; }
+    .relic-item.rarity-rare   { border-left-color: #3498db; }
+    .relic-item.rarity-special { border-left-color: #9b59b6; }
+    .relic-icon { font-size: 32px; flex-shrink: 0; margin-top: 2px;}
+    .relic-info { flex: 1; }
+    .relic-name { font-weight: bold; font-size: 18px; margin-bottom: 5px;}
+    .relic-rarity-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-left: 8px; vertical-align: middle; font-weight: normal; }
+    .rarity-common .relic-name { color: #bdc3c7; }
+    .rarity-common .relic-rarity-badge { background: #bdc3c7; color: #1a1a2e; }
+    .rarity-rare .relic-name { color: #3498db; }
+    .rarity-rare .relic-rarity-badge { background: #3498db; color: white; }
+    .rarity-special .relic-name { color: #9b59b6; }
+    .rarity-special .relic-rarity-badge { background: #9b59b6; color: white; }
+    .relic-desc { font-size: 14px; color: #bdc3c7; line-height: 1.4;}
+    .empty { color: #aaa; margin-top: 40px; font-size: 18px; }
     .back-btn {
       margin-top: 30px;
       background: #e74c3c; color: white; border: none;
       padding: 10px 24px; font-size: 16px; border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s;
+      cursor: pointer; transition: all 0.3s;
     }
     .back-btn:hover { background: #c0392b; transform: translateY(-2px); }
   </style>
 </head>
 <body>
-  <script src="status_bar.js"></script>
   <h2>📿 已获得的遗物</h2>
   <div class="relic-list" id="relic-list">
-    <!-- 动态生成 -->
+    <div class="empty">加载中...</div>
   </div>
   <button class="back-btn" onclick="history.back()">返回</button>
 
   <script>
-    (function() {
-      const relics = JSON.parse(localStorage.getItem('relics') || '[]');
-      const list = document.getElementById('relic-list');
+    (async function() {
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      
+      // 1. 获取所有遗物配置字典 (ID -> {name, description})
+      let relicDict = {};
+      try {
+        const resp = await fetch('/api/relics');
+        if (resp.ok) {
+          const list = await resp.json();
+          list.forEach(r => relicDict[r.id] = r);
+        }
+      } catch (e) { 
+        console.warn('获取遗物配置失败', e); 
+      }
+
+      // 2. 从后端加载最新存档
+      const saveData = await loadSaveData(char);
+      const relics = saveData.relics || [];
+      
+      const listDiv = document.getElementById('relic-list');
       if (relics.length === 0) {
-        list.innerHTML = '<div class="empty">暂无遗物</div>';
+        listDiv.innerHTML = '<div class="empty">暂无遗物，去打怪或开宝箱吧！</div>';
         return;
       }
-      relics.forEach(name => {
+      
+      // 3. 渲染遗物列表
+      listDiv.innerHTML = ''; 
+      relics.forEach(relicId => {
         const div = document.createElement('div');
         div.className = 'relic-item';
-        div.innerHTML = `<span class="relic-icon">📿</span> ${name}`;
-        list.appendChild(div);
+        
+        // 根据 ID 查找中文名和描述
+        const relicInfo = relicDict[relicId];
+        if (relicInfo) {
+          // 稀有度映射：STARTER/COMMON → common(白), RARE → rare(蓝), SPECIAL → special(紫)
+          const rarity = relicInfo.rarity || 'COMMON';
+          let rarityClass = 'common', rarityLabel = '普通';
+          if (rarity === 'RARE') { rarityClass = 'rare'; rarityLabel = '稀有'; }
+          else if (rarity === 'SPECIAL') { rarityClass = 'special'; rarityLabel = '特殊'; }
+          div.className = 'relic-item rarity-' + rarityClass;
+          div.innerHTML = `
+            <span class="relic-icon">📿</span>
+            <div class="relic-info">
+              <div class="relic-name">${relicInfo.name}<span class="relic-rarity-badge">${rarityLabel}</span></div>
+              <div class="relic-desc">${relicInfo.description || '神秘的遗物，效果未知。'}</div>
+            </div>
+          `;
+        } else {
+          // 兜底：如果字典里没有（可能是旧存档的脏数据），直接显示 ID
+          div.innerHTML = `
+            <span class="relic-icon">❓</span> 
+            <div class="relic-info">
+              <div class="relic-name">未知遗物</div>
+              <div class="relic-desc">ID: ${relicId}</div>
+            </div>
+          `;
+        }
+        listDiv.appendChild(div);
       });
     })();
   </script>
+
+  <script src="status_bar.js"></script>
 </body>
 </html>

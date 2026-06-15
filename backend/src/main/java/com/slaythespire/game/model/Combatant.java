@@ -3,6 +3,11 @@ package com.slaythespire.game.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.slaythespire.repository.GameDataRepository;
+
+/**
+ * 战斗实体基类 - 统一处理血量、格挡、状态和遗物的触发逻辑
+ */
 public abstract class Combatant {
     protected int hp;
     protected int maxHp;
@@ -10,8 +15,8 @@ public abstract class Combatant {
     protected List<StatusEffect> statuses = new ArrayList<>();
     protected List<Relic> relics = new ArrayList<>();
     
-    // ✅ 新增：用于收集回合结束时的日志
     protected List<String> lastTurnEndLogs = new ArrayList<>();
+    protected List<String> turnStartLogs = new ArrayList<>();
 
     public Combatant(int hp, int maxHp) {
         this.maxHp = maxHp;
@@ -20,16 +25,34 @@ public abstract class Combatant {
 
     public void addStatus(StatusEffect status) {
         for (StatusEffect s : statuses) {
-            if (s.getId().equals(status.getId())) { s.setCount(s.getCount() + status.getCount()); return; }
+            if (s.getId().equals(status.getId())) { 
+                s.setCount(s.getCount() + status.getCount()); 
+                return; 
+            }
         }
         statuses.add(status);
     }
+    
     public void addRelic(Relic relic) { relics.add(relic); }
     public List<Relic> getRelics() { return relics; }
     public List<StatusEffect> getStatuses() { return statuses; }
-    public List<String> getLastTurnEndLogs() { return lastTurnEndLogs; } // ✅ 新增 Getter
+    
+    public List<String> getLastTurnEndLogs() { 
+        List<String> copy = new ArrayList<>(lastTurnEndLogs);
+        lastTurnEndLogs.clear();
+        return copy; 
+    }
+    
+    public List<String> getLastTurnStartLogs() {
+        List<String> copy = new ArrayList<>(turnStartLogs);
+        turnStartLogs.clear();
+        return copy;
+    }
+    
+    protected void addTurnStartLog(String log) {
+        if (log != null) turnStartLogs.add(log);
+    }
 
-    // ✅ 修改：增加 ignoreBlock 参数
     public int takeDamage(int rawDamage, Combatant source) {
         return takeDamage(rawDamage, source, false);
     }
@@ -44,7 +67,7 @@ public abstract class Combatant {
         for (Relic r : this.relics) finalDamage = r.onDamageTaken(finalDamage, this);
 
         int blocked = 0;
-        if (!ignoreBlock) { // ✅ 毒伤害无视格挡
+        if (!ignoreBlock) { 
             blocked = Math.min(block, finalDamage);
             block -= blocked;
         }
@@ -58,15 +81,16 @@ public abstract class Combatant {
         block += finalBlock;
     }
 
-    // ✅ 修改：收集状态和遗物产生的日志
     public void onTurnEnd() {
         lastTurnEndLogs.clear();
         for (Relic r : relics) {
             r.onTurnEnd(this);
         }
         List<StatusEffect> toRemove = new ArrayList<>();
-        for (StatusEffect s : statuses) {
-            String log = s.onTurnEnd(this); // ✅ 获取日志
+        
+        // ✅ 修复：遍历副本，防止 onTurnEnd 内部添加新状态导致 ConcurrentModificationException
+        for (StatusEffect s : new ArrayList<>(statuses)) {
+            String log = s.onTurnEnd(this); 
             if (log != null) lastTurnEndLogs.add(log);
             s.decrement();
             if (s.getCount() <= 0) toRemove.add(s);
@@ -76,9 +100,13 @@ public abstract class Combatant {
 
     public int getHp() { return hp; }
     public int getMaxHp() { return maxHp; }
+    public void setMaxHp(int maxHp) { this.maxHp = maxHp; }
+    
     public int getBlock() { return block; }
     public void clearBlock() { block = 0; }
     public void heal(int amount) { if (amount > 0) hp = Math.min(hp + amount, maxHp); }
     public boolean isAlive() { return hp > 0; }
+    
     public abstract void onTurnStart();
+    public abstract GameDataRepository getDataRepo();
 }

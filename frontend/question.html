@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>问号事件</title>
+  <script src="save_helper.js"></script>
+  <style>
+    body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; position: relative; }
+    .event-background { width: 100%; height: 250px; display: flex; align-items: center; justify-content: center; font-size: 80px; color: white; text-shadow: 0 0 20px rgba(0,0,0,0.8); }
+    .event-text { max-width: 600px; padding: 20px; text-align: center; font-size: 18px; line-height: 1.6; background: rgba(0,0,0,0.4); border-radius: 12px; margin: 20px; }
+    .options { display: flex; gap: 30px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+    .option-btn { padding: 15px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; background: #e67e22; color: white; max-width: 250px; }
+    .option-btn:hover { background: #d35400; transform: translateY(-2px); }
+    .option-btn:disabled { background: #555; cursor: not-allowed; transform: none; }
+  </style>
+</head>
+<body>
+  <script src="status_bar.js"></script>
+  <div class="event-background" id="event-bg"></div>
+  <div class="event-text" id="event-description"></div>
+  <div class="options" id="options-container"></div>
+
+  <script>
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      const currentNode = params.get('currentNode') || 'start';
+      const nextNode = params.get('nextNode') || currentNode;
+
+      let eventData = null; // 保存后端返回的事件数据
+
+      // 加载事件
+      async function loadEvent() {
+        try {
+          const resp = await fetch('/api/event/roll');
+          if (resp.ok) {
+            eventData = await resp.json();
+            renderEvent(eventData);
+          } else {
+            throw new Error('事件接口错误');
+          }
+        } catch (e) {
+          console.error('无法获取事件', e);
+          // 降级显示简单文本
+          document.getElementById('event-bg').style.background = 'linear-gradient(135deg, #333, #111)';
+          document.getElementById('event-bg').innerHTML = '❓';
+          document.getElementById('event-description').textContent = '一片未知的区域，什么也没有发生。';
+          const optionsDiv = document.getElementById('options-container');
+          optionsDiv.innerHTML = '';
+        }
+      }
+
+      function renderEvent(event) {
+        document.getElementById('event-bg').style.background = event.background || 'linear-gradient(135deg, #333, #111)';
+        document.getElementById('event-bg').innerHTML = `<span>${event.icon || '❓'}</span>`;
+        document.getElementById('event-description').textContent = event.description || '无描述';
+
+        const optionsDiv = document.getElementById('options-container');
+        optionsDiv.innerHTML = '';
+        event.options.forEach((opt, index) => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.textContent = opt.text;
+          btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            try {
+              const chooseResp = await fetch(`/api/event/choose?eventId=${encodeURIComponent(event.id)}&optionIndex=${index}&charId=${char}`, { method: 'POST' });
+              if (chooseResp.ok) {
+                const result = await chooseResp.text();
+                console.log('事件结果:', result);
+                alert('事件发生：' + result);
+                // 跳转到地图
+                window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
+              } else {
+                alert('执行选项失败');
+                btn.disabled = false;
+              }
+            } catch (e) {
+              console.error('执行事件错误', e);
+              alert('发生错误，请重试');
+              btn.disabled = false;
+            }
+          });
+          optionsDiv.appendChild(btn);
+        });
+      }
+
+      loadEvent();
+  </script>
+</body>
+</html>

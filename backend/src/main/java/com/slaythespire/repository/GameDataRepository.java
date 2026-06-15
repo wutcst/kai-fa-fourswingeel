@@ -17,6 +17,7 @@ public class GameDataRepository {
     private List<EnemyTemplate> enemies = new ArrayList<>();
     private List<RelicTemplate> relics = new ArrayList<>();
     private List<StatusTemplate> statuses = new ArrayList<>();
+    private List<EnemyGroupTemplate> enemyGroups = new ArrayList<>();
 
     @PostConstruct
     public void init() {
@@ -24,6 +25,7 @@ public class GameDataRepository {
         loadJson("config/enemies.json", enemies, new TypeReference<List<EnemyTemplate>>() {});
         loadJson("config/relics.json", relics, new TypeReference<List<RelicTemplate>>() {});
         loadJson("config/statuses.json", statuses, new TypeReference<List<StatusTemplate>>() {});
+        loadJson("config/enemy_groups.json", enemyGroups, new TypeReference<List<EnemyGroupTemplate>>() {});
     }
 
     private <T> void loadJson(String path, List<T> target, TypeReference<List<T>> typeRef) {
@@ -43,6 +45,7 @@ public class GameDataRepository {
     public List<EnemyTemplate> getAllEnemies() { return enemies; }
     public List<RelicTemplate> getAllRelics() { return relics; }
     public List<StatusTemplate> getAllStatuses() { return statuses; }
+    public List<EnemyGroupTemplate> getAllEnemyGroups() { return enemyGroups; }
 
     public StatusTemplate getStatusById(String id) {
         return statuses.stream().filter(s -> s.getId().equals(id)).findFirst().orElse(null);
@@ -51,8 +54,17 @@ public class GameDataRepository {
         return relics.stream().filter(r -> r.getId().equals(id)).findFirst().orElse(null);
     }
     
-    // ✅ 新增：根据 ID 查找卡牌模板
     public CardTemplate getCardById(String id) {
         return cards.stream().filter(c -> c.getId().equals(id)).findFirst().orElse(null);
+    }
+
+    // ✅ 新增：根据名称查找卡牌模板（用于存档旧卡牌补全 charId）
+    public CardTemplate getCardByName(String name) {
+        return cards.stream().filter(c -> c.getName().equals(name)).findFirst().orElse(null);
+    }
+
+    // ✅ 新增：根据敌人 ID 查找敌人模板
+    public EnemyTemplate getEnemyById(String enemyId) {
+        return enemies.stream().filter(e -> e.getId().equals(enemyId)).findFirst().orElse(null);
     }
 }

@@ -1,5 +1,6 @@
 package com.slaythespire.game.model;
 
+import com.slaythespire.game.model.factory.StatusFactory;
 import com.slaythespire.repository.StatusTemplate;
 
 public class GameStatus implements StatusEffect {
@@ -45,12 +46,26 @@ public class GameStatus implements StatusEffect {
         return amount;
     }
 
-        // ✅ 核心修改：处理毒(无视格挡) 和 再生(回血)，并返回日志
+    @Override
+    public String onTurnStart(Combatant owner) {
+        if ("TURN_START_GAIN_STRENGTH".equals(effectType)) {
+            int amount = (int) (value * count); 
+            // 通过 owner 获取 dataRepo 来创建力量状态
+            StatusEffect strength = StatusFactory.create("STRENGTH", amount, owner.getDataRepo());
+            if (strength != null) {
+                owner.addStatus(strength);
+                return "🔥 " + name + "生效，获得 " + amount + " 点力量";
+            }
+        }
+        return null;
+    }
+
+    // ✅ 原有的：处理回合结束时的效果（如毒、再生）
     @Override
     public String onTurnEnd(Combatant owner) {
         if ("TURN_END_DAMAGE".equals(effectType)) {
             int dmg = (int) (value * count);
-            owner.takeDamage(dmg, null, true); // 第三个参数 true 表示无视格挡
+            owner.takeDamage(dmg, null, true); 
             return "☠️ " + name + "发作，造成 " + dmg + " 点伤害";
         }
         if ("TURN_END_HEAL".equals(effectType)) {
