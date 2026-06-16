@@ -9,9 +9,9 @@ public class Card {
     private boolean upgraded; private String charId; private String rarity;
     private int selfDamage; private int energyGain; private int multiHitCount; 
     private int exhaustHandCount; private String exhaustHandMode;
-    
     private boolean unplayable; private boolean innate; private int discardCount;
     private boolean xCost; private boolean aoe;
+    private boolean drawFirst; // 🆕 新增
 
     public enum CardType { ATTACK, SKILL, POWER }
 
@@ -26,9 +26,9 @@ public class Card {
         this.selfDamage = template.getSelfDamage(); this.energyGain = template.getEnergyGain();
         this.multiHitCount = template.getMultiHitCount(); this.exhaustHandCount = template.getExhaustHandCount();
         this.exhaustHandMode = template.getExhaustHandMode();
-        
         this.unplayable = template.isUnplayable(); this.innate = template.isInnate();
         this.discardCount = template.getDiscardCount(); this.xCost = template.isXCost(); this.aoe = template.isAoe();
+        this.drawFirst = template.isDrawFirst(); // 🆕 从模板读取
     }
 
     public Card(String name, int cost, int damage, int block, CardType type) {
@@ -37,9 +37,9 @@ public class Card {
         this.selfDamage = 0; this.energyGain = 0; this.multiHitCount = 1;
         this.exhaustHandCount = 0; this.exhaustHandMode = "RANDOM";
         this.unplayable = false; this.innate = false; this.discardCount = 0; this.xCost = false; this.aoe = false;
+        this.drawFirst = false; // 🆕 默认 false
     }
 
-    // Getters
     public String getName() { return name; } public int getCost() { return cost; } public int getDamage() { return damage; }
     public int getBlock() { return block; } public CardType getType() { return type; }
     public String getApplyStatusType() { return applyStatusType; } public int getApplyStatusCount() { return applyStatusCount; }
@@ -51,8 +51,8 @@ public class Card {
     public String getExhaustHandMode() { return exhaustHandMode; }
     public boolean isUnplayable() { return unplayable; } public boolean isInnate() { return innate; }
     public int getDiscardCount() { return discardCount; } public boolean isXCost() { return xCost; } public boolean isAoe() { return aoe; }
+    public boolean isDrawFirst() { return drawFirst; } // 🆕 新增 Getter
 
-    // Setters
     public void setName(String name) { this.name = name; } public void setDamage(int damage) { this.damage = damage; }
     public void setBlock(int block) { this.block = block; } public void setApplyStatusType(String applyStatusType) { this.applyStatusType = applyStatusType; }
     public void setApplyStatusCount(int applyStatusCount) { this.applyStatusCount = applyStatusCount; }
@@ -69,4 +69,5 @@ public class Card {
     public void setDiscardCount(int discardCount) { this.discardCount = discardCount; }
     public void setXCost(boolean xCost) { this.xCost = xCost; }
     public void setAoe(boolean aoe) { this.aoe = aoe; }
+    public void setDrawFirst(boolean drawFirst) { this.drawFirst = drawFirst; } // 🆕 新增 Setter
 }

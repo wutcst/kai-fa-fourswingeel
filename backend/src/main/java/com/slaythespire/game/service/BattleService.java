@@ -183,28 +183,48 @@ public class BattleService {
 
         removeDeadEnemies();
 
+        // ================= ⚙️ 核心结算顺序：根据 drawFirst 决定抽牌时机 =================
         int playedCardIndex = index;
 
+        // 1. 如果配置为先抽牌（如：杂技），则先执行抽牌
+        if (card.isDrawFirst()) {
+            if (card.getDrawCount() > 0) {
+                drawCards(card.getDrawCount());
+            }
+        }
+
+        // 2. 处理消耗手牌 (手中无其他牌时 count=0，安全跳过，不会报错)
         if (card.getExhaustHandCount() > 0) {
             int count = Math.min(card.getExhaustHandCount(), hand.size() - 1);
             for (int i = 0; i < count; i++) {
                 int targetIdx = resolveHandInteractionIndex(i, exhaustHandIndex, playedCardIndex, hand.size(), "消耗");
                 hand.remove(targetIdx);
-                if (targetIdx < playedCardIndex) playedCardIndex--;
+                if (targetIdx < playedCardIndex) {
+                    playedCardIndex--;
+                }
             }
         }
 
+        // 3. 处理丢弃手牌 (手中无其他牌时 count=0，安全跳过，不会报错)
         if (card.getDiscardCount() > 0) {
             int count = Math.min(card.getDiscardCount(), hand.size() - 1);
             for (int i = 0; i < count; i++) {
                 int targetIdx = resolveHandInteractionIndex(i, discardHandIndex, playedCardIndex, hand.size(), "丢弃");
                 hand.remove(targetIdx);
-                if (targetIdx < playedCardIndex) playedCardIndex--;
+                if (targetIdx < playedCardIndex) {
+                    playedCardIndex--;
+                }
             }
         }
 
-        if (card.getDrawCount() > 0) drawCards(card.getDrawCount());
+        // 4. 如果配置为后抽牌（如：知识渴求），则后执行抽牌
+        if (!card.isDrawFirst()) {
+            if (card.getDrawCount() > 0) {
+                drawCards(card.getDrawCount());
+            }
+        }
 
+        // 5. 最后移除打出的牌
         Card finalCard = hand.remove(playedCardIndex);
         if (finalCard.getType() == Card.CardType.POWER) {
             logList.add(finalCard.getName() + "被使用（能力牌）");
@@ -414,6 +434,11 @@ public class BattleService {
             if (cardData.containsKey("xCost")) card.setXCost((Boolean) cardData.get("xCost"));
             if (cardData.containsKey("aoe")) card.setAoe((Boolean) cardData.get("aoe"));
             
+            // 🆕 读取 drawFirst 字段
+            if (cardData.containsKey("drawFirst")) {
+                card.setDrawFirst((Boolean) cardData.get("drawFirst"));
+            }
+            
             deck.add(card);
         }
         return deck;
@@ -500,6 +525,7 @@ public class BattleService {
             cardInfo.put("discardCount", c.getDiscardCount());
             cardInfo.put("xCost", c.isXCost());
             cardInfo.put("aoe", c.isAoe());
+            cardInfo.put("drawFirst", c.isDrawFirst()); // 🆕 传递给前端
             
             handCards.add(cardInfo);
         }

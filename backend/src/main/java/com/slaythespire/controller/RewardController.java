@@ -5,19 +5,13 @@ import com.slaythespire.repository.GameDataRepository;
 import com.slaythespire.repository.RelicTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.*;
 
 @RestController
 @RequestMapping("/api")
 public class RewardController {
-
-    @Autowired
-    private GameDataRepository dataRepo;
-
-    @Autowired
-    private com.slaythespire.game.service.RelicPoolService relicPoolService;
-
+    @Autowired private GameDataRepository dataRepo;
+    @Autowired private com.slaythespire.game.service.RelicPoolService relicPoolService;
     private final Random random = new Random();
 
     @GetMapping("/reward")
@@ -25,24 +19,16 @@ public class RewardController {
                                           @RequestParam(required = false) List<String> ownedRelics,
                                           @RequestParam(defaultValue = "1") String charId) {
         Map<String, Object> reward = new LinkedHashMap<>();
-        int gold = 0;
-        Map<String, Object> relic = null;
-
+        int gold = 0; Map<String, Object> relic = null;
         switch (nodeType.toLowerCase()) {
             case "elite": gold = 40 + random.nextInt(15); relic = drawRelicMap(charId, ownedRelics, "rare"); break;
             case "boss": gold = 100 + random.nextInt(50); relic = drawRelicMap(charId, ownedRelics, "rare"); break;
             case "chest": gold = 30 + random.nextInt(20); relic = drawRelicMap(charId, ownedRelics, "common"); break;
             case "monster": default: gold = 15 + random.nextInt(15); relic = null; break;
         }
-
-        reward.put("gold", gold);
-        reward.put("relic", relic);
-        
-        if ("chest".equalsIgnoreCase(nodeType)) {
-            reward.put("cards", Collections.emptyList());
-        } else {
-            reward.put("cards", generateCardPool(3, false, charId));
-        }
+        reward.put("gold", gold); reward.put("relic", relic);
+        if ("chest".equalsIgnoreCase(nodeType)) reward.put("cards", Collections.emptyList());
+        else reward.put("cards", generateCardPool(3, false, charId));
         return reward;
     }
 
@@ -54,7 +40,6 @@ public class RewardController {
     private List<Map<String, Object>> generateCardPool(int count, boolean allowUpgraded, String charId) {
         List<CardTemplate> allCards = dataRepo.getAllCards();
         if (allCards.isEmpty()) return Collections.emptyList();
-
         List<CardTemplate> validCards = new ArrayList<>();
         for (CardTemplate tpl : allCards) {
             if (!allowUpgraded && tpl.isUpgraded()) continue;
@@ -63,75 +48,38 @@ public class RewardController {
             validCards.add(tpl);
         }
         if (validCards.isEmpty()) return Collections.emptyList();
-
         List<Map<String, Object>> pool = new ArrayList<>();
         Set<String> usedIds = new HashSet<>();
         int attempts = 0;
-        
         while (pool.size() < count && attempts < count * 3) {
             CardTemplate tpl = validCards.get(random.nextInt(validCards.size()));
-            if (!usedIds.contains(tpl.getId())) {
-                usedIds.add(tpl.getId());
-                pool.add(cardToMap(tpl));
-            }
+            if (!usedIds.contains(tpl.getId())) { usedIds.add(tpl.getId()); pool.add(cardToMap(tpl)); }
             attempts++;
         }
-        while (pool.size() < count) {
-            CardTemplate tpl = validCards.get(random.nextInt(validCards.size()));
-            pool.add(cardToMap(tpl));
-        }
+        while (pool.size() < count) pool.add(cardToMap(validCards.get(random.nextInt(validCards.size()))));
         return pool;
     }
 
-    /**
-     * 将卡牌模板转换为 Map 返回给前端
-     * 🆕 已补全所有新机制字段，确保前端奖励界面能正确渲染完整描述
-     */
     private Map<String, Object> cardToMap(CardTemplate tpl) {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("id", tpl.getId());
-        map.put("name", tpl.getName());
-        map.put("cost", tpl.getCost());
-        map.put("damage", tpl.getDamage());
-        map.put("block", tpl.getBlock());
-        map.put("type", tpl.getType().name());
-        map.put("applyStatusType", tpl.getApplyStatusType());
-        map.put("applyStatusCount", tpl.getApplyStatusCount());
-        map.put("applyStatusTarget", tpl.getApplyStatusTarget());
-        map.put("charId", tpl.getCharId());
-        map.put("drawCount", tpl.getDrawCount());
-        map.put("upgraded", tpl.isUpgraded());
-        map.put("rarity", tpl.getRarity());  
-        map.put("selfDamage", tpl.getSelfDamage());
-        map.put("energyGain", tpl.getEnergyGain());
-        map.put("multiHitCount", tpl.getMultiHitCount());
-        
-        // 基础词条
-        map.put("exhaust", tpl.isExhaust());
-        map.put("ethereal", tpl.isEthereal());
-        map.put("retain", tpl.isRetain());
-        
-        // 消耗/丢弃手牌机制
-        map.put("exhaustHandCount", tpl.getExhaustHandCount());
-        map.put("exhaustHandMode", tpl.getExhaustHandMode());
-        
-        // 🆕 补全新机制字段，确保前端 card_ui.js 能正确生成描述
-        map.put("unplayable", tpl.isUnplayable());
-        map.put("innate", tpl.isInnate());
-        map.put("discardCount", tpl.getDiscardCount());
-        map.put("xCost", tpl.isXCost());
-        map.put("aoe", tpl.isAoe());
-        
+        map.put("id", tpl.getId()); map.put("name", tpl.getName()); map.put("cost", tpl.getCost());
+        map.put("damage", tpl.getDamage()); map.put("block", tpl.getBlock()); map.put("type", tpl.getType().name());
+        map.put("applyStatusType", tpl.getApplyStatusType()); map.put("applyStatusCount", tpl.getApplyStatusCount());
+        map.put("applyStatusTarget", tpl.getApplyStatusTarget()); map.put("charId", tpl.getCharId());
+        map.put("drawCount", tpl.getDrawCount()); map.put("upgraded", tpl.isUpgraded()); map.put("rarity", tpl.getRarity());  
+        map.put("selfDamage", tpl.getSelfDamage()); map.put("energyGain", tpl.getEnergyGain()); map.put("multiHitCount", tpl.getMultiHitCount());
+        map.put("exhaust", tpl.isExhaust()); map.put("ethereal", tpl.isEthereal()); map.put("retain", tpl.isRetain());
+        map.put("exhaustHandCount", tpl.getExhaustHandCount()); map.put("exhaustHandMode", tpl.getExhaustHandMode());
+        map.put("unplayable", tpl.isUnplayable()); map.put("innate", tpl.isInnate()); map.put("discardCount", tpl.getDiscardCount());
+        map.put("xCost", tpl.isXCost()); map.put("aoe", tpl.isAoe());
+        map.put("drawFirst", tpl.isDrawFirst()); // 🆕 补全新字段
         return map;
     }
 
     private Map<String, Object> relicToMap(RelicTemplate tpl) {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("id", tpl.getId());
-        map.put("name", tpl.getName());
-        map.put("effectType", tpl.getEffectType());
-        map.put("value", tpl.getValue());
-        map.put("rarity", tpl.getRarity());
+        map.put("id", tpl.getId()); map.put("name", tpl.getName()); map.put("effectType", tpl.getEffectType());
+        map.put("value", tpl.getValue()); map.put("rarity", tpl.getRarity());
         return map;
     }
 
