@@ -153,13 +153,26 @@
           div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div><div style="font-size:11px;color:#ecf0f1;margin-top:4px;">${CARD_UI.getCardEffectText(card)}</div>`;
           CARD_UI.bindTooltip(div, card.applyStatusType);
           
-          div.addEventListener('click', () => {
-            const upgraded = { ...card, upgraded: true, name: card.name + '+' };
-            if (upgraded.damage > 0) upgraded.damage += 3;
-            if (upgraded.block > 0) upgraded.block += 3;
-            currentSaveData.deck[index] = upgraded;
-            alert(`【${card.name}】升级为【${upgraded.name}】！`);
-            finishStart(relicId);
+          div.addEventListener('click', async () => {
+            const baseCard = card;
+            const baseId = baseCard.id;
+            if (baseId) {
+              const upgradedId = baseId + '+';
+              try {
+                const resp = await fetch(`/api/card/${encodeURIComponent(upgradedId)}`);
+                if (resp.ok) {
+                  const upgradedCardData = await resp.json();
+                  currentSaveData.deck[index] = upgradedCardData;
+                  await saveSaveData(currentSaveData);
+                  alert(`【${baseCard.name}】升级为【${upgradedCardData.name}】！`);
+                  finishStart(relicId);
+                  return;
+                }
+              } catch (e) {
+                console.warn('无法获取升级模板', e);
+              }
+            }
+            alert('无法升级该卡牌（缺少升级模板）');
           });
           cardListDiv.appendChild(div);
         });
@@ -177,6 +190,10 @@
         }
         
         await saveSaveData(currentSaveData);
+        
+        // ✅ 标记起点已完成，允许访问下一层
+        localStorage.setItem('startRelicDone', 'true');
+        
         alert('初始遗物选择完毕，开始冒险吧！');
         window.location.href = `map.html?char=${char}&currentNode=${currentNode}`;
       }

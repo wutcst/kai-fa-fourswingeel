@@ -12,8 +12,8 @@ public class SaveData {
     private List<String> relics;
     private List<String> visitedNodes;
     private String currentNode;
+    private int act = 1; // 新增：当前阶段（1~3）
 
-    // Getters and Setters
     public String getCharId() { return charId; }
     public void setCharId(String charId) { this.charId = charId; }
 
@@ -37,4 +37,7 @@ public class SaveData {
 
     public String getCurrentNode() { return currentNode; }
     public void setCurrentNode(String currentNode) { this.currentNode = currentNode; }
+
+    public int getAct() { return act; }
+    public void setAct(int act) { this.act = act; }
 }

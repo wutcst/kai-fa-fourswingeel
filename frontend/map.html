@@ -5,15 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>杀戮尖塔 - 地图</title>
   <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a1a; color: #e0e0e0; overflow-y: auto; height: 100vh; width: 100vw; padding-top: 40px; }
-    #map-container { position: relative; width: 100%; height: 1500px; }
+    #map-container { position: relative; width: 100%; height: 2500px; }
     svg#lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-    .node { position: absolute; width: 60px; height: 60px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; font-size: 12px; font-weight: bold; text-transform: uppercase; color: white; border: 3px solid #444; background: rgba(20, 20, 40, 0.9); backdrop-filter: blur(4px); z-index: 2; }
+    .node {
+      position: absolute;
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.3s;
+      font-size: 12px; font-weight: bold; text-transform: uppercase;
+      color: white; border: 3px solid #444;
+      background: rgba(20, 20, 40, 0.9); backdrop-filter: blur(4px); z-index: 2;
+      /* ✅ 使用transform使中心对准百分占比坐标 */
+      transform: translate(-50%, -50%);
+    }
     .node.current { border-color: #f1c40f; box-shadow: 0 0 20px #f1c40f; background: rgba(241, 196, 15, 0.3); color: #fff; }
     .node.clickable { border-color: #e74c3c; animation: pulse 1.5s infinite; cursor: pointer; }
     .node.visited { opacity: 0.5; cursor: default; border-color: #555; background: rgba(20, 20, 40, 0.4); }
+    .node.nonclickable { cursor: default; border-color: #555; opacity: 0.5; }
     @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
     .node .icon { font-size: 28px; }
     .node .label { font-size: 10px; margin-top: 2px; }
@@ -34,21 +47,25 @@
     (async function() {
       const params = new URLSearchParams(window.location.search);
       const charParam = params.get('char') || '1';
-      
+
+      // 从 URL 或存档中读取 act
+      let act = parseInt(params.get('act'));
+      if (isNaN(act)) {
+        const saveDataForAct = await loadSaveData(charParam);
+        act = saveDataForAct.act || 1;
+      }
+
       const saveData = await loadSaveData(charParam);
-      
+
       let currentNodeId = params.get('currentNode') || saveData.currentNode || 'start';
       let visitedNodes = saveData.visitedNodes || ['start'];
-      
+
       if (!visitedNodes.includes(currentNodeId)) {
         visitedNodes.push(currentNodeId);
         saveData.visitedNodes = visitedNodes;
         saveData.currentNode = currentNodeId;
+        saveData.act = act;
         await saveSaveData(saveData);
-      }
-      
-      if (currentNodeId === 'start' && visitedNodes.length === 1) {
-          localStorage.removeItem('startRelicDone');
       }
 
       const container = document.getElementById('map-container');
@@ -61,7 +78,8 @@
       function getNodeById(id) { return mapData.nodes.find(n => n.id === id); }
       function getNextNodes(fromId) { return mapData.edges.filter(e => e.from === fromId).map(e => e.to); }
 
-      const storedData = sessionStorage.getItem('mapData');
+      const mapStorageKey = `mapData_act${act}`;
+      const storedData = sessionStorage.getItem(mapStorageKey);
       if (storedData) {
         try {
           mapData = JSON.parse(storedData);
@@ -72,12 +90,12 @@
 
       if (!mapData.nodes || mapData.nodes.length === 0) {
         try {
-          const resp = await fetch('/api/map');
+          const resp = await fetch(`/api/map?act=${act}`);
           if (resp.ok) {
             const data = await resp.json();
             if (data && Array.isArray(data.nodes) && data.nodes.length > 0) {
               mapData = data;
-              sessionStorage.setItem('mapData', JSON.stringify(data));
+              sessionStorage.setItem(mapStorageKey, JSON.stringify(data));
             }
           }
         } catch (e) {
@@ -88,6 +106,9 @@
       nextNodeIds = getNextNodes(currentNodeId).filter(id => !visitedNodes.includes(id));
       const currentNode = getNodeById(currentNodeId);
       if (currentNode) currentLabel.textContent = currentNode.label || currentNode.id;
+
+      // 阶段1需要完成起点（选择初始遗物），阶段2、3视为已完成
+      const startDone = act === 1 ? localStorage.getItem('startRelicDone') === 'true' : true;
 
       container.querySelectorAll('.node').forEach(n => n.remove());
       svg.innerHTML = '';
@@ -101,14 +122,10 @@
           line.setAttribute("y1", `${fromNode.y}%`);
           line.setAttribute("x2", `${toNode.x}%`);
           line.setAttribute("y2", `${toNode.y}%`);
-          
-          if (edge.from === currentNodeId && nextNodeIds.includes(edge.to)) {
-            line.setAttribute("stroke", "#e74c3c");
-            line.setAttribute("stroke-width", "4");
-          } else {
-            line.setAttribute("stroke", "#555");
-            line.setAttribute("stroke-width", "2");
-          }
+
+          const isHighlight = edge.from === currentNodeId && nextNodeIds.includes(edge.to) && startDone;
+          line.setAttribute("stroke", isHighlight ? "#e74c3c" : "#555");
+          line.setAttribute("stroke-width", isHighlight ? "4" : "2");
           svg.appendChild(line);
         }
       });
@@ -116,20 +133,24 @@
       mapData.nodes.forEach(node => {
         const div = document.createElement('div');
         div.className = 'node';
-        div.style.left = `${node.x - 3}%`;
-        div.style.top = `${node.y - 3}%`;
+        div.style.left = `${node.x}%`;
+        div.style.top = `${node.y}%`;
         const iconHtml = node.icon ? `<span class="icon">${node.icon}</span>` : '';
         div.innerHTML = `${iconHtml}<span class="label">${node.label}</span>`;
 
         if (node.id === currentNodeId) {
           div.classList.add('current');
-          if (node.type === 'start') {
+          if (node.type === 'start' && act === 1) {
             div.classList.add('clickable');
             div.addEventListener('click', () => handleNodeClick(node));
           }
         } else if (nextNodeIds.includes(node.id)) {
-          div.classList.add('clickable');
-          div.addEventListener('click', () => handleNodeClick(node));
+          if (startDone) {
+            div.classList.add('clickable');
+            div.addEventListener('click', () => handleNodeClick(node));
+          } else {
+            div.classList.add('nonclickable');
+          }
         } else if (visitedNodes.includes(node.id)) {
           div.classList.add('visited');
         }
@@ -139,15 +160,17 @@
 
       async function handleNodeClick(node) {
         const baseParams = `char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
-        
+
         if (node.type === 'monster' || node.type === 'elite' || node.type === 'boss') {
           window.location.href = `fight.html?from=map&${baseParams}&nodeType=${node.type}`;
         } else if (node.type === 'start') {
-          if (localStorage.getItem('startRelicDone') === 'true') {
-            alert('你已经选择过初始遗物了！');
-            return;
+          if (act === 1) {
+            if (localStorage.getItem('startRelicDone') === 'true') {
+              alert('你已经选择过初始遗物了！');
+              return;
+            }
+            window.location.href = `start.html?${baseParams}`;
           }
-          window.location.href = `start.html?${baseParams}`;
         } else if (node.type === 'chest') {
           window.location.href = `chest.html?${baseParams}`;
         } else if (node.type === 'shop') {
@@ -155,11 +178,10 @@
         } else if (node.type === 'campfire') {
           window.location.href = `campfire.html?${baseParams}`;
         } else if (node.type === 'question') {
-          // ✅ 修改：调用后端接口决定结果
           try {
             const resp = await fetch(`/api/question/roll?charId=${charParam}`);
             if (resp.ok) {
-              const resultType = await resp.text(); // "enemy", "chest", "shop", "event"
+              const resultType = await resp.text();
               if (resultType === 'enemy') {
                 window.location.href = `fight.html?from=map&${baseParams}&nodeType=monster`;
               } else if (resultType === 'chest') {
@@ -169,11 +191,9 @@
               } else if (resultType === 'event') {
                 window.location.href = `question.html?${baseParams}`;
               } else {
-                // 降级：直接跳转到事件
                 window.location.href = `question.html?${baseParams}`;
               }
             } else {
-              // 后端不可用时降级到事件
               window.location.href = `question.html?${baseParams}`;
             }
           } catch (e) {
@@ -183,14 +203,14 @@
         }
       }
 
-      // 返回封面按钮：保存当前状态并跳转
+      // 返回封面按钮
       const returnBtn = document.createElement('button');
       returnBtn.className = 'btn-return';
       returnBtn.textContent = '返回封面';
       returnBtn.onclick = async () => {
-        // 确保最新存档已保存
         const currentSave = await loadSaveData(charParam);
         currentSave.currentNode = currentNodeId;
+        currentSave.act = act;
         if (currentSave.visitedNodes && !currentSave.visitedNodes.includes(currentNodeId)) {
           currentSave.visitedNodes.push(currentNodeId);
         }

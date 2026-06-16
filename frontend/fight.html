@@ -157,7 +157,8 @@
           <strong>{{ selectedCard.name }}</strong><br>
           <span style="color: #ecf0f1; font-size: 14px;">{{ getCardEffectText(selectedCard) }}</span>
         </p>
-        <div v-if="state && state.enemies && state.enemies.length > 1" style="margin-top: 10px;">
+        <!-- 仅在多敌人且攻击牌时显示目标选择 -->
+        <div v-if="state && state.enemies && state.enemies.length > 1 && selectedCard.type === 'ATTACK'" style="margin-top: 10px;">
           <label>目标敌人:</label>
           <select v-model="selectedEnemyIndex" style="margin-left:8px; padding:4px; background:#34495e; color:white; border:none; border-radius:4px;">
             <option v-for="enemy in state.enemies" :key="enemy.index" :value="enemy.index">{{ enemy.name }} (❤️{{ enemy.hp }})</option>
@@ -214,7 +215,9 @@
         async confirmPlay() {
           if (this.selectedIndex >= 0) {
             let url = `${API_BASE}/play?index=${this.selectedIndex}`;
-            if (this.state && this.state.enemies && this.state.enemies.length > 1) {
+            const card = this.selectedCard;
+            // 仅攻击牌且多敌人时传递 targetIndex
+            if (card && card.type === 'ATTACK' && this.state && this.state.enemies && this.state.enemies.length > 1) {
               url += `&targetIndex=${this.selectedEnemyIndex}`;
             }
             await this.playCard(this.selectedIndex, url);

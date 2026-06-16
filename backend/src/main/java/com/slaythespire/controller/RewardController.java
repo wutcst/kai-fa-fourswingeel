@@ -51,25 +51,35 @@ public class RewardController {
 
         reward.put("gold", gold);
         reward.put("relic", relic);
-        reward.put("cards", generateCardPool(3, false));
-
+        
+        // 宝箱不提供卡牌奖励
+        if ("chest".equalsIgnoreCase(nodeType)) {
+            reward.put("cards", Collections.emptyList());
+        } else {
+            reward.put("cards", generateCardPool(3, false, charId));
+        }
+        
         return reward;
     }
 
     @GetMapping("/cardPool")
     public List<Map<String, Object>> getCardPool(@RequestParam(defaultValue = "1") String charParam) {
-        return generateCardPool(3, false);
+        return generateCardPool(3, false, charParam);
     }
 
-    private List<Map<String, Object>> generateCardPool(int count, boolean allowUpgraded) {
+    private List<Map<String, Object>> generateCardPool(int count, boolean allowUpgraded, String charId) {
         List<CardTemplate> allCards = dataRepo.getAllCards();
         if (allCards.isEmpty()) return Collections.emptyList();
 
         List<CardTemplate> validCards = new ArrayList<>();
         for (CardTemplate tpl : allCards) {
-            if (allowUpgraded || !tpl.isUpgraded()) {
-                validCards.add(tpl);
-            }
+            // 排除升级状态不符的
+            if (!allowUpgraded && tpl.isUpgraded()) continue;
+            // 排除起始卡牌
+            if ("START".equals(tpl.getRarity())) continue;
+            // 按角色过滤
+            if (charId != null && tpl.getCharId() != null && !tpl.getCharId().equals(charId)) continue;
+            validCards.add(tpl);
         }
         if (validCards.isEmpty()) return Collections.emptyList();
 
@@ -97,7 +107,6 @@ public class RewardController {
 
     /**
      * 将卡牌模板转换为 Map 返回给前端
-     * ✅ 已补全所有新增机制字段 (selfDamage, energyGain, multiHitCount)
      */
     private Map<String, Object> cardToMap(CardTemplate tpl) {
         Map<String, Object> map = new LinkedHashMap<>();
@@ -117,7 +126,6 @@ public class RewardController {
         map.put("upgraded", tpl.isUpgraded());
         map.put("rarity", tpl.getRarity());  
         
-        // 🆕 核心修复：补全自身伤害、获得能量、多段攻击字段
         map.put("selfDamage", tpl.getSelfDamage());
         map.put("energyGain", tpl.getEnergyGain());
         map.put("multiHitCount", tpl.getMultiHitCount());

@@ -35,7 +35,7 @@
 
   <div class="section"><h3>购买卡牌</h3><div class="item-list" id="buy-cards"></div></div>
   <div class="section"><h3>购买遗物</h3><div class="item-list" id="buy-relics"></div></div>
-  <div class="section"><h3 id="delete-title">删除卡牌 (75 金币)</h3><div class="delete-list" id="delete-cards"></div></div>
+  <div class="section"><h3 id="delete-title">删除卡牌</h3><div class="delete-list" id="delete-cards"></div></div>
 
   <button class="skip-btn" id="skip-btn">跳过 →</button>
 
@@ -48,6 +48,11 @@
 
       let saveData = await loadSaveData(char);
       let gold = saveData.gold;
+      
+      // 删除计数器（全局累计，每次商人访问时读取）
+      let deleteCount = parseInt(localStorage.getItem('shopDeleteCount')) || 0;
+      // 本次商人页面是否已删除过
+      const alreadyDeletedThisShop = sessionStorage.getItem('shopDeleted') === 'true';
       
       const updateGoldDisplay = () => document.getElementById('gold-amount').textContent = gold;
       updateGoldDisplay();
@@ -84,7 +89,6 @@
         shopData.cards.forEach(card => {
           const div = document.createElement('div');
           div.className = `shop-item ${CARD_UI.getCardTypeClass(card)}`;
-          // 设置背景和稀有度边框
           div.style.background = CARD_UI.getCardCharStyle(card);
           div.style.borderColor = CARD_UI.getRarityBorderColor(card);
           div.style.borderWidth = '3px';
@@ -136,38 +140,49 @@
           buyRelicsDiv.appendChild(relicDiv);
         });
 
+        // 删除卡牌区域
         const deleteDiv = document.getElementById('delete-cards');
         deleteDiv.innerHTML = '';
-        const deleteCost = shopData.deleteCost || 75;
-        document.getElementById('delete-title').textContent = `删除卡牌 (${deleteCost} 金币)`;
+        const currentDeleteCost = 75 + deleteCount * 25;
+        document.getElementById('delete-title').textContent = `删除卡牌 (${currentDeleteCost} 金币)`;
         
-        if (saveData.deck.length === 0) {
-          deleteDiv.innerHTML = '<p style="color:#aaa;">卡组为空</p>';
+        if (alreadyDeletedThisShop) {
+          deleteDiv.innerHTML = '<p style="color:#aaa;">你已经在本商人处删除过卡牌了。</p>';
         } else {
-          saveData.deck.forEach((card, index) => {
-            const span = document.createElement('span');
-            span.className = 'delete-item';
-            span.innerHTML = `${card.name} <span class="delete-cost">-${deleteCost}💰</span>`;
-            
-            span.addEventListener('click', async () => {
-              if (await spendGold(deleteCost)) {
-                saveData = await loadSaveData(char);
-                if (index < saveData.deck.length) {
-                    saveData.deck.splice(index, 1);
-                    await saveSaveData(saveData);
-                    alert(`删除了 ${card.name}`);
-                    location.reload();
+          if (saveData.deck.length === 0) {
+            deleteDiv.innerHTML = '<p style="color:#aaa;">卡组为空</p>';
+          } else {
+            saveData.deck.forEach((card, index) => {
+              const span = document.createElement('span');
+              span.className = 'delete-item';
+              span.innerHTML = `${card.name} <span class="delete-cost">-${currentDeleteCost}💰</span>`;
+              
+              span.addEventListener('click', async () => {
+                if (alreadyDeletedThisShop) return;
+                if (await spendGold(currentDeleteCost)) {
+                  saveData = await loadSaveData(char);
+                  if (index < saveData.deck.length) {
+                      saveData.deck.splice(index, 1);
+                      deleteCount++;
+                      localStorage.setItem('shopDeleteCount', deleteCount);
+                      sessionStorage.setItem('shopDeleted', 'true');
+                      await saveSaveData(saveData);
+                      alert(`删除了 ${card.name}`);
+                      location.reload();
+                  }
                 }
-              }
+              });
+              deleteDiv.appendChild(span);
             });
-            deleteDiv.appendChild(span);
-          });
+          }
         }
       }
 
       loadShopData();
 
       document.getElementById('skip-btn').addEventListener('click', () => {
+        // 清除本次商人标记（不影响下次）
+        sessionStorage.removeItem('shopDeleted');
         window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
       });
     })();

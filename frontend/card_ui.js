@@ -47,6 +47,7 @@ const CARD_UI = {
     if (!card) return 'linear-gradient(135deg, #667eea, #764ba2)';
     const charId = (card.charId && card.charId !== '') ? card.charId : '1';
     if (charId === '0') return 'linear-gradient(135deg, #808080, #A9A9A9)';
+    if (charId === '2') return 'linear-gradient(135deg, #2ecc71, #27ae60)'; // 静默猎手-绿色
     return 'linear-gradient(135deg, #8B0000, #B22222)';
   },
   getRarityBorderColor(card) {
