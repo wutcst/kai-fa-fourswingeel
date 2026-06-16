@@ -87,6 +87,7 @@ public class BattleService {
         }
         
         int drawCount = Math.max(0, 5 - innateCards.size());
+        if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) drawCount++;
         drawCards(drawCount);
         
         return getCurrentState();
@@ -334,7 +335,9 @@ public class BattleService {
         if (!player.isAlive()) { gameOver = true; winner = "敌人"; logList.add("💀 玩家倒下..."); return getCurrentState(); }
 
         energy = 3;
-        drawCards(5);
+        int turnDrawCount = 5 - retained.size();
+        if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) turnDrawCount++;
+        drawCards(Math.max(0, turnDrawCount));
         for (Enemy enemy : enemies) enemy.advanceIntent();
         return getCurrentState();
     }

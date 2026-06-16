@@ -68,6 +68,17 @@ public class RelicEffectHandler {
         return 0;
     }
 
+    /** 荆棘甲反伤 — 对攻击者造成固定伤害 */
+    public static void handleThornsDamage(Combatant attacker, Combatant defender) {
+        for (Relic r : defender.getRelics()) {
+            if (r instanceof GameRelic && "THORNS".equals(((GameRelic) r).getEffectType())) {
+                int dmg = ((GameRelic) r).getValue();
+                attacker.takeDamage(dmg, null, true);
+                break;
+            }
+        }
+    }
+
     /** 获取每回合伤害上限（魔法护盾） */
     public static int getDamageCapPerTurn(Combatant combatant) {
         for (Relic r : combatant.getRelics()) {

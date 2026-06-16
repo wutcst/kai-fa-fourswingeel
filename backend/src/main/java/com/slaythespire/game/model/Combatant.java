@@ -109,6 +109,12 @@ public abstract class Combatant {
         actualDamageTakenThisTurn += hpLost;
 
         hp = Math.max(0, hp - hpLost);
+
+        // 荆棘甲反伤（对攻击者造成固定伤害）
+        if (hpLost > 0 && source != null) {
+            RelicEffectHandler.handleThornsDamage(source, this);
+        }
+
         return finalDamage;
     }
 
