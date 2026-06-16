@@ -8,9 +8,11 @@ const CARD_UI = {
     'POISON':       { name: '毒',       desc: '回合结束时，造成等同于毒层数的伤害，然后减少 1 层。',           decay: true },
     'REGENERATION': { name: '再生',     desc: '回合结束时，恢复等同于再生层数的生命，然后减少 1 层。',          decay: true },
     'RITUAL':       { name: '仪式',     desc: '回合开始时，获得 1 点力量。',                                  decay: false },
-    'EXHAUST':      { name: '消耗',     desc: '打出的牌将被消耗，本场战斗无法再次抽到。',                     decay: false }
+    'EXHAUST':      { name: '消耗',     desc: '打出的牌将被消耗，本场战斗无法再次抽到。',                     decay: false },
+    // 🆕 更新无实体描述，关闭前端自动衰减提示（因为现在是后端精确控制持续一回合）
+    'INTANGIBLE':   { name: '无实体',   desc: '持续一回合，受到的所有伤害降低为 1。',                         decay: false } 
   },
-  RARITY_COLORS: { 'START': '#999999', 'COMMON': '#bdc3c7', 'UNCOMMON': '#5dade2', 'RARE': '#f1c40f' },
+  RARITY_COLORS: { 'START': '#999999', 'COMMON': '#bdc3c7', 'UNCOMMON': '#5dade2', 'RARE': '#f1c40f', 'SPECIAL': '#8e44ad' },
   
   getStatusName(type) { return this.STATUS_INFO[type]?.name || type; },
 
@@ -18,27 +20,32 @@ const CARD_UI = {
     if (!card) return '无效果';
     const parts = [];
     
+    if (card.xCost) parts.push(`X耗能 (消耗所有能量，效果触发X次)`);
+    
     if (card.damage > 0) {
-      if (card.multiHitCount > 1) parts.push(`造成 ${card.damage} 点伤害 ${card.multiHitCount} 次`);
-      else parts.push(`造成 ${card.damage} 点伤害`);
+        const dmgText = card.multiHitCount > 1 ? `造成 ${card.damage} 点伤害 ${card.multiHitCount} 次` : `造成 ${card.damage} 点伤害`;
+        parts.push(card.aoe ? `AOE: ${dmgText}` : dmgText);
     }
     if (card.block > 0) parts.push(`获得 ${card.block} 点格挡`);
     if (card.selfDamage > 0) parts.push(`失去 ${card.selfDamage} 点生命`);
     if (card.energyGain > 0) parts.push(`获得 ${card.energyGain} 点能量`);
     
-    // 🆕 调整顺序：先消耗手牌，再抽牌
     if (card.exhaustHandCount > 0) {
         const mode = card.exhaustHandMode === 'SELECT' ? '选择' : '随机';
         parts.push(`${mode}消耗 ${card.exhaustHandCount} 张手牌`);
     }
+    if (card.discardCount > 0) parts.push(`丢弃 ${card.discardCount} 张手牌`);
     if (card.drawCount > 0) parts.push(`抽 ${card.drawCount} 张牌`);
     
     if (card.applyStatusType) {
-      const sn = this.getStatusName(card.applyStatusType);
-      const isSelf = card.applyStatusTarget === 'SELF';
-      parts.push(`${isSelf ? '自身获得' : '施加'} ${card.applyStatusCount} 层${sn}`);
+        const sn = this.getStatusName(card.applyStatusType);
+        const isSelf = card.applyStatusTarget === 'SELF';
+        const aoeText = card.aoe && !isSelf ? '所有敌人' : (isSelf ? '自身' : '目标');
+        parts.push(`给${aoeText}${isSelf ? '获得' : '施加'} ${card.applyStatusCount} 层${sn}`);
     }
     
+    if (card.unplayable) parts.push('无法被打出');
+    if (card.innate) parts.push('固有');
     if (card.exhaust) parts.push('消耗');
     if (card.ethereal) parts.push('虚无');
     if (card.retain) parts.push('保留');
@@ -89,6 +96,7 @@ const CARD_UI = {
         tip.style.cssText = 'position:fixed;z-index:9999;pointer-events:none;max-width:260px;background:#0d1b2a;border:1px solid #34495e;border-radius:8px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,0.6);display:none;font-family:Segoe UI,Tahoma,sans-serif;';
         document.body.appendChild(tip);
       }
+      // 🆕 因为 INTANGIBLE 的 decay 改为了 false，这里不会再显示“每回合结束层数减一”
       tip.innerHTML = `<div style="font-weight:bold;font-size:14px;color:#f1c40f;margin-bottom:6px;">${info.name}</div><div style="font-size:12px;color:#bdc3c7;line-height:1.5;margin-bottom:4px;">${info.desc}</div>` + (info.decay ? '<div style="font-size:11px;color:#e67e22;">每回合结束层数减一</div>' : '');
       tip.style.display = 'block';
       const x = e.clientX, y = e.clientY, w = window.innerWidth;

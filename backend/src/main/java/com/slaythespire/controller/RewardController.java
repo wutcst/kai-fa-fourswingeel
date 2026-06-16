@@ -83,6 +83,10 @@ public class RewardController {
         return pool;
     }
 
+    /**
+     * 将卡牌模板转换为 Map 返回给前端
+     * 🆕 已补全所有新机制字段，确保前端奖励界面能正确渲染完整描述
+     */
     private Map<String, Object> cardToMap(CardTemplate tpl) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", tpl.getId());
@@ -101,12 +105,23 @@ public class RewardController {
         map.put("selfDamage", tpl.getSelfDamage());
         map.put("energyGain", tpl.getEnergyGain());
         map.put("multiHitCount", tpl.getMultiHitCount());
-        // 🆕 补全基础词条和新机制字段
+        
+        // 基础词条
         map.put("exhaust", tpl.isExhaust());
         map.put("ethereal", tpl.isEthereal());
         map.put("retain", tpl.isRetain());
+        
+        // 消耗/丢弃手牌机制
         map.put("exhaustHandCount", tpl.getExhaustHandCount());
         map.put("exhaustHandMode", tpl.getExhaustHandMode());
+        
+        // 🆕 补全新机制字段，确保前端 card_ui.js 能正确生成描述
+        map.put("unplayable", tpl.isUnplayable());
+        map.put("innate", tpl.isInnate());
+        map.put("discardCount", tpl.getDiscardCount());
+        map.put("xCost", tpl.isXCost());
+        map.put("aoe", tpl.isAoe());
+        
         return map;
     }
 
