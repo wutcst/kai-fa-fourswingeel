@@ -1,23 +1,87 @@
 [
-    {
+  {
     "id": "cultist",
     "name": "邪教徒",
+    "type": "NORMAL",
     "maxHp": 50,
-    "attackDamage": 8,
+    "attackDamage": 6,
+    "description": "第一回合念咒获得仪式，之后每回合造成递增的伤害。",
     "intents": [
-      { "type": "BUFF", "value": 0, "desc": "仪式", "applyStatusType": "RITUAL", "applyStatusCount": 4, "applyStatusTarget": "ENEMY" },
-      { "type": "ATTACK", "value": 6, "desc": "轻击" }
+      { "type": "BUFF", "value": 0, "desc": "念咒", "applyStatusType": "RITUAL", "applyStatusCount": 4, "applyStatusTarget": "ENEMY" },
+      { "type": "ATTACK", "value": 6, "desc": "黑暗打击" }
     ]
   },
   {
-    "id": "slime",
-    "name": "绿色史莱姆",
-    "maxHp": 40,
-    "attackDamage": 6,
+    "id": "acid_slime_large",
+    "name": "酸液史莱姆",
+    "type": "NORMAL",
+    "maxHp": 30,
+    "attackDamage": 11,
+    "description": "酸液史莱姆，能造成伤害并施加虚弱。",
     "intents": [
-      { "type": "ATTACK", "value": 6, "desc": "撞击" },
-      { "type": "DEFEND", "value": 8, "desc": "缩壳" },
-      { "type": "ATTACK", "value": 9, "desc": "弹射" }
+      { "type": "ATTACK", "value": 11, "desc": "腐蚀喷吐", "applyStatusType": "WEAK", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
+      { "type": "ATTACK", "value": 16, "desc": "重击" },
+      { "type": "ATTACK", "value": 11, "desc": "酸液舔舐", "applyStatusType": "WEAK", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" }
+    ]
+  },
+  {
+    "id": "spike_slime_medium",
+    "name": "尖刺史莱姆",
+    "type": "NORMAL",
+    "maxHp": 28,
+    "attackDamage": 10,
+    "description": "尖刺史莱姆，攻击附带易伤效果。",
+    "initialStatuses": { "DEXTERITY": 5 },
+    "intents": [
+      { "type": "ATTACK", "value": 10, "desc": "尖刺冲撞", "applyStatusType": "VULNERABLE", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" },
+      { "type": "ATTACK", "value": 10, "desc": "针刺", "applyStatusType": "VULNERABLE", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" },
+      { "type": "ATTACK", "value": 15, "desc": "全力穿刺" }
+    ]
+  },
+  {
+    "id": "gremlin_nob",
+    "name": "地精大块头",
+    "type": "ELITE",
+    "maxHp": 84,
+    "attackDamage": 6,
+    "description": "你每使用一张技能牌，地精大块头就获得2点力量！",
+    "passive": { "type": "ANGRY_ON_SKILL", "value": 2, "desc": "激怒：玩家每打出一张技能牌，获得2点力量" },
+    "intents": [
+      { "type": "BUFF", "value": 0, "desc": "咆哮", "applyStatusType": "ANGRY", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" },
+      { "type": "ATTACK", "value": 6, "desc": "颅骨重击", "applyStatusType": "VULNERABLE", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
+      { "type": "ATTACK", "value": 14, "desc": "蛮牛冲撞" }
+    ]
+  },
+  {
+    "id": "sentry",
+    "name": "哨卫",
+    "type": "ELITE",
+    "maxHp": 38,
+    "attackDamage": 9,
+    "description": "哨卫在激光攻击和眩晕攻击之间交替。自带一层人工制品。",
+    "initialStatuses": { "ARTIFACT": 1 },
+    "intents": [
+      { "type": "ATTACK", "value": 9, "desc": "激光" },
+      { "type": "DEBUFF", "value": 0, "desc": "螺旋催眠", "stunCards": 2 }
+    ]
+  },
+  {
+    "id": "hexaghost",
+    "name": "六火亡魂",
+    "type": "BOSS",
+    "maxHp": 250,
+    "attackDamage": 6,
+    "description": "第一层Boss。每6回合发动一次大范围地狱火攻击，期间会不断塞入灼伤。",
+    "passive": { "type": "HEXAGHOST", "value": 0, "desc": "六火循环：准备→地狱火→灼烧→双击→灼烧→高热→双击→灼烧→地狱火" },
+    "intents": [
+      { "type": "BUFF", "value": 0, "desc": "准备（六火亡魂在积蓄力量）" },
+      { "type": "MULTI_ATTACK", "value": 6, "desc": "地狱火", "multiHit": 6, "hpScaling": true },
+      { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 },
+      { "type": "MULTI_ATTACK", "value": 5, "desc": "双击", "multiHit": 2 },
+      { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 },
+      { "type": "BUFF", "value": 12, "desc": "高热", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" },
+      { "type": "MULTI_ATTACK", "value": 5, "desc": "双击", "multiHit": 2 },
+      { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 }
     ]
   }
 ]

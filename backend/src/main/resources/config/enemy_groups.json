@@ -2,16 +2,65 @@
   {
     "id": "single_cultist",
     "name": "单个邪教徒",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 3,
     "enemies": ["cultist"]
   },
   {
-    "id": "single_slime",
-    "name": "单个史莱姆",
-    "enemies": ["slime"]
+    "id": "single_acid_slime",
+    "name": "单个酸液史莱姆",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 2,
+    "enemies": ["acid_slime_large"]
   },
   {
-    "id": "double_slime",
-    "name": "两只史莱姆",
-    "enemies": ["slime", "slime"]
+    "id": "single_spike_slime",
+    "name": "单个尖刺史莱姆",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 2,
+    "enemies": ["spike_slime_medium"]
+  },
+  {
+    "id": "cultist_acid",
+    "name": "邪教徒+酸液史莱姆",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 2,
+    "enemies": ["cultist", "acid_slime_large"]
+  },
+  {
+    "id": "triple_cultist",
+    "name": "三邪教徒",
+    "type": "NORMAL",
+    "minAct": 2,
+    "maxAct": 3,
+    "enemies": ["cultist", "cultist", "cultist"]
+  },
+  {
+    "id": "elite_gremlin",
+    "name": "地精大块头",
+    "type": "ELITE",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["gremlin_nob"]
+  },
+  {
+    "id": "elite_sentry",
+    "name": "三哨卫",
+    "type": "ELITE",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["sentry", "sentry", "sentry"]
+  },
+  {
+    "id": "boss_hexaghost",
+    "name": "六火亡魂",
+    "type": "BOSS",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["hexaghost"]
   }
 ]

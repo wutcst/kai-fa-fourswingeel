@@ -26,7 +26,7 @@ public class BattleService {
     private boolean gameOver;
     private String winner;
 
-    public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp) {
+    public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp, String nodeType) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
         if (playerRelics != null) {
             for (String relicId : playerRelics) {
@@ -37,7 +37,17 @@ public class BattleService {
 
         List<EnemyGroupTemplate> groups = dataRepo.getAllEnemyGroups();
         if (groups.isEmpty()) throw new IllegalStateException("敌方阵容配置为空");
-        EnemyGroupTemplate chosenGroup = groups.get(new Random().nextInt(groups.size()));
+        // 根据节点类型筛选阵容
+        // 统一节点类型映射：前端传 "monster/elite/boss"，JSON 中用 "NORMAL/ELITE/BOSS"
+        String nodeTypeUpper = (nodeType != null) ? nodeType.toUpperCase() : null;
+        if ("MONSTER".equals(nodeTypeUpper)) nodeTypeUpper = "NORMAL";
+        List<EnemyGroupTemplate> filteredGroups = new ArrayList<>();
+        for (EnemyGroupTemplate g : groups) {
+            if (nodeTypeUpper != null && !g.getType().equalsIgnoreCase(nodeTypeUpper)) continue;
+            filteredGroups.add(g);
+        }
+        if (filteredGroups.isEmpty()) filteredGroups = groups;
+        EnemyGroupTemplate chosenGroup = filteredGroups.get(new Random().nextInt(filteredGroups.size()));
         
         this.enemies = new ArrayList<>();
         for (String eid : chosenGroup.getEnemies()) {
@@ -122,6 +132,22 @@ public class BattleService {
             energy -= card.getCost();
         }
 
+        // 🆕 地精大块头被动：玩家打出技能牌时，激怒敌人
+        if (card.getType() == Card.CardType.SKILL) {
+            for (Enemy e : enemies) {
+                for (StatusEffect s : e.getStatuses()) {
+                    if ("ANGRY".equals(s.getId())) {
+                        int angryPower = (int) (s.getCount() + 1);
+                        StatusEffect strength = com.slaythespire.game.model.factory.StatusFactory.create("STRENGTH", angryPower, dataRepo);
+                        if (strength != null) {
+                            e.addStatus(strength);
+                            logList.add("🔥 " + e.getEnemyName() + "因【激怒】获得 " + angryPower + " 点力量！");
+                        }
+                    }
+                }
+            }
+        }
+
         if (card.getBlock() > 0) {
             int actualBlock = card.getBlock() * xValue;
             player.gainBlock(actualBlock);
@@ -204,7 +230,9 @@ public class BattleService {
             int count = Math.min(card.getExhaustHandCount(), hand.size() - 1);
             for (int i = 0; i < count; i++) {
                 int targetIdx = resolveHandInteractionIndex(i, exhaustHandIndex, playedCardIndex, hand.size(), "消耗");
-                hand.remove(targetIdx);
+                Card exhaustedCard = hand.remove(targetIdx);
+                exhaustPile.add(exhaustedCard);
+                logList.add("🔥 消耗了手中的 " + exhaustedCard.getName());
                 if (targetIdx < playedCardIndex) {
                     playedCardIndex--;
                 }
@@ -474,7 +502,7 @@ public class BattleService {
         for (int i = 0; i < enemies.size(); i++) {
             Enemy e = enemies.get(i);
             Map<String, Object> eMap = new LinkedHashMap<>();
-            eMap.put("index", i); eMap.put("name", e.getEnemyName()); eMap.put("hp", e.getHp()); eMap.put("maxHp", e.getMaxHp());
+            eMap.put("index", i); eMap.put("name", e.getEnemyName()); eMap.put("hp", e.getHp()); eMap.put("maxHp", e.getMaxHp()); eMap.put("enemyType", e.getEnemyType());
             eMap.put("block", e.getBlock()); eMap.put("nextDamage", e.getNextDamage()); eMap.put("nextBlock", e.getNextBlock()); eMap.put("intentDesc", e.getIntentDesc());
             
             IntentTemplate intent = e.getCurrentIntentTemplate();
@@ -515,7 +543,7 @@ public class BattleService {
             state.put("enemyName", ""); state.put("enemyHp", 0); state.put("enemyMaxHp", 0); state.put("enemyStatuses", new ArrayList<>());
         }
 
-        state.put("energy", energy); state.put("drawPileSize", drawPile.size()); state.put("discardPileSize", discardPile.size());
+        state.put("energy", energy); state.put("drawPileSize", drawPile.size()); state.put("discardPileSize", discardPile.size()); state.put("exhaustPileSize", exhaustPile.size()); state.put("handSize", hand.size()); state.put("handLimit", HAND_LIMIT);
         state.put("exhaustPileSize", exhaustPile.size()); state.put("handSize", hand.size()); state.put("handLimit", HAND_LIMIT);
 
         List<Map<String, Object>> handCards = new ArrayList<>();
@@ -541,7 +569,11 @@ public class BattleService {
             
             handCards.add(cardInfo);
         }
-        state.put("hand", handCards); state.put("log", new ArrayList<>(logList)); state.put("gameOver", gameOver); state.put("winner", winner);
+        state.put("hand", handCards);
+        state.put("drawPile", cardsToStateList(drawPile));
+        state.put("discardPile", cardsToStateList(discardPile));
+        state.put("exhaustPile", cardsToStateList(exhaustPile));
+        state.put("log", new ArrayList<>(logList)); state.put("gameOver", gameOver); state.put("winner", winner);
         return state;
     }
 
@@ -554,4 +586,26 @@ public class BattleService {
 
     private void validateBattleActive() { if (gameOver) throw new IllegalStateException("战斗已经结束"); }
     private void validateCardIndex(int index) { if (index < 0 || index >= hand.size()) throw new IllegalArgumentException("无效的卡牌编号"); }
+
+    private List<Map<String, Object>> cardsToStateList(List<Card> cards) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (Card c : cards) {
+            Map<String, Object> info = new LinkedHashMap<>();
+            info.put("name", c.getName()); info.put("cost", c.getCost());
+            info.put("damage", c.getDamage()); info.put("block", c.getBlock()); info.put("type", c.getType().name());
+            info.put("applyStatusType", c.getApplyStatusType()); info.put("applyStatusCount", c.getApplyStatusCount());
+            info.put("applyStatusTarget", c.getApplyStatusTarget());
+            info.put("exhaust", c.isExhaust()); info.put("retain", c.isRetain()); info.put("ethereal", c.isEthereal());
+            info.put("drawCount", c.getDrawCount()); info.put("charId", c.getCharId()); info.put("rarity", c.getRarity());
+            info.put("selfDamage", c.getSelfDamage()); info.put("energyGain", c.getEnergyGain());
+            info.put("multiHitCount", c.getMultiHitCount());
+            info.put("exhaustHandCount", c.getExhaustHandCount());
+            info.put("exhaustHandMode", c.getExhaustHandMode());
+            info.put("innate", c.isInnate()); info.put("aoe", c.isAoe());
+            info.put("upgraded", c.isUpgraded());
+            list.add(info);
+        }
+        return list;
+    }
+
 }

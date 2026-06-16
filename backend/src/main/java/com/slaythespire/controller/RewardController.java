@@ -47,8 +47,25 @@ public class RewardController {
                 gold = 15 + random.nextInt(15);
                 break;
         }
-        reward.put("gold", gold);
-        reward.put("relics", relics);
+        reward.put("gold", gold); reward.put("relic", relic);
+        
+        // 为Boss战生成Boss遗物选项（占位符，后续从配置读取）
+        if ("boss".equalsIgnoreCase(nodeType)) {
+            List<Map<String, Object>> bossRelicOptions = new ArrayList<>();
+            Map<String, Object> br1 = new LinkedHashMap<>();
+            br1.put("id", "placeholder_boss_relic_1"); br1.put("name", "能量方块"); br1.put("description", "每回合获得1点额外能量。");
+            br1.put("effectType", "NO_EFFECT"); br1.put("value", 0); br1.put("rarity", "SPECIAL");
+            bossRelicOptions.add(br1);
+            Map<String, Object> br2 = new LinkedHashMap<>();
+            br2.put("id", "placeholder_boss_relic_2"); br2.put("name", "灵魂之炉"); br2.put("description", "每场战斗首次受伤时恢复5点生命。");
+            br2.put("effectType", "NO_EFFECT"); br2.put("value", 0); br2.put("rarity", "SPECIAL");
+            bossRelicOptions.add(br2);
+            Map<String, Object> br3 = new LinkedHashMap<>();
+            br3.put("id", "placeholder_boss_relic_3"); br3.put("name", "符文立方体"); br3.put("description", "每回合抽牌数+1。");
+            br3.put("effectType", "NO_EFFECT"); br3.put("value", 0); br3.put("rarity", "SPECIAL");
+            bossRelicOptions.add(br3);
+            reward.put("bossRelicOptions", bossRelicOptions);
+        }
         if ("chest".equalsIgnoreCase(nodeType)) reward.put("cards", Collections.emptyList());
         else reward.put("cards", generateCardPool(3, false, charId));
         return reward;

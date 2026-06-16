@@ -12,18 +12,22 @@ import java.util.Map;
 
 public class Enemy extends Combatant {
     private String name;
+    private String enemyType;   // NORMAL, ELITE, BOSS
     private final List<IntentTemplate> intentSequence;
     private int currentTurn;
     private IntentTemplate currentIntent;
     private GameDataRepository dataRepo;
+    private boolean hexaghostFirstCycleDone = false;
+    private int hexCyclePosition = 0;
 
     public Enemy(EnemyTemplate template, GameDataRepository dataRepo) {
         super(template.getMaxHp(), template.getMaxHp());
         this.dataRepo = dataRepo;
         this.name = template.getName();
+        this.enemyType = template.getType();
         this.intentSequence = template.getIntents();
         this.currentTurn = 0;
-        
+
         if (template.getInitialStatuses() != null) {
             for (Map.Entry<String, Integer> entry : template.getInitialStatuses().entrySet()) {
                 StatusEffect status = StatusFactory.create(entry.getKey(), entry.getValue(), dataRepo);
@@ -32,6 +36,8 @@ public class Enemy extends Combatant {
         }
         updateCurrentIntent();
     }
+
+    public String getEnemyType() { return enemyType; }
 
     @Override
     public GameDataRepository getDataRepo() { return this.dataRepo; }
@@ -50,22 +56,89 @@ public class Enemy extends Combatant {
 
     public int executeCurrentIntent(Combatant target) {
         if (currentIntent == null) return 0;
-        if (currentIntent.getType() == IntentType.ATTACK) return target.takeDamage(currentIntent.getValue(), this);
-        if (currentIntent.getType() == IntentType.DEFEND) { this.gainBlock(currentIntent.getValue()); return 0; }
-        if (currentIntent.getType() == IntentType.BUFF) return 0;
+        IntentType type = currentIntent.getType();
+
+        if (type == IntentType.ATTACK) {
+            return target.takeDamage(currentIntent.getValue(), this);
+        }
+        if (type == IntentType.DEFEND) {
+            this.gainBlock(currentIntent.getValue());
+            return 0;
+        }
+        if (type == IntentType.BUFF) {
+            // 处理自身力量Buff (高热)
+            if (currentIntent.getApplyStatusType() != null) {
+                StatusEffect status = StatusFactory.create(currentIntent.getApplyStatusType(), currentIntent.getApplyStatusCount(), dataRepo);
+                if (status != null) {
+                    this.addStatus(status);
+                }
+            }
+            // 处理获得格挡 (高热)
+            if (currentIntent.getValue() > 0) {
+                this.gainBlock(currentIntent.getValue());
+            }
+            return 0;
+        }
+        if (type == IntentType.MULTI_ATTACK) {
+            int hitCount = currentIntent.getMultiHit();
+            int dmg = currentIntent.getValue();
+            if (currentIntent.isHpScaling()) {
+                dmg = Math.max(1, target.getHp() / 12 + 1);
+            }
+            int totalDmg = 0;
+            for (int i = 0; i < hitCount; i++) {
+                totalDmg += target.takeDamage(dmg, this);
+            }
+            return totalDmg;
+        }
+        if (type == IntentType.DEBUFF) {
+            // 处理弃牌堆塞牌（晕眩/灼伤等）- 前端会处理
+            int stunCards = currentIntent.getStunCards();
+            int burnCards = currentIntent.getBurnCards();
+            if (burnCards > 0) {
+                // 将burnCards张灼伤加入弃牌堆
+                if (target instanceof Player) {
+                    for (int i = 0; i < burnCards; i++) {
+                        ((Player)target).addStatusCard("burn");
+                    }
+                }
+            }
+            if (stunCards > 0) {
+                if (target instanceof Player) {
+                    for (int i = 0; i < stunCards; i++) {
+                        ((Player)target).addStatusCard("dazed");
+                    }
+                }
+            }
+            return 0;
+        }
         return 0;
     }
 
-    public void advanceIntent() { currentTurn++; updateCurrentIntent(); }
+    public void advanceIntent() {
+        currentTurn++;
+        updateCurrentIntent();
+    }
+
     public String getEnemyName() { return name; }
     public IntentTemplate getCurrentIntentTemplate() { return currentIntent; }
     public String getIntentDesc() { return currentIntent != null ? currentIntent.getDesc() : "待机"; }
 
     public int getNextDamage() {
-        if (currentIntent == null || currentIntent.getType() != IntentType.ATTACK) return 0;
-        int dmg = currentIntent.getValue();
-        for (StatusEffect s : statuses) dmg = s.onDamageDealt(dmg, this, null);
-        return dmg;
+        if (currentIntent == null) return 0;
+        if (currentIntent.getType() == IntentType.ATTACK || currentIntent.getType() == IntentType.MULTI_ATTACK) {
+            int dmg = currentIntent.getValue();
+            if (currentIntent.isHpScaling()) {
+                // hpScaling由execute时动态计算，预览时用近似值
+                dmg = Math.max(1, 6);
+            }
+            if (currentIntent.getType() == IntentType.MULTI_ATTACK) {
+                dmg = dmg * currentIntent.getMultiHit();
+            }
+            for (StatusEffect s : statuses) dmg = s.onDamageDealt(dmg, this, null);
+            return dmg;
+        }
+        return 0;
     }
 
     public int getNextBlock() {
@@ -76,17 +149,17 @@ public class Enemy extends Combatant {
     }
 
     private void updateCurrentIntent() {
-        if (intentSequence == null || intentSequence.isEmpty()) { 
-            this.currentIntent = null; 
-            return; 
+        if (intentSequence == null || intentSequence.isEmpty()) {
+            this.currentIntent = null;
+            return;
         }
-        
+
         if (currentTurn == 0) {
             this.currentIntent = intentSequence.get(0);
         } else {
             int remainingSize = intentSequence.size() - 1;
             if (remainingSize <= 0) {
-                this.currentIntent = null; 
+                this.currentIntent = null;
                 return;
             }
             int index = 1 + ((currentTurn - 1) % remainingSize);

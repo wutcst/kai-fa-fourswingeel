@@ -461,7 +461,8 @@ public class GameConfigController {
             List<String> starterIds = Arrays.asList(
                 "strike", "strike", "strike", "strike", "strike",
                 "defend", "defend", "defend", "defend",
-                "bash"
+                "bash",
+                "oneshot"
             );
             List<Map<String, Object>> deck = new ArrayList<>();
             for (String id : starterIds) {
