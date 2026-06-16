@@ -39,6 +39,10 @@
       cursor: pointer; transition: all 0.3s;
     }
     .back-btn:hover { background: #c0392b; transform: translateY(-2px); }
+    /* 稀有度边框颜色（内联样式将覆盖） */
+    .deck-table td {
+      border-left: 5px solid transparent;
+    }
   </style>
 </head>
 <body>
@@ -65,17 +69,18 @@
 
       let html = '<table class="deck-table"><thead><tr><th>名称</th><th>费用</th><th>类型</th><th>效果</th></tr></thead><tbody>';
       deck.forEach(card => {
-        html += `<tr>
+        const bgStyle = CARD_UI.getCardCharStyle(card);
+        const borderColor = CARD_UI.getRarityBorderColor(card);
+        html += `<tr style="background:${bgStyle.replace('background:','')}; color:white; border-left: 5px solid ${borderColor};">
           <td>${card.name}</td>
           <td>⚡ ${card.cost}</td>
-          <td>${card.type === 'ATTACK' ? '攻击' : '技能'}</td>
+          <td>${card.type === 'ATTACK' ? '攻击' : card.type === 'SKILL' ? '技能' : '能力'}</td>
           <td style="font-size:13px;color:#ecf0f1;">${CARD_UI.getCardEffectText(card)}</td>
         </tr>`;
       });
       html += '</tbody></table>';
       container.innerHTML = html;
 
-      // 悬浮小窗
       const tbody = container.querySelector('tbody');
       if (tbody) {
         tbody.querySelectorAll('tr').forEach((row, i) => {

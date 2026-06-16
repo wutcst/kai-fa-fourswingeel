@@ -1,6 +1,7 @@
 package com.slaythespire.game.model;
 
 import com.slaythespire.repository.GameDataRepository;
+import java.util.ArrayList;
 
 public class Player extends Combatant {
     private int energy;
@@ -17,8 +18,18 @@ public class Player extends Combatant {
     public void useEnergy(int cost) { this.energy -= cost; }
 
     @Override
+    public GameDataRepository getDataRepo() { return this.dataRepo; }
+
+    @Override
     public void onTurnStart() {
         clearBlock();
+        turnStartLogs.clear(); // 使用父类的 protected 字段
+        
+        // ✅ 遍历副本防止并发修改异常
+        for (StatusEffect s : new ArrayList<>(statuses)) {
+            addTurnStartLog(s.onTurnStart(this)); // 使用父类提供的方法
+        }
+        
         for (Relic r : getRelics()) r.onTurnStart(this);
     }
 }

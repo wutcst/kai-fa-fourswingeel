@@ -3,6 +3,7 @@ package com.slaythespire.controller;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,8 +35,12 @@ public class GameConfigController {
 
     private final Random random = new Random();
 
+    // ================ 重写的地图生成 ================
+
     /**
-     * 生成随机15层无交叉路径的地图
+     * 生成15层随机地图：起点一个，合并与扩展保持顺序且无死路；
+     * 每层节点数偏好3~4，1、2、5为少数；
+     * boss前一层全篝火，前两层只有小怪/未知，降低精英、商店、篝火概率。
      */
     @GetMapping("/map")
     public Map<String, Object> getMapData() {
@@ -43,113 +48,203 @@ public class GameConfigController {
         List<Map<String, Object>> nodes = new ArrayList<>();
         List<Map<String, String>> edges = new ArrayList<>();
 
-        String[] nodeTypes = {"monster", "elite", "shop", "campfire", "chest", "question"};
-        String[] icons      = {"👾",      "💀",    "🛒",   "🔥",       "📦",    "❓"};
-        String[] labels     = {"小怪",     "精英",   "商店",  "篝火",      "宝箱",   "?"};
-        
-        int[] layerSizes = new int[15];
-        layerSizes[0] = 1;
-        layerSizes[14] = 1;
-        for (int i = 1; i < 14; i++) {
-            layerSizes[i] = random.nextInt(5) + 1;
-        }
+        final int FLOOR_COUNT = 15; // 0~14
+        List<List<Map<String, Object>>> floors = new ArrayList<>();
 
-        List<List<Map<String, Object>>> layerNodes = new ArrayList<>();
-        int nodeId = 0;
+        // ===== 第0层（底部）单一起点 =====
+        List<Map<String, Object>> floor0 = new ArrayList<>();
+        Map<String, Object> startNode = new LinkedHashMap<>();
+        startNode.put("id", "start");
+        startNode.put("type", "start");
+        startNode.put("icon", "🏁");
+        startNode.put("label", "起点");
+        startNode.put("x", 50.0);
+        startNode.put("y", 90.0);
+        nodes.add(startNode);
+        floor0.add(startNode);
+        floors.add(floor0);
 
-        for (int layer = 0; layer < 15; layer++) {
-            List<Map<String, Object>> curLayer = new ArrayList<>();
-            int count = layerSizes[layer];
-            double yPercent = 8.0 + (14 - layer) * 6.0;
-            for (int j = 0; j < count; j++) {
-                Map<String, Object> node = new LinkedHashMap<>();
-                String id;
-                if (layer == 0) {
-                    id = "start";
-                } else if (layer == 14) {
-                    id = "boss";
-                } else {
-                    id = "n" + nodeId;
-                    nodeId++;
-                }
-                node.put("id", id);
-                
-                String type, icon, label;
-                if (layer == 0) {
-                    type = "start"; icon = "🛡️"; label = "起点";
-                } else if (layer == 14) {
-                    type = "boss";  icon = "👑"; label = "BOSS";
-                } else {
-                    int idx = random.nextInt(nodeTypes.length);
-                    type  = nodeTypes[idx];
-                    icon  = icons[idx];
-                    label = labels[idx];
-                }
-                node.put("type", type);
-                node.put("icon", icon);
-                node.put("label", label);
-                double xPercent = 100.0 * (j + 1) / (count + 1);
-                node.put("x", xPercent);
-                node.put("y", yPercent);
+        // ===== 第1~13层 =====
+        for (int floorIdx = 1; floorIdx <= 13; floorIdx++) {
+            List<Map<String, Object>> prevFloor = floors.get(floorIdx - 1);
+            int prevCount = prevFloor.size();
 
-                curLayer.add(node);
-                nodes.add(node);
-            }
-            layerNodes.add(curLayer);
-        }
+            int targetCount;
 
-        for (int layer = 0; layer < 14; layer++) {
-            List<Map<String, Object>> fromLayer = layerNodes.get(layer);
-            List<Map<String, Object>> toLayer   = layerNodes.get(layer + 1);
-            int nFrom = fromLayer.size();
-            int nTo   = toLayer.size();
-            
-            boolean[] connected = new boolean[nTo];
-            int prevIdx = -1;
-            
-            for (int i = 0; i < nFrom; i++) {
-                int minIdx = Math.max(0, prevIdx);
-                int maxIdx = nTo - 1;
-                int targetIdx;
-                if (prevIdx >= maxIdx) {
-                    targetIdx = maxIdx;
-                } else {
-                    targetIdx = minIdx + random.nextInt(maxIdx - minIdx + 1);
-                }
-                Map<String, Object> fromNode = fromLayer.get(i);
-                Map<String, Object> toNode   = toLayer.get(targetIdx);
-                Map<String, String> edge = new LinkedHashMap<>();
-                edge.put("from", fromNode.get("id").toString());
-                edge.put("to",   toNode.get("id").toString());
-                edges.add(edge);
-                
-                connected[targetIdx] = true;
-                prevIdx = targetIdx;
+            // ---- 第1层（起点后）：强制3~4个怪物节点 ----
+            if (floorIdx == 1) {
+                targetCount = 3 + random.nextInt(2); // 3或4
+            } else {
+                // 根据权重选择节点数（偏好3~4）
+                double r = random.nextDouble();
+                if (r < 0.05)         targetCount = 1;
+                else if (r < 0.15)    targetCount = 2;
+                else if (r < 0.50)    targetCount = 3;
+                else if (r < 0.85)    targetCount = 4;
+                else                  targetCount = 5;
+                // 与上层差别不超过1，保证变化平滑
+                targetCount = Math.min(5, Math.max(1,
+                        prevCount + (random.nextBoolean() ? 1 : -1) * random.nextInt(2)));
+                // 再次应用权重偏好，但若不满足则修正
+                if (targetCount > 4) targetCount = 4;
+                if (targetCount < 2) targetCount = 2;
+                // 再随机调整到3或4为主
+                // 最终：若上层较小则可能为2，较大则可能为4，中间大多3或4
+                targetCount = Math.min(5, Math.max(1, targetCount));
             }
 
-            for (int j = 0; j < nTo; j++) {
-                if (!connected[j]) {
-                    int candidate = Math.min(nFrom - 1, Math.max(0, (int) Math.floor(j * nFrom / (double) nTo)));
-                    int tries = 0;
-                    int finalj = j;
-                    int finalCandidate = candidate;
-                    while (tries < 5) {
-                        boolean duplicate = edges.stream()
-                                .anyMatch(e -> e.get("from").equals(fromLayer.get(finalCandidate).get("id").toString())
-                                        && e.get("to").equals(toLayer.get(finalj).get("id").toString()));
-                        if (!duplicate) {
-                            break;
-                        }
-                        if (candidate > 0 && (tries % 2 == 0)) candidate--;
-                        else if (candidate < nFrom - 1) candidate++;
-                        tries++;
+            // 构建 parentSeq（子节点对应的父节点索引列表）
+            List<Integer> parentSeq = new ArrayList<>();
+            for (int i = 0; i < prevCount; i++) parentSeq.add(i);
+
+            // 用于记录被合并的父节点 -> 合并到的父节点
+            Map<Integer, Integer> mergedMap = new HashMap<>();
+
+            // 扩展：插入副本（使同一父节点对应多个子节点）
+            while (parentSeq.size() < targetCount) {
+                int idx = random.nextInt(parentSeq.size());
+                int val = parentSeq.get(idx);
+                parentSeq.add(idx + 1, val);
+            }
+            // 合并：删除相邻元素，同时记录被删元素
+            while (parentSeq.size() > targetCount) {
+                int idx = random.nextInt(parentSeq.size() - 1);
+                int removedIdx = parentSeq.get(idx + 1);
+                int keptIdx = parentSeq.get(idx);
+                parentSeq.remove(idx + 1);
+                mergedMap.put(removedIdx, keptIdx);
+            }
+
+            // 生成子节点，同时记录每个父节点对应的第一个子节点（用于额外边）
+            Map<Integer, Map<String, Object>> firstChildForParent = new HashMap<>();
+            List<Map<String, Object>> curFloor = new ArrayList<>();
+            int totalChildren = parentSeq.size();
+
+            for (int k = 0; k < totalChildren; k++) {
+                int parentIndex = parentSeq.get(k);
+                Map<String, Object> parentNode = prevFloor.get(parentIndex);
+
+                Map<String, Object> childNode = new LinkedHashMap<>();
+                String id = "n" + nodes.size();
+                childNode.put("id", id);
+
+                // 节点类型
+                String type;
+                String icon;
+                String label;
+                if (floorIdx == 13) {
+                    type = "campfire";
+                    icon = "🔥";
+                    label = "篝火";
+                } else if (floorIdx == 1) {
+                    // 第1层强制为怪物
+                    type = "monster";
+                    icon = "👾";
+                    label = "小怪";
+                } else if (floorIdx == 2) {
+                    // 第2层小怪或未知
+                    type = random.nextBoolean() ? "monster" : "question";
+                    icon = type.equals("monster") ? "👾" : "❓";
+                    label = type.equals("monster") ? "小怪" : "?";
+                } else {
+                    double rr = random.nextDouble();
+                    if (rr < 0.45) {
+                        type = "monster";
+                    } else if (rr < 0.75) {
+                        type = "question";
+                    } else if (rr < 0.85) {
+                        type = "chest";
+                    } else if (rr < 0.90) {
+                        type = "elite";
+                    } else if (rr < 0.95) {
+                        type = "shop";
+                    } else {
+                        type = "campfire";
                     }
-                    
-                    Map<String, String> edge = new LinkedHashMap<>();
-                    edge.put("from", fromLayer.get(candidate).get("id").toString());
-                    edge.put("to",   toLayer.get(j).get("id").toString());
-                    edges.add(edge);
-                    connected[j] = true;
+                    switch (type) {
+                        case "monster": icon = "👾"; label = "小怪"; break;
+                        case "elite":   icon = "💀"; label = "精英"; break;
+                        case "shop":    icon = "🛒"; label = "商店"; break;
+                        case "campfire":icon = "🔥"; label = "篝火"; break;
+                        case "chest":   icon = "📦"; label = "宝箱"; break;
+                        default:        icon = "❓"; label = "?";   break;
+                    }
+                }
+                childNode.put("type", type);
+                childNode.put("icon", icon);
+                childNode.put("label", label);
+
+                // 位置
+                double yPercent = 90.0 - floorIdx * 6.0;
+                double xPercent = 100.0 * (k + 1) / (totalChildren + 1);
+                childNode.put("x", xPercent);
+                childNode.put("y", yPercent);
+
+                nodes.add(childNode);
+                curFloor.add(childNode);
+
+                // 正常边：父节点 -> 当前子节点
+                addEdge(edges, parentNode, childNode);
+
+                // 记录该父节点的第一个子节点（若尚未记录）
+                if (!firstChildForParent.containsKey(parentIndex)) {
+                    firstChildForParent.put(parentIndex, childNode);
+                }
+            }
+
+            // 额外边：被合并的父节点连接到其合并目标父节点所对应的子节点
+            for (Map.Entry<Integer, Integer> entry : mergedMap.entrySet()) {
+                int removedIdx = entry.getKey();
+                int keptIdx = entry.getValue();
+                Map<String, Object> removedParent = prevFloor.get(removedIdx);
+                Map<String, Object> childOfKept = firstChildForParent.get(keptIdx);
+                if (childOfKept != null) {
+                    addEdge(edges, removedParent, childOfKept);
+                }
+            }
+
+            floors.add(curFloor);
+        }
+
+        // ===== 第14层（顶部）Boss =====
+        List<Map<String, Object>> floor14 = new ArrayList<>();
+        Map<String, Object> bossNode = new LinkedHashMap<>();
+        bossNode.put("id", "boss");
+        bossNode.put("type", "boss");
+        bossNode.put("icon", "👑");
+        bossNode.put("label", "BOSS");
+        bossNode.put("x", 50.0);
+        bossNode.put("y", 6.0);
+        nodes.add(bossNode);
+        floor14.add(bossNode);
+        floors.add(floor14);
+
+        // 第13层 -> Boss 连线
+        List<Map<String, Object>> prevFloor = floors.get(13);
+        for (Map<String, Object> pn : prevFloor) {
+            addEdge(edges, pn, bossNode);
+        }
+
+        // ===== 额外交汇（增加第二条入边）30% =====
+        for (int floorIdx = 0; floorIdx < FLOOR_COUNT - 1; floorIdx++) {
+            List<Map<String, Object>> fromList = floors.get(floorIdx);
+            List<Map<String, Object>> toList = floors.get(floorIdx + 1);
+            int toCount = toList.size();
+            int[] inEdges = new int[toCount];
+            // 统计入度
+            for (Map<String, String> e : edges) {
+                String toId = e.get("to");
+                for (int t = 0; t < toCount; t++) {
+                    if (toList.get(t).get("id").equals(toId)) {
+                        inEdges[t]++;
+                        break;
+                    }
+                }
+            }
+            for (int t = 0; t < toCount; t++) {
+                if (inEdges[t] == 1 && random.nextDouble() < 0.3) {
+                    int f = random.nextInt(fromList.size());
+                    addEdge(edges, fromList.get(f), toList.get(t));
                 }
             }
         }
@@ -159,20 +254,33 @@ public class GameConfigController {
         return mapData;
     }
 
-    /**
-     * 商店数据
-     */
+    private void addEdge(List<Map<String, String>> edges,
+                         Map<String, Object> from,
+                         Map<String, Object> to) {
+        Map<String, String> edge = new LinkedHashMap<>();
+        edge.put("from", from.get("id").toString());
+        edge.put("to", to.get("id").toString());
+        edges.add(edge);
+    }
+
+    // ================ 以下原方法保持不变 ================
+
     @GetMapping("/shop")
     public Map<String, Object> getShopData(@RequestParam(defaultValue = "1") String charParam,
                                             @RequestParam(required = false) List<String> ownedRelics) {
         Map<String, Object> shop = new LinkedHashMap<>();
 
         List<CardTemplate> allCards = dataRepo.getAllCards();
+        List<CardTemplate> normalCards = new ArrayList<>();
+        for (CardTemplate tpl : allCards) {
+            if (!tpl.isUpgraded()) normalCards.add(tpl);
+        }
+
         List<Map<String, Object>> shopCards = new ArrayList<>();
         Set<String> usedIds = new HashSet<>();
         int attempts = 0;
-        while (shopCards.size() < 3 && attempts < 10 && !allCards.isEmpty()) {
-            CardTemplate tpl = allCards.get(random.nextInt(allCards.size()));
+        while (shopCards.size() < 3 && attempts < 10 && !normalCards.isEmpty()) {
+            CardTemplate tpl = normalCards.get(random.nextInt(normalCards.size()));
             if (!usedIds.contains(tpl.getId())) {
                 usedIds.add(tpl.getId());
                 Map<String, Object> cardMap = new LinkedHashMap<>();
@@ -185,6 +293,9 @@ public class GameConfigController {
                 cardMap.put("applyStatusType", tpl.getApplyStatusType());
                 cardMap.put("applyStatusCount", tpl.getApplyStatusCount());
                 cardMap.put("applyStatusTarget", tpl.getApplyStatusTarget());
+                cardMap.put("charId", tpl.getCharId());
+                cardMap.put("drawCount", tpl.getDrawCount());
+                cardMap.put("rarity", tpl.getRarity());  // ✅ 添加稀有度
                 int price = 50 + (tpl.getCost() * 25);
                 if (tpl.getDamage() > 10 || tpl.getBlock() > 10) price += 20;
                 cardMap.put("price", price);
@@ -194,12 +305,10 @@ public class GameConfigController {
         }
         shop.put("cards", shopCards);
 
-        // 商店遗物：从 RelicPoolService 按权重抽取 2 件
         List<Map<String, Object>> shopRelics = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             RelicTemplate tpl = relicPoolService.drawRelic(charParam, ownedRelics);
             if (tpl == null) break;
-            // 抽取后从 ownedRelics 排除，防止两次抽到相同遗物
             if (ownedRelics == null) ownedRelics = new ArrayList<>();
             ownedRelics.add(tpl.getId());
             Map<String, Object> relicMap = new LinkedHashMap<>();
@@ -216,9 +325,6 @@ public class GameConfigController {
         return shop;
     }
 
-    /**
-     * 角色初始数据
-     */
     @GetMapping("/character/{charId}")
     public Map<String, Object> getCharacterInfo(@PathVariable String charId) {
         Map<String, Object> info = new LinkedHashMap<>();
@@ -241,6 +347,9 @@ public class GameConfigController {
                     cardMap.put("applyStatusType", tpl.getApplyStatusType());
                     cardMap.put("applyStatusCount", tpl.getApplyStatusCount());
                     cardMap.put("applyStatusTarget", tpl.getApplyStatusTarget());
+                    cardMap.put("charId", tpl.getCharId());
+                    cardMap.put("drawCount", tpl.getDrawCount());
+                    cardMap.put("rarity", tpl.getRarity());  // ✅ 添加稀有度
                     deck.add(cardMap);
                 }
             }
@@ -256,9 +365,6 @@ public class GameConfigController {
         return info;
     }
 
-    /**
-     * ✅ 新增：获取所有遗物配置（供前端将 ID 翻译为中文名和描述）
-     */
     @GetMapping("/relics")
     public List<Map<String, Object>> getAllRelics() {
         List<RelicTemplate> allRelics = dataRepo.getAllRelics();
@@ -274,5 +380,25 @@ public class GameConfigController {
             result.add(map);
         }
         return result;
+    }
+
+    @GetMapping("/card/{id}")
+    public Map<String, Object> getCardById(@PathVariable String id) {
+        CardTemplate tpl = dataRepo.getCardById(id);
+        if (tpl == null) return null;
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", tpl.getId());
+        map.put("name", tpl.getName());
+        map.put("cost", tpl.getCost());
+        map.put("damage", tpl.getDamage());
+        map.put("block", tpl.getBlock());
+        map.put("type", tpl.getType().name());
+        map.put("applyStatusType", tpl.getApplyStatusType());
+        map.put("applyStatusCount", tpl.getApplyStatusCount());
+        map.put("applyStatusTarget", tpl.getApplyStatusTarget());
+        map.put("drawCount", tpl.getDrawCount());
+        map.put("upgraded", tpl.isUpgraded());
+        map.put("rarity", tpl.getRarity());  // ✅ 添加稀有度
+        return map;
     }
 }

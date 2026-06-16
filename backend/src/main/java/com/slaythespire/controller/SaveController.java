@@ -1,6 +1,7 @@
 package com.slaythespire.controller;
 
 import com.slaythespire.model.SaveData;
+import com.slaythespire.service.QuestionService;
 import com.slaythespire.service.SaveService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -8,11 +9,14 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*") // 允许跨域
+@CrossOrigin(origins = "*")
 public class SaveController {
 
     @Autowired
     private SaveService saveService;
+
+    @Autowired
+    private QuestionService questionService;
 
     /**
      * 保存游戏
@@ -67,6 +71,9 @@ public class SaveController {
             if (data.getRelics() == null) {
                 data.setRelics(new java.util.ArrayList<>());
             }
+            
+            // 保存前重置该角色的未知房间概率
+            questionService.resetChar(data.getCharId());
             
             saveService.saveGame(data.getCharId(), data);
             return ResponseEntity.ok(data);

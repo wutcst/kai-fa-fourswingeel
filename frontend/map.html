@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>杀戮尖塔 - 地图</title>
-  <script src="save_helper.js"></script> <!-- 引入存档助手 -->
+  <script src="save_helper.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a1a; color: #e0e0e0; overflow-y: auto; height: 100vh; width: 100vw; padding-top: 40px; }
@@ -23,8 +23,6 @@
   </style>
 </head>
 <body>
-  <!-- 注意：这里移除了顶部的 status_bar.js，防止 DOM 未加载报错 -->
-  
   <div id="map-container">
     <svg id="lines"></svg>
   </div>
@@ -33,15 +31,12 @@
   </div>
 
   <script>
-    // ✅ 使用 async IIFE 包装，支持从后端异步读取存档
     (async function() {
       const params = new URLSearchParams(window.location.search);
       const charParam = params.get('char') || '1';
       
-      // 1. 从后端加载最新存档
       const saveData = await loadSaveData(charParam);
       
-      // 如果 URL 传入了 currentNode (例如从其他页面跳转回来)，则更新存档
       let currentNodeId = params.get('currentNode') || saveData.currentNode || 'start';
       let visitedNodes = saveData.visitedNodes || ['start'];
       
@@ -49,7 +44,7 @@
         visitedNodes.push(currentNodeId);
         saveData.visitedNodes = visitedNodes;
         saveData.currentNode = currentNodeId;
-        await saveSaveData(saveData); // 同步进度到后端
+        await saveSaveData(saveData);
       }
       
       if (currentNodeId === 'start' && visitedNodes.length === 1) {
@@ -66,7 +61,6 @@
       function getNodeById(id) { return mapData.nodes.find(n => n.id === id); }
       function getNextNodes(fromId) { return mapData.edges.filter(e => e.from === fromId).map(e => e.to); }
 
-      // 2. 加载地图数据 (优先使用 cover.html 缓存的 sessionStorage)
       const storedData = sessionStorage.getItem('mapData');
       if (storedData) {
         try {
@@ -76,7 +70,6 @@
         }
       }
 
-      // 如果 sessionStorage 没有，则请求后端
       if (!mapData.nodes || mapData.nodes.length === 0) {
         try {
           const resp = await fetch('/api/map');
@@ -84,7 +77,7 @@
             const data = await resp.json();
             if (data && Array.isArray(data.nodes) && data.nodes.length > 0) {
               mapData = data;
-              sessionStorage.setItem('mapData', JSON.stringify(data)); // 缓存起来
+              sessionStorage.setItem('mapData', JSON.stringify(data));
             }
           }
         } catch (e) {
@@ -92,7 +85,6 @@
         }
       }
 
-      // 3. 渲染地图
       nextNodeIds = getNextNodes(currentNodeId).filter(id => !visitedNodes.includes(id));
       const currentNode = getNodeById(currentNodeId);
       if (currentNode) currentLabel.textContent = currentNode.label || currentNode.id;
@@ -100,7 +92,6 @@
       container.querySelectorAll('.node').forEach(n => n.remove());
       svg.innerHTML = '';
 
-      // 绘制连线
       mapData.edges.forEach(edge => {
         const fromNode = getNodeById(edge.from);
         const toNode = getNodeById(edge.to);
@@ -111,7 +102,6 @@
           line.setAttribute("x2", `${toNode.x}%`);
           line.setAttribute("y2", `${toNode.y}%`);
           
-          // 当前节点到下一节点的连线高亮
           if (edge.from === currentNodeId && nextNodeIds.includes(edge.to)) {
             line.setAttribute("stroke", "#e74c3c");
             line.setAttribute("stroke-width", "4");
@@ -123,7 +113,6 @@
         }
       });
 
-      // 绘制节点
       mapData.nodes.forEach(node => {
         const div = document.createElement('div');
         div.className = 'node';
@@ -134,7 +123,6 @@
 
         if (node.id === currentNodeId) {
           div.classList.add('current');
-          // 起点在当前节点时允许再次点击（为了选初始遗物）
           if (node.type === 'start') {
             div.classList.add('clickable');
             div.addEventListener('click', () => handleNodeClick(node));
@@ -149,8 +137,7 @@
         container.appendChild(div);
       });
 
-      // 4. 节点点击跳转逻辑
-      function handleNodeClick(node) {
+      async function handleNodeClick(node) {
         const baseParams = `char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
         
         if (node.type === 'monster' || node.type === 'elite' || node.type === 'boss') {
@@ -168,28 +155,53 @@
         } else if (node.type === 'campfire') {
           window.location.href = `campfire.html?${baseParams}`;
         } else if (node.type === 'question') {
-          const rand = Math.random();
-          if (rand < 0.2) {
-            window.location.href = `fight.html?from=map&${baseParams}&nodeType=monster`;
-          } else if (rand < 0.9) {
+          // ✅ 修改：调用后端接口决定结果
+          try {
+            const resp = await fetch(`/api/question/roll?charId=${charParam}`);
+            if (resp.ok) {
+              const resultType = await resp.text(); // "enemy", "chest", "shop", "event"
+              if (resultType === 'enemy') {
+                window.location.href = `fight.html?from=map&${baseParams}&nodeType=monster`;
+              } else if (resultType === 'chest') {
+                window.location.href = `chest.html?${baseParams}`;
+              } else if (resultType === 'shop') {
+                window.location.href = `merchant.html?${baseParams}`;
+              } else if (resultType === 'event') {
+                window.location.href = `question.html?${baseParams}`;
+              } else {
+                // 降级：直接跳转到事件
+                window.location.href = `question.html?${baseParams}`;
+              }
+            } else {
+              // 后端不可用时降级到事件
+              window.location.href = `question.html?${baseParams}`;
+            }
+          } catch (e) {
+            console.error('调用未知房间API失败', e);
             window.location.href = `question.html?${baseParams}`;
-          } else {
-            window.location.href = `chest.html?${baseParams}`;
           }
         }
       }
 
-      // 5. 返回封面按钮
+      // 返回封面按钮：保存当前状态并跳转
       const returnBtn = document.createElement('button');
       returnBtn.className = 'btn-return';
       returnBtn.textContent = '返回封面';
-      returnBtn.onclick = () => { window.location.href = `cover.html?char=${charParam}`; };
+      returnBtn.onclick = async () => {
+        // 确保最新存档已保存
+        const currentSave = await loadSaveData(charParam);
+        currentSave.currentNode = currentNodeId;
+        if (currentSave.visitedNodes && !currentSave.visitedNodes.includes(currentNodeId)) {
+          currentSave.visitedNodes.push(currentNodeId);
+        }
+        await saveSaveData(currentSave);
+        window.location.href = `cover.html?char=${charParam}`;
+      };
       document.body.appendChild(returnBtn);
 
     })();
   </script>
 
-  <!-- ✅ 将 status_bar.js 放在 body 最底部，彻底解决 DOM 未加载报错 -->
   <script src="status_bar.js"></script>
 </body>
 </html>

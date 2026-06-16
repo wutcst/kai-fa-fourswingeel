@@ -6,6 +6,7 @@ import com.slaythespire.repository.GameDataRepository;
 import com.slaythespire.repository.IntentTemplate;
 import com.slaythespire.repository.IntentType;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -33,12 +34,24 @@ public class Enemy extends Combatant {
     }
 
     @Override
-    public void onTurnStart() { clearBlock(); }
+    public GameDataRepository getDataRepo() { return this.dataRepo; }
+
+    @Override
+    public void onTurnStart() { 
+        clearBlock(); 
+        turnStartLogs.clear(); // 使用父类的 protected 字段
+        
+        // ✅ 遍历副本防止并发修改异常
+        for (StatusEffect s : new ArrayList<>(statuses)) {
+            addTurnStartLog(s.onTurnStart(this));
+        }
+    }
 
     public int executeCurrentIntent(Combatant target) {
         if (currentIntent == null) return 0;
         if (currentIntent.getType() == IntentType.ATTACK) return target.takeDamage(currentIntent.getValue(), this);
         if (currentIntent.getType() == IntentType.DEFEND) { this.gainBlock(currentIntent.getValue()); return 0; }
+        if (currentIntent.getType() == IntentType.BUFF) return 0;
         return 0;
     }
 
@@ -62,7 +75,21 @@ public class Enemy extends Combatant {
     }
 
     private void updateCurrentIntent() {
-        if (intentSequence == null || intentSequence.isEmpty()) { this.currentIntent = null; return; }
-        this.currentIntent = intentSequence.get(Math.floorMod(currentTurn, intentSequence.size()));
+        if (intentSequence == null || intentSequence.isEmpty()) { 
+            this.currentIntent = null; 
+            return; 
+        }
+        
+        if (currentTurn == 0) {
+            this.currentIntent = intentSequence.get(0);
+        } else {
+            int remainingSize = intentSequence.size() - 1;
+            if (remainingSize <= 0) {
+                this.currentIntent = null; 
+                return;
+            }
+            int index = 1 + ((currentTurn - 1) % remainingSize);
+            this.currentIntent = intentSequence.get(index);
+        }
     }
 }
