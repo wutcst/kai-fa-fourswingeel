@@ -57,6 +57,13 @@ public class BattleService {
         player.onTurnStart();
         logList.addAll(player.getLastTurnStartLogs());
         energy = 3;
+        for (Relic r : player.getRelics()) {
+            if (r instanceof GameRelic && "ENERGY_FIRST_TURN".equals(((GameRelic) r).getEffectType())) {
+                energy += ((GameRelic) r).getValue();
+                logList.add("🏮 灯笼使初始能量 +" + ((GameRelic) r).getValue());
+                break;
+            }
+        }
         drawCards(5);
         return getCurrentState();
     }
@@ -169,6 +176,7 @@ public class BattleService {
                 // 执行消耗
                 Card exhaustedCard = hand.remove(targetIdx);
                 exhaustPile.add(exhaustedCard);
+                triggerDrawOnExhaust();
                 
                 // 🆕 关键修正：如果消耗的牌在打出牌之前，打出牌的索引需要前移 1 位
                 if (targetIdx < playedCardIndex) {
@@ -188,6 +196,7 @@ public class BattleService {
         } else if (finalCard.isExhaust()) {
             exhaustPile.add(finalCard);
             logList.add(finalCard.getName() + "被消耗");
+            triggerDrawOnExhaust();
         } else {
             discardPile.add(finalCard);
         }
@@ -203,7 +212,7 @@ public class BattleService {
 
         List<Card> retained = new ArrayList<>();
         for (Card card : hand) {
-            if (card.isEthereal()) { exhaustPile.add(card); logList.add(card.getName() + "因【虚无】被消耗"); }
+            if (card.isEthereal()) { exhaustPile.add(card); logList.add(card.getName() + "因【虚无】被消耗"); triggerDrawOnExhaust(); }
             else if (card.isRetain()) retained.add(card);
             else discardPile.add(card);
         }
@@ -402,6 +411,16 @@ public class BattleService {
         }
         state.put("hand", handCards); state.put("log", new ArrayList<>(logList)); state.put("gameOver", gameOver); state.put("winner", winner);
         return state;
+    }
+
+    private void triggerDrawOnExhaust() {
+        for (Relic r : player.getRelics()) {
+            if (r instanceof GameRelic && "DRAW_ON_EXHAUST".equals(((GameRelic) r).getEffectType())) {
+                drawCards(1);
+                logList.add("📄 金纸触发，抽了一张牌");
+                break;
+            }
+        }
     }
 
     private void validateBattleActive() { if (gameOver) throw new IllegalStateException("战斗已经结束"); }

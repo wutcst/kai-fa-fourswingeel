@@ -26,17 +26,34 @@ public class RewardController {
                                           @RequestParam(defaultValue = "1") String charId) {
         Map<String, Object> reward = new LinkedHashMap<>();
         int gold = 0;
-        Map<String, Object> relic = null;
+        List<Map<String, Object>> relics = new ArrayList<>();
 
         switch (nodeType.toLowerCase()) {
-            case "elite": gold = 40 + random.nextInt(15); relic = drawRelicMap(charId, ownedRelics, "rare"); break;
-            case "boss": gold = 100 + random.nextInt(50); relic = drawRelicMap(charId, ownedRelics, "rare"); break;
-            case "chest": gold = 30 + random.nextInt(20); relic = drawRelicMap(charId, ownedRelics, "common"); break;
-            case "monster": default: gold = 15 + random.nextInt(15); relic = null; break;
+            case "elite":
+                gold = 40 + random.nextInt(15);
+                relics.add(drawRelicMap(charId, ownedRelics, "rare"));
+                break;
+            case "boss":
+                gold = 100 + random.nextInt(50);
+                // 第1个：必定传说
+                Map<String, Object> leg = drawRelicMap(charId, ownedRelics, "legendary");
+                relics.add(leg);
+                // 第2个：稀有/普通 35/65
+                String secondTier = random.nextInt(100) < 35 ? "rare" : "common";
+                relics.add(drawRelicMap(charId, ownedRelics != null ? ownedRelics : new ArrayList<>(), secondTier));
+                break;
+            case "chest":
+                gold = 30 + random.nextInt(20);
+                relics.add(drawRelicMap(charId, ownedRelics, "common"));
+                break;
+            case "monster":
+            default:
+                gold = 15 + random.nextInt(15);
+                break;
         }
 
         reward.put("gold", gold);
-        reward.put("relic", relic);
+        reward.put("relics", relics);
         
         if ("chest".equalsIgnoreCase(nodeType)) {
             reward.put("cards", Collections.emptyList());

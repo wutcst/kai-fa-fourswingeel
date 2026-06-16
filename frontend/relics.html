@@ -26,9 +26,10 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
     /* 稀有度颜色：白色/普通、蓝色/稀有、金色/传说 */
-    .relic-item.rarity-common { border-left-color: #bdc3c7; }
-    .relic-item.rarity-rare   { border-left-color: #3498db; }
-    .relic-item.rarity-special { border-left-color: #9b59b6; }
+    .relic-item.rarity-common    { border-left-color: #bdc3c7; }
+    .relic-item.rarity-rare      { border-left-color: #3498db; }
+    .relic-item.rarity-legendary { border-left-color: #ffd700; }
+    .relic-item.rarity-special   { border-left-color: #9b59b6; }
     .relic-icon { font-size: 32px; flex-shrink: 0; margin-top: 2px;}
     .relic-info { flex: 1; }
     .relic-name { font-weight: bold; font-size: 18px; margin-bottom: 5px;}
@@ -37,6 +38,8 @@
     .rarity-common .relic-rarity-badge { background: #bdc3c7; color: #1a1a2e; }
     .rarity-rare .relic-name { color: #3498db; }
     .rarity-rare .relic-rarity-badge { background: #3498db; color: white; }
+    .rarity-legendary .relic-name { color: #ffd700; }
+    .rarity-legendary .relic-rarity-badge { background: #ffd700; color: #1a1a2e; }
     .rarity-special .relic-name { color: #9b59b6; }
     .rarity-special .relic-rarity-badge { background: #9b59b6; color: white; }
     .relic-desc { font-size: 14px; color: #bdc3c7; line-height: 1.4;}
@@ -93,11 +96,13 @@
         // 根据 ID 查找中文名和描述
         const relicInfo = relicDict[relicId];
         if (relicInfo) {
-          // 稀有度映射：STARTER/COMMON → common(白), RARE → rare(蓝), SPECIAL → special(紫)
+          // 稀有度映射
           const rarity = relicInfo.rarity || 'COMMON';
           let rarityClass = 'common', rarityLabel = '普通';
           if (rarity === 'RARE') { rarityClass = 'rare'; rarityLabel = '稀有'; }
+          else if (rarity === 'LEGENDARY') { rarityClass = 'legendary'; rarityLabel = '传说'; }
           else if (rarity === 'SPECIAL') { rarityClass = 'special'; rarityLabel = '特殊'; }
+          else if (rarity === 'STARTER') { rarityClass = 'common'; rarityLabel = '初始'; }
           div.className = 'relic-item rarity-' + rarityClass;
           div.innerHTML = `
             <span class="relic-icon">📿</span>

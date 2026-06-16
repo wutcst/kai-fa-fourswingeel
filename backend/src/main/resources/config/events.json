@@ -16,7 +16,7 @@
         "text": "冒险深入探寻 (-10❤️，获得遗物)",
         "effects": [
           { "type": "HP_CHANGE", "value": -10 },
-          { "type": "ADD_RELIC", "tier": "chest" }
+          { "type": "ADD_RELIC", "tier": "common" }
         ]
       }
     ]

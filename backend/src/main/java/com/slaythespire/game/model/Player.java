@@ -1,5 +1,6 @@
 package com.slaythespire.game.model;
 
+import com.slaythespire.game.model.factory.StatusFactory;
 import com.slaythespire.repository.GameDataRepository;
 import java.util.ArrayList;
 
@@ -32,5 +33,21 @@ public class Player extends Combatant {
         }
         
         for (Relic r : getRelics()) r.onTurnStart(this);
+
+        // 遗物特殊效果：回合开始低血量触发
+        for (Relic r : getRelics()) {
+            if (r instanceof GameRelic) {
+                GameRelic gr = (GameRelic) r;
+                if ("STRENGTH_IF_HALF_HP".equals(gr.getEffectType())) {
+                    if (getHp() * 2 < getMaxHp()) { // HP < 50%
+                        StatusEffect strength = StatusFactory.create("STRENGTH", gr.getValue(), dataRepo);
+                        if (strength != null) {
+                            addStatus(strength);
+                            addTurnStartLog("🩸 带血匕首触发，获得 " + gr.getValue() + " 层力量");
+                        }
+                    }
+                }
+            }
+        }
     }
 }
