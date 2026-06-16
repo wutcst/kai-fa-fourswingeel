@@ -146,17 +146,9 @@ public abstract class Combatant {
     public void heal(int amount) { if (amount > 0) hp = Math.min(hp + amount, maxHp); }
     public boolean isAlive() { return hp > 0; }
 
-    /** 检查遗物中的每回合伤害上限 */
+    /** 检查遗物中的每回合伤害上限（委托给处理器） */
     private int getDamageCapPerTurn() {
-        for (Relic r : relics) {
-            if (r instanceof GameRelic) {
-                GameRelic gr = (GameRelic) r;
-                if ("DAMAGE_CAP_PER_TURN".equals(gr.getEffectType())) {
-                    return gr.getValue();
-                }
-            }
-        }
-        return -1;
+        return RelicEffectHandler.getDamageCapPerTurn(this);
     }
     
     public abstract void onTurnStart();

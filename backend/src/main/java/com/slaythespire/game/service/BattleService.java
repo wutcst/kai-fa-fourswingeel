@@ -80,12 +80,10 @@ public class BattleService {
         player.onTurnStart();
         logList.addAll(player.getLastTurnStartLogs());
         energy = 3;
-        for (Relic r : player.getRelics()) {
-            if (r instanceof GameRelic && "ENERGY_FIRST_TURN".equals(((GameRelic) r).getEffectType())) {
-                energy += ((GameRelic) r).getValue();
-                logList.add("🏮 灯笼使初始能量 +" + ((GameRelic) r).getValue());
-                break;
-            }
+        if (RelicEffectHandler.hasEffect(player, "ENERGY_FIRST_TURN")) {
+            int val = RelicEffectHandler.getEffectValue(player, "ENERGY_FIRST_TURN");
+            energy += val;
+            logList.add("🏮 灯笼使初始能量 +" + val);
         }
         
         int drawCount = Math.max(0, 5 - innateCards.size());
@@ -543,12 +541,9 @@ public class BattleService {
     }
 
     private void triggerDrawOnExhaust() {
-        for (Relic r : player.getRelics()) {
-            if (r instanceof GameRelic && "DRAW_ON_EXHAUST".equals(((GameRelic) r).getEffectType())) {
-                drawCards(1);
-                logList.add("📄 金纸触发，抽了一张牌");
-                break;
-            }
+        if (RelicEffectHandler.hasEffect(player, "DRAW_ON_EXHAUST")) {
+            drawCards(1);
+            logList.add("📄 金纸触发，抽了一张牌");
         }
     }
 
