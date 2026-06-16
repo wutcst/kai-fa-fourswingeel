@@ -310,41 +310,28 @@ public class GameConfigController {
         int lastIdx = nextCount - 1;
 
         for (int p = 0; p < curCount; p++) {
-            // 计算当前合理的连接范围：最多连3个，且不能超过边界
             int maxConnect = Math.min(3, lastIdx - childIdx + 1);
             
-            // 【优雅收尾】：为了防止最后一个父节点跨全图拉线导致交叉，
-            // 我们不能简单粗暴地让它“全包”，而是应该在推进过程中让每个父节点多帮衬一点。
-            // 限制当前节点留给后面父节点的子节点数量，不能超过后面父节点的最大承载力（人数 * 3）
             int remainingParents = curCount - 1 - p;
             if (lastIdx - childIdx + 1 - maxConnect > remainingParents * 3) {
-                // 如果不合流就会漏掉，这里强制让 maxConnect 增加（但限制在合理物理范围内）
                 maxConnect = Math.min(3, lastIdx - childIdx + 1 - remainingParents * 1);
             }
-            
-            // 确保最后一个父节点一定能摸到最后一个子节点
             if (p == curCount - 1) {
                 maxConnect = lastIdx - childIdx + 1;
             }
 
             int connectCount = maxConnect > 0 ? (1 + random.nextInt(maxConnect)) : 1;
             
-            int nextChildIdx = childIdx;
             for (int j = 0; j < connectCount; j++) {
-                int currentTarget = Math.min(nextChildIdx, lastIdx);
+                if (childIdx > lastIdx) break;
                 
-                addEdge(edges, curFloor.get(p), nextFloor.get(currentTarget));
-                childEdgeCount[currentTarget]++; // 正确统计入边
-                
-                nextChildIdx++;
+                addEdge(edges, curFloor.get(p), nextFloor.get(childIdx));
+                childEdgeCount[childIdx]++; 
+                childIdx++;
             }
             
-            // 你的直觉是对的：允许下一个父节点复用当前父节点的最后一个子节点（合流）
-            childIdx = Math.min(nextChildIdx - 1, lastIdx);
-            
-            // 防呆：如果指针已经到头了，但父节点还没遍历完，剩下的父节点只能全部合流在最后一个子节点上
-            if (childIdx == lastIdx && p < curCount - 1) {
-                childIdx = lastIdx;
+            if (childIdx > 0) {
+                childIdx--;
             }
         }
     } 
@@ -357,48 +344,42 @@ public class GameConfigController {
         for (int p = curCount - 1; p >= 0; p--) {
             int maxConnect = Math.min(3, childIdx + 1);
             
-            // 【逆向反推收尾】：防止左边收尾时跨全图产生交叉
-            int remainingParents = p; // 左边还剩多少个父节点
+            int remainingParents = p; 
             if (childIdx + 1 - maxConnect > remainingParents * 3) {
                 maxConnect = Math.min(3, childIdx + 1 - remainingParents * 1);
             }
-            
             if (p == 0) {
                 maxConnect = childIdx + 1;
             }
 
             int connectCount = maxConnect > 0 ? (1 + random.nextInt(maxConnect)) : 1;
 
-            int nextChildIdx = childIdx;
             for (int j = 0; j < connectCount; j++) {
-                int currentTarget = Math.max(nextChildIdx, 0);
+                if (childIdx < 0) break;
                 
-                addEdge(edges, curFloor.get(p), nextFloor.get(currentTarget));
-                childEdgeCount[currentTarget]++; // 正确统计入边
-                
-                nextChildIdx--; 
+                addEdge(edges, curFloor.get(p), nextFloor.get(childIdx));
+                childEdgeCount[childIdx]++; 
+                childIdx--; 
             }
 
-            // 逆向允许复用左边界
-            childIdx = Math.max(nextChildIdx + 1, 0);
-            
-            if (childIdx == 0 && p > 0) {
-                childIdx = 0;
+            if (childIdx < nextCount - 1) {
+                childIdx++;
             }
         }
     }
 
     // ================================================================
-    // 【非交叉兜底】：确保孤立子节点被就近的父节点收容
+    // 【听老哥的：严格区分奇偶，安全收容至尽头节点】
     // ================================================================
-    // 原来的 random 乱连是交叉的万恶之源。既然有指针顺序，未连上的子节点必定夹在它的“左邻右舍”之间。
     for (int i = 0; i < nextCount; i++) {
         if (childEdgeCount[i] == 0) {
-            // 根据当前子节点 i 在下一层的相对位置，映射出一个最近的父节点下标，杜绝跨全图连线
-            double ratio = (double) i / nextCount;
-            int nearestParentIdx = (int) Math.min(curCount - 1, Math.floor(ratio * curCount));
-            
-            addEdge(edges, curFloor.get(nearestParentIdx), nextFloor.get(i));
+            if (!reverse) {
+                // 正向层：既然是从左往右漏掉的，说明是在右侧收尾处有残留，直接无脑连给最后一个父节点
+                addEdge(edges, curFloor.get(curCount - 1), nextFloor.get(i));
+            } else {
+                // 反向层：从右往左收尾时漏掉的，残留必然在最左侧，直接无脑连给第 0 个父节点
+                addEdge(edges, curFloor.get(0), nextFloor.get(i));
+            }
             childEdgeCount[i]++;
         }
     }
