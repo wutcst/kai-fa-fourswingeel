@@ -36,5 +36,17 @@
   { "id": "pommel_strike+", "name": "剑柄打击+", "cost": 1, "damage": 10, "block": 0, "type": "ATTACK", "drawCount": 2, "upgraded": true, "charId": "1", "rarity": "COMMON" },
 
   { "id": "twin_strike", "name": "双重打击", "cost": 1, "damage": 5, "block": 0, "type": "ATTACK", "multiHitCount": 2, "upgraded": false, "charId": "1", "rarity": "COMMON" },
-  { "id": "twin_strike+", "name": "双重打击+", "cost": 1, "damage": 7, "block": 0, "type": "ATTACK", "multiHitCount": 2, "upgraded": true, "charId": "1", "rarity": "COMMON" }
+  { "id": "twin_strike+", "name": "双重打击+", "cost": 1, "damage": 7, "block": 0, "type": "ATTACK", "multiHitCount": 2, "upgraded": true, "charId": "1", "rarity": "COMMON" },
+
+  { "id": "thirst_for_knowledge", "name": "燃烧契约", "cost": 1, "damage": 0, "block": 0, "type": "SKILL", "exhaustHandCount": 1, "exhaustHandMode": "SELECT", "drawCount": 3, "upgraded": false, "charId": "1", "rarity": "UNCOMMON" },
+  { "id": "thirst_for_knowledge+", "name": "燃烧契约+", "cost": 1, "damage": 0, "block": 0, "type": "SKILL", "exhaustHandCount": 1, "exhaustHandMode": "SELECT", "drawCount": 4, "upgraded": true, "charId": "1", "rarity": "UNCOMMON" },
+
+  { "id": "entrench", "name": "坚毅", "cost": 1, "damage": 0, "block": 7, "type": "SKILL", "exhaustHandCount": 1, "exhaustHandMode": "RANDOM", "upgraded": false, "charId": "1", "rarity": "UNCOMMON" },
+  { "id": "entrench+", "name": "坚毅+", "cost": 1, "damage": 0, "block": 8, "type": "SKILL", "exhaustHandCount": 1, "exhaustHandMode": "SELECT", "upgraded": true, "charId": "1", "rarity": "UNCOMMON" },
+
+  { "id": "tremor", "name": "战栗", "cost": 1, "damage": 0, "block": 0, "type": "SKILL", "applyStatusType": "VULNERABLE", "applyStatusCount": 3, "applyStatusTarget": "ENEMY", "exhaust": true, "upgraded": false, "charId": "1", "rarity": "UNCOMMON" },
+  { "id": "tremor+", "name": "战栗+", "cost": 1, "damage": 0, "block": 0, "type": "SKILL", "applyStatusType": "VULNERABLE", "applyStatusCount": 4, "applyStatusTarget": "ENEMY", "exhaust": true, "upgraded": true, "charId": "1", "rarity": "UNCOMMON" },
+
+  { "id": "heavy_strike", "name": "重击", "cost": 2, "damage": 14, "block": 0, "type": "ATTACK", "exhaust": true, "upgraded": false, "charId": "1", "rarity": "COMMON" },
+  { "id": "heavy_strike+", "name": "重击+", "cost": 2, "damage": 18, "block": 0, "type": "ATTACK", "exhaust": true, "upgraded": true, "charId": "1", "rarity": "COMMON" }
 ]

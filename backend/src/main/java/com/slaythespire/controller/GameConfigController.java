@@ -35,7 +35,7 @@ public class GameConfigController {
 
     private final Random random = new Random();
 
-    // ================ 重写的地图生成 ================
+    // ================ 地图生成 ================
 
     @GetMapping("/map")
     public Map<String, Object> getMapData() {
@@ -43,12 +43,11 @@ public class GameConfigController {
         List<Map<String, Object>> nodes = new ArrayList<>();
         List<Map<String, String>> edges = new ArrayList<>();
 
-        final int TOTAL_FLOORS = 17; // 0:起点, 1~15:中间层, 16:boss
+        final int TOTAL_FLOORS = 17; 
         final int BOSS_FLOOR = 16;
-        final int CHEST_FLOOR = 9;   // 第9层（1-index）整层宝箱
-        final int CAMPFIRE_FLOOR = 15; // 第15层（1-index）整层篝火
+        final int CHEST_FLOOR = 9;   
+        final int CAMPFIRE_FLOOR = 15; 
 
-        // 第0层（底部）单一起点
         List<Map<String, Object>> floor0 = new ArrayList<>();
         Map<String, Object> startNode = new LinkedHashMap<>();
         startNode.put("id", "start");
@@ -63,7 +62,6 @@ public class GameConfigController {
         List<List<Map<String, Object>>> floors = new ArrayList<>();
         floors.add(floor0);
 
-        // 预先确定每层的节点数
         int[] nodeCount = new int[TOTAL_FLOORS];
         nodeCount[0] = 1;
         nodeCount[BOSS_FLOOR] = 1;
@@ -73,7 +71,7 @@ public class GameConfigController {
             int targetCount;
 
             if (floorIdx == 1) {
-                targetCount = 3 + random.nextInt(2); // 3或4
+                targetCount = 3 + random.nextInt(2); 
             } else {
                 double r = random.nextDouble();
                 if (r < 0.02) targetCount = 1;
@@ -89,7 +87,6 @@ public class GameConfigController {
             nodeCount[floorIdx] = targetCount;
         }
 
-        // ---------- 第一阶段：创建所有节点（占位），然后生成连线 ----------
         for (int floorIdx = 1; floorIdx <= BOSS_FLOOR - 1; floorIdx++) {
             int count = nodeCount[floorIdx];
             List<Map<String, Object>> curFloor = new ArrayList<>();
@@ -98,12 +95,11 @@ public class GameConfigController {
                 Map<String, Object> childNode = new LinkedHashMap<>();
                 String id = "n" + nodes.size();
                 childNode.put("id", id);
-                childNode.put("type", null);   // 占位
+                childNode.put("type", null);   
                 childNode.put("icon", null);
                 childNode.put("label", null);
 
                 double yPercent = 95.0 - floorIdx * (93.0 / BOSS_FLOOR);
-                // ✅ 节点水平位置均匀分布，避免右偏
                 double xPercent;
                 if (count == 1) {
                     xPercent = 50.0;
@@ -119,7 +115,6 @@ public class GameConfigController {
             floors.add(curFloor);
         }
 
-        // ===== Boss层（占位）=====
         List<Map<String, Object>> bossFloor = new ArrayList<>();
         Map<String, Object> bossNode = new LinkedHashMap<>();
         bossNode.put("id", "boss");
@@ -132,20 +127,14 @@ public class GameConfigController {
         bossFloor.add(bossNode);
         floors.add(bossFloor);
 
-        // ===== 生成连线（根据当前占位节点），奇偶层交替方向 =====
         for (int floorIdx = 1; floorIdx <= BOSS_FLOOR - 1; floorIdx++) {
             List<Map<String, Object>> prevFloor = floors.get(floorIdx - 1);
             List<Map<String, Object>> curFloor = floors.get(floorIdx);
-            // 从prevFloor连接至curFloor，方向交替：
-            // 奇数层从左向右（递增），偶数层从右向左（递减）
-            boolean reverse = (floorIdx % 2 == 0) ? true : false;
+            boolean reverse = (floorIdx % 2 == 0);
             generateMonotonicEdges(edges, prevFloor, curFloor, reverse);
         }
-        // 连接第15层 -> Boss（第15层为奇数层，正向）
         generateMonotonicEdges(edges, floors.get(15), bossFloor, false);
 
-        // ---------- 第二阶段：分配节点类型 ----------
-        // 计算桶数（不含campfire，因为campfire只出现在第15层）
         int totalSpecialNodes = 0;
         for (int floorIdx = 2; floorIdx <= 14; floorIdx++) {
             if (floorIdx == CHEST_FLOOR || floorIdx == CAMPFIRE_FLOOR) continue;
@@ -153,18 +142,16 @@ public class GameConfigController {
         }
 
         int shopCount = (int) Math.round(totalSpecialNodes * 0.05);
-        // campfireCount = 0 （第15层已经固定为篝火，其他层不允许出现篝火）
         int questionCount = (int) Math.round(totalSpecialNodes * 0.22);
         int eliteCount = (int) Math.round(totalSpecialNodes * 0.08);
         int monsterCount = totalSpecialNodes - shopCount - questionCount - eliteCount;
 
         int remainingShop = shopCount;
-        int remainingCampfire = 0;  // 始终为0
+        int remainingCampfire = 0;  
         int remainingQuestion = questionCount;
         int remainingElite = eliteCount;
         int remainingMonster = monsterCount;
 
-        // 先设置固定层类型（第1、9、15层）
         for (int floorIdx = 1; floorIdx <= BOSS_FLOOR - 1; floorIdx++) {
             List<Map<String, Object>> curFloor = floors.get(floorIdx);
             for (Map<String, Object> node : curFloor) {
@@ -186,7 +173,6 @@ public class GameConfigController {
             }
         }
 
-        // 为其他层分配类型，同时检查连续类型限制
         for (int floorIdx = 2; floorIdx <= 14; floorIdx++) {
             if (floorIdx == CHEST_FLOOR || floorIdx == CAMPFIRE_FLOOR) continue;
             List<Map<String, Object>> curFloor = floors.get(floorIdx);
@@ -206,8 +192,8 @@ public class GameConfigController {
                     }
                 }
                 boolean forbidElite = (floorIdx <= 5);
-                boolean forbidShop       = parentTypes.contains("shop");
-                boolean forbidEliteCont   = parentTypes.contains("elite");
+                boolean forbidShop = parentTypes.contains("shop");
+                boolean forbidEliteCont = parentTypes.contains("elite");
 
                 String type = rollBucketType(floorIdx,
                         remainingShop, remainingCampfire, remainingQuestion, remainingElite, remainingMonster,
@@ -291,99 +277,87 @@ public class GameConfigController {
                                     List<Map<String, Object>> curFloor,
                                     List<Map<String, Object>> nextFloor,
                                     boolean reverse) {
-    int curCount = curFloor.size();
-    int nextCount = nextFloor.size();
-    if (curCount == 0 || nextCount == 0) return;
+        int curCount = curFloor.size();
+        int nextCount = nextFloor.size();
+        if (curCount == 0 || nextCount == 0) return;
 
-    int[] childEdgeCount = new int[nextCount];
+        int[] childEdgeCount = new int[nextCount];
 
-    if (curCount == 1) {
-        for (int i = 0; i < nextCount; i++) {
-            addEdge(edges, curFloor.get(0), nextFloor.get(i));
-            childEdgeCount[i]++;
-        }
-    } else if (!reverse) {
-        // ================================================================
-        // 【正向（奇数层）：父节点与子节点均从左向右遍历】
-        // ================================================================
-        int childIdx = 0; 
-        int lastIdx = nextCount - 1;
-
-        for (int p = 0; p < curCount; p++) {
-            int maxConnect = Math.min(3, lastIdx - childIdx + 1);
-            
-            int remainingParents = curCount - 1 - p;
-            if (lastIdx - childIdx + 1 - maxConnect > remainingParents * 3) {
-                maxConnect = Math.min(3, lastIdx - childIdx + 1 - remainingParents * 1);
-            }
-            if (p == curCount - 1) {
-                maxConnect = lastIdx - childIdx + 1;
-            }
-
-            int connectCount = maxConnect > 0 ? (1 + random.nextInt(maxConnect)) : 1;
-            
-            for (int j = 0; j < connectCount; j++) {
-                if (childIdx > lastIdx) break;
-                
-                addEdge(edges, curFloor.get(p), nextFloor.get(childIdx));
-                childEdgeCount[childIdx]++; 
-                childIdx++;
-            }
-            
-            if (childIdx > 0) {
-                childIdx--;
-            }
-        }
-    } 
-    else {
-        // ================================================================
-        // 【反向（偶数层）：父节点与子节点均从右向左连】
-        // ================================================================
-        int childIdx = nextCount - 1; 
-
-        for (int p = curCount - 1; p >= 0; p--) {
-            int maxConnect = Math.min(3, childIdx + 1);
-            
-            int remainingParents = p; 
-            if (childIdx + 1 - maxConnect > remainingParents * 3) {
-                maxConnect = Math.min(3, childIdx + 1 - remainingParents * 1);
-            }
-            if (p == 0) {
-                maxConnect = childIdx + 1;
-            }
-
-            int connectCount = maxConnect > 0 ? (1 + random.nextInt(maxConnect)) : 1;
-
-            for (int j = 0; j < connectCount; j++) {
-                if (childIdx < 0) break;
-                
-                addEdge(edges, curFloor.get(p), nextFloor.get(childIdx));
-                childEdgeCount[childIdx]++; 
-                childIdx--; 
-            }
-
-            if (childIdx < nextCount - 1) {
-                childIdx++;
-            }
-        }
-    }
-
-    // ================================================================
-    // 【听老哥的：严格区分奇偶，安全收容至尽头节点】
-    // ================================================================
-    for (int i = 0; i < nextCount; i++) {
-        if (childEdgeCount[i] == 0) {
-            if (!reverse) {
-                // 正向层：既然是从左往右漏掉的，说明是在右侧收尾处有残留，直接无脑连给最后一个父节点
-                addEdge(edges, curFloor.get(curCount - 1), nextFloor.get(i));
-            } else {
-                // 反向层：从右往左收尾时漏掉的，残留必然在最左侧，直接无脑连给第 0 个父节点
+        if (curCount == 1) {
+            for (int i = 0; i < nextCount; i++) {
                 addEdge(edges, curFloor.get(0), nextFloor.get(i));
+                childEdgeCount[i]++;
             }
-            childEdgeCount[i]++;
+        } else if (!reverse) {
+            int childIdx = 0; 
+            int lastIdx = nextCount - 1;
+
+            for (int p = 0; p < curCount; p++) {
+                int maxConnect = Math.min(3, lastIdx - childIdx + 1);
+                
+                int remainingParents = curCount - 1 - p;
+                if (lastIdx - childIdx + 1 - maxConnect > remainingParents * 3) {
+                    maxConnect = Math.min(3, lastIdx - childIdx + 1 - remainingParents * 1);
+                }
+                if (p == curCount - 1) {
+                    maxConnect = lastIdx - childIdx + 1;
+                }
+
+                int connectCount = maxConnect > 0 ? (1 + random.nextInt(maxConnect)) : 1;
+                
+                for (int j = 0; j < connectCount; j++) {
+                    if (childIdx > lastIdx) break;
+                    
+                    addEdge(edges, curFloor.get(p), nextFloor.get(childIdx));
+                    childEdgeCount[childIdx]++; 
+                    childIdx++;
+                }
+                
+                if (childIdx > 0) {
+                    childIdx--;
+                }
+            }
+        } else {
+            int childIdx = nextCount - 1; 
+
+            for (int p = curCount - 1; p >= 0; p--) {
+                int maxConnect = Math.min(3, childIdx + 1);
+                
+                int remainingParents = p; 
+                if (childIdx + 1 - maxConnect > remainingParents * 3) {
+                    maxConnect = Math.min(3, childIdx + 1 - remainingParents * 1);
+                }
+                if (p == 0) {
+                    maxConnect = childIdx + 1;
+                }
+
+                int connectCount = maxConnect > 0 ? (1 + random.nextInt(maxConnect)) : 1;
+
+                for (int j = 0; j < connectCount; j++) {
+                    if (childIdx < 0) break;
+                    
+                    addEdge(edges, curFloor.get(p), nextFloor.get(childIdx));
+                    childEdgeCount[childIdx]++; 
+                    childIdx--; 
+                }
+
+                if (childIdx < nextCount - 1) {
+                    childIdx++;
+                }
+            }
+        }
+
+        for (int i = 0; i < nextCount; i++) {
+            if (childEdgeCount[i] == 0) {
+                if (!reverse) {
+                    addEdge(edges, curFloor.get(curCount - 1), nextFloor.get(i));
+                } else {
+                    addEdge(edges, curFloor.get(0), nextFloor.get(i));
+                }
+                childEdgeCount[i]++;
+            }
         }
     }
-}
 
     private void addEdge(List<Map<String, String>> edges,
                          Map<String, Object> from,
@@ -394,7 +368,7 @@ public class GameConfigController {
         edges.add(edge);
     }
 
-    // ================ 以下原方法保持不变 ================
+    // ================ 商店、角色、卡牌接口 ================
 
     @GetMapping("/shop")
     public Map<String, Object> getShopData(@RequestParam(defaultValue = "1") String charParam,
@@ -430,6 +404,18 @@ public class GameConfigController {
                 cardMap.put("charId", tpl.getCharId());
                 cardMap.put("drawCount", tpl.getDrawCount());
                 cardMap.put("rarity", tpl.getRarity());
+                
+                // 🆕 补全商店卡牌缺失的字段
+                cardMap.put("upgraded", tpl.isUpgraded());
+                cardMap.put("selfDamage", tpl.getSelfDamage());
+                cardMap.put("energyGain", tpl.getEnergyGain());
+                cardMap.put("multiHitCount", tpl.getMultiHitCount());
+                cardMap.put("exhaust", tpl.isExhaust());
+                cardMap.put("ethereal", tpl.isEthereal());
+                cardMap.put("retain", tpl.isRetain());
+                cardMap.put("exhaustHandCount", tpl.getExhaustHandCount());
+                cardMap.put("exhaustHandMode", tpl.getExhaustHandMode());
+                
                 int price = 50 + (tpl.getCost() * 25);
                 if (tpl.getDamage() > 10 || tpl.getBlock() > 10) price += 20;
                 cardMap.put("price", price);
@@ -488,6 +474,18 @@ public class GameConfigController {
                     cardMap.put("charId", tpl.getCharId());
                     cardMap.put("drawCount", tpl.getDrawCount());
                     cardMap.put("rarity", tpl.getRarity());
+                    
+                    // 🆕 补全初始卡组缺失的字段
+                    cardMap.put("upgraded", tpl.isUpgraded());
+                    cardMap.put("selfDamage", tpl.getSelfDamage());
+                    cardMap.put("energyGain", tpl.getEnergyGain());
+                    cardMap.put("multiHitCount", tpl.getMultiHitCount());
+                    cardMap.put("exhaust", tpl.isExhaust());
+                    cardMap.put("ethereal", tpl.isEthereal());
+                    cardMap.put("retain", tpl.isRetain());
+                    cardMap.put("exhaustHandCount", tpl.getExhaustHandCount());
+                    cardMap.put("exhaustHandMode", tpl.getExhaustHandMode());
+                    
                     deck.add(cardMap);
                 }
             }
@@ -537,6 +535,17 @@ public class GameConfigController {
         map.put("drawCount", tpl.getDrawCount());
         map.put("upgraded", tpl.isUpgraded());
         map.put("rarity", tpl.getRarity());
+        
+        // 🆕 补全单卡查询缺失的字段
+        map.put("selfDamage", tpl.getSelfDamage());
+        map.put("energyGain", tpl.getEnergyGain());
+        map.put("multiHitCount", tpl.getMultiHitCount());
+        map.put("exhaust", tpl.isExhaust());
+        map.put("ethereal", tpl.isEthereal());
+        map.put("retain", tpl.isRetain());
+        map.put("exhaustHandCount", tpl.getExhaustHandCount());
+        map.put("exhaustHandMode", tpl.getExhaustHandMode());
+        
         return map;
     }
 }

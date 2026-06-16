@@ -6,9 +6,7 @@
     "attackDamage": 8,
     "intents": [
       { "type": "BUFF", "value": 0, "desc": "仪式", "applyStatusType": "RITUAL", "applyStatusCount": 4, "applyStatusTarget": "ENEMY" },
-      { "type": "ATTACK", "value": 6, "desc": "轻击" },
-      { "type": "ATTACK", "value": 10, "desc": "诅咒重击", "applyStatusType": "WEAK", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
-      { "type": "DEFEND", "value": 14, "desc": "格挡" }
+      { "type": "ATTACK", "value": 6, "desc": "轻击" }
     ]
   },
   {

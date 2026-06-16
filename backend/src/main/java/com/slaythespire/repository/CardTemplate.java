@@ -24,6 +24,8 @@ public class CardTemplate {
     private final int selfDamage;
     private final int energyGain;
     private final int multiHitCount;
+    private final int exhaustHandCount;
+    private final String exhaustHandMode; // "RANDOM" 或 "SELECT"
 
     @JsonCreator
     public CardTemplate(
@@ -37,7 +39,9 @@ public class CardTemplate {
             @JsonProperty("upgraded") Boolean upgraded, @JsonProperty("charId") String charId,
             @JsonProperty("rarity") String rarity,
             @JsonProperty("selfDamage") Integer selfDamage, @JsonProperty("energyGain") Integer energyGain,
-            @JsonProperty("multiHitCount") Integer multiHitCount) {
+            @JsonProperty("multiHitCount") Integer multiHitCount,
+            @JsonProperty("exhaustHandCount") Integer exhaustHandCount,
+            @JsonProperty("exhaustHandMode") String exhaustHandMode) {
         
         this.id = id; this.name = name; this.cost = cost; this.damage = damage; this.block = block;
         this.type = type; this.applyStatusType = applyStatusType; this.applyStatusCount = applyStatusCount;
@@ -48,6 +52,8 @@ public class CardTemplate {
         this.rarity = rarity != null ? rarity : "COMMON";
         this.selfDamage = selfDamage != null ? selfDamage : 0; this.energyGain = energyGain != null ? energyGain : 0;
         this.multiHitCount = multiHitCount != null && multiHitCount > 0 ? multiHitCount : 1;
+        this.exhaustHandCount = exhaustHandCount != null ? exhaustHandCount : 0;
+        this.exhaustHandMode = exhaustHandMode != null ? exhaustHandMode.toUpperCase() : "RANDOM";
     }
 
     public String getId() { return id; } 
@@ -69,12 +75,13 @@ public class CardTemplate {
     public int getSelfDamage() { return selfDamage; } 
     public int getEnergyGain() { return energyGain; }
     public int getMultiHitCount() { return multiHitCount; }
+    public int getExhaustHandCount() { return exhaustHandCount; }
+    public String getExhaustHandMode() { return exhaustHandMode; }
 
-    // ✅ 补全并增强了 toString 方法，方便后端控制台调试查看新字段
     @Override
     public String toString() {
         return String.format("CardTemplate{id='%s', name='%s', cost=%d, damage=%d, block=%d, type=%s, " +
-                        "selfDamage=%d, energyGain=%d, multiHitCount=%d, upgraded=%s, charId=%s, rarity=%s}",
-                id, name, cost, damage, block, type, selfDamage, energyGain, multiHitCount, upgraded, charId, rarity);
+                        "exhaust=%s, exhaustHandCount=%d, exhaustHandMode=%s, upgraded=%s}",
+                id, name, cost, damage, block, type, exhaust, exhaustHandCount, exhaustHandMode, upgraded);
     }
 }

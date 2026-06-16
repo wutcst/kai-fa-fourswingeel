@@ -7,33 +7,48 @@ const CARD_UI = {
     'DEXTERITY':    { name: '敏捷',     desc: '每层敏捷使获得的格挡增加 1 点。',                              decay: false },
     'POISON':       { name: '毒',       desc: '回合结束时，造成等同于毒层数的伤害，然后减少 1 层。',           decay: true },
     'REGENERATION': { name: '再生',     desc: '回合结束时，恢复等同于再生层数的生命，然后减少 1 层。',          decay: true },
-    'RITUAL':       { name: '仪式',     desc: '回合开始时，获得 1 点力量。',                                  decay: false }
+    'RITUAL':       { name: '仪式',     desc: '回合开始时，获得 1 点力量。',                                  decay: false },
+    'EXHAUST':      { name: '消耗',     desc: '打出的牌将被消耗，本场战斗无法再次抽到。',                     decay: false }
   },
   RARITY_COLORS: { 'START': '#999999', 'COMMON': '#bdc3c7', 'UNCOMMON': '#5dade2', 'RARE': '#f1c40f' },
+  
   getStatusName(type) { return this.STATUS_INFO[type]?.name || type; },
 
   getCardEffectText(card) {
+    if (!card) return '无效果';
     const parts = [];
+    
     if (card.damage > 0) {
-      // 🆕 处理多段伤害文本
       if (card.multiHitCount > 1) parts.push(`造成 ${card.damage} 点伤害 ${card.multiHitCount} 次`);
       else parts.push(`造成 ${card.damage} 点伤害`);
     }
-    if (card.block > 0)  parts.push(`获得 ${card.block} 点格挡`);
+    if (card.block > 0) parts.push(`获得 ${card.block} 点格挡`);
     if (card.selfDamage > 0) parts.push(`失去 ${card.selfDamage} 点生命`);
     if (card.energyGain > 0) parts.push(`获得 ${card.energyGain} 点能量`);
+    
+    // 🆕 调整顺序：先消耗手牌，再抽牌
+    if (card.exhaustHandCount > 0) {
+        const mode = card.exhaustHandMode === 'SELECT' ? '选择' : '随机';
+        parts.push(`${mode}消耗 ${card.exhaustHandCount} 张手牌`);
+    }
     if (card.drawCount > 0) parts.push(`抽 ${card.drawCount} 张牌`);
+    
     if (card.applyStatusType) {
       const sn = this.getStatusName(card.applyStatusType);
       const isSelf = card.applyStatusTarget === 'SELF';
       parts.push(`${isSelf ? '自身获得' : '施加'} ${card.applyStatusCount} 层${sn}`);
     }
+    
+    if (card.exhaust) parts.push('消耗');
+    if (card.ethereal) parts.push('虚无');
+    if (card.retain) parts.push('保留');
+
     return parts.join('，') || '无效果';
   },
 
   getCardTypeLabel(card) {
     if (card.type === 'ATTACK') return '攻击';
-    if (card.type === 'SKILL')  return '防御';
+    if (card.type === 'SKILL')  return '技能';
     if (card.type === 'POWER')  return '能力';
     return '未知';
   },
@@ -47,7 +62,7 @@ const CARD_UI = {
     if (!card) return 'linear-gradient(135deg, #667eea, #764ba2)';
     const charId = (card.charId && card.charId !== '') ? card.charId : '1';
     if (charId === '0') return 'linear-gradient(135deg, #808080, #A9A9A9)';
-    if (charId === '2') return 'linear-gradient(135deg, #2ecc71, #27ae60)'; // 静默猎手-绿色
+    if (charId === '2') return 'linear-gradient(135deg, #2ecc71, #27ae60)';
     return 'linear-gradient(135deg, #8B0000, #B22222)';
   },
   getRarityBorderColor(card) {

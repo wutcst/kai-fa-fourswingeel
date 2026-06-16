@@ -61,7 +61,7 @@ public class BattleService {
         return getCurrentState();
     }
 
-    public synchronized Map<String, Object> playCard(int index, Integer targetIndex) {
+        public synchronized Map<String, Object> playCard(int index, Integer targetIndex, Integer exhaustHandIndex) {
         validateBattleActive();
         validateCardIndex(index);
 
@@ -79,28 +79,33 @@ public class BattleService {
         }
         Enemy target = (targetIndex != null && targetIndex >= 0 && targetIndex < aliveEnemies.size()) ? aliveEnemies.get(targetIndex) : aliveEnemies.get(0);
 
+        // 1. 处理格挡
         if (card.getBlock() > 0) {
             player.gainBlock(card.getBlock());
             logList.add(String.format("🛡️ 获得 %d 点格挡，当前格挡: %d", card.getBlock(), player.getBlock()));
         }
+        
+        // 2. 处理自伤
         if (card.getSelfDamage() > 0) {
             player.takeDamage(card.getSelfDamage(), null, true);
             logList.add(String.format("💔 失去 %d 点生命，当前 HP: %d", card.getSelfDamage(), player.getHp()));
             if (!player.isAlive()) { gameOver = true; winner = "自身"; logList.add("💀 玩家因自身伤害倒下..."); return getCurrentState(); }
         }
+        
+        // 3. 处理获得能量
         if (card.getEnergyGain() > 0) {
             energy += card.getEnergyGain();
             logList.add(String.format("⚡ 获得 %d 点能量，当前能量: %d", card.getEnergyGain(), energy));
         }
 
-        // ================= ⚔️ 处理对敌伤害（支持多段攻击及目标切换） =================
+        // 4. 处理对敌伤害
         if (card.getDamage() > 0) {
             int hitCount = Math.max(1, card.getMultiHitCount());
             for (int i = 0; i < hitCount; i++) {
                 if (!target.isAlive()) {
                     List<Enemy> currentAlive = getAliveEnemies();
                     if (currentAlive.isEmpty()) break;
-                    target = currentAlive.get(0); // 自动寻找下一个目标
+                    target = currentAlive.get(0);
                 }
                 int actualDmg = target.takeDamage(card.getDamage(), player);
                 if (hitCount > 1) {
@@ -111,6 +116,7 @@ public class BattleService {
             }
         }
 
+        // 5. 处理施加状态效果
         if (card.getApplyStatusType() != null && !card.getApplyStatusType().isEmpty()) {
             StatusEffect status = StatusFactory.create(card.getApplyStatusType(), card.getApplyStatusCount(), dataRepo);
             if (status != null) {
@@ -127,12 +133,64 @@ public class BattleService {
         }
 
         removeDeadEnemies();
+
+        // ================= ⚙️ 核心修正：调整结算顺序 (先消耗，再抽牌) =================
+        
+        int playedCardIndex = index;
+
+        // 6. 🆕 先处理消耗手牌 (此时打出的牌还在 hand 中)
+        if (card.getExhaustHandCount() > 0) {
+            // 最多只能消耗 (当前手牌数 - 1) 张，因为不能消耗正在打出的这张牌
+            int count = Math.min(card.getExhaustHandCount(), hand.size() - 1);
+            
+            for (int i = 0; i < count; i++) {
+                int targetIdx;
+                
+                // 仅在第一次循环且传入了有效的手牌索引时，使用手动选择
+                if (i == 0 && exhaustHandIndex != null && exhaustHandIndex >= 0 && exhaustHandIndex < hand.size()) {
+                    if (exhaustHandIndex == playedCardIndex) {
+                        // 玩家试图消耗正在打出的牌，拒绝并随机消耗其他牌
+                        targetIdx = (playedCardIndex == 0) ? 1 : 0; 
+                        logList.add("⚠️ 无法消耗正在打出的牌，随机消耗了其他牌");
+                    } else {
+                        targetIdx = exhaustHandIndex;
+                        logList.add(String.format("🔥 你选择消耗了手中的 %s", hand.get(targetIdx).getName()));
+                    }
+                } else {
+                    // 随机消耗：构建一个不包含 playedCardIndex 的有效索引列表
+                    List<Integer> validIndices = new ArrayList<>();
+                    for (int j = 0; j < hand.size(); j++) {
+                        if (j != playedCardIndex) validIndices.add(j);
+                    }
+                    targetIdx = validIndices.get(new Random().nextInt(validIndices.size()));
+                    logList.add(String.format("🎲 随机消耗了手中的 %s", hand.get(targetIdx).getName()));
+                }
+                
+                // 执行消耗
+                Card exhaustedCard = hand.remove(targetIdx);
+                exhaustPile.add(exhaustedCard);
+                
+                // 🆕 关键修正：如果消耗的牌在打出牌之前，打出牌的索引需要前移 1 位
+                if (targetIdx < playedCardIndex) {
+                    playedCardIndex--;
+                }
+            }
+        }
+
+        // 7. 🆕 再处理抽牌 (此时手牌已经因为消耗而减少，抽牌会正常补充到手中)
         if (card.getDrawCount() > 0) drawCards(card.getDrawCount());
 
-        hand.remove(index);
-        if (card.getType() == Card.CardType.POWER) logList.add(card.getName() + "被使用（能力牌）");
-        else if (card.isExhaust()) { exhaustPile.add(card); logList.add(card.getName() + "被消耗"); }
-        else discardPile.add(card);
+        // 8. 最后处理打出牌的去向 (此时 playedCardIndex 已经准确指向该牌)
+        Card finalCard = hand.remove(playedCardIndex);
+        
+        if (finalCard.getType() == Card.CardType.POWER) {
+            logList.add(finalCard.getName() + "被使用（能力牌）");
+        } else if (finalCard.isExhaust()) {
+            exhaustPile.add(finalCard);
+            logList.add(finalCard.getName() + "被消耗");
+        } else {
+            discardPile.add(finalCard);
+        }
 
         if (getAliveEnemies().isEmpty()) { gameOver = true; winner = "玩家"; logList.add("🎉 所有敌人被击败！"); }
         return getCurrentState();
@@ -244,9 +302,21 @@ public class BattleService {
             if (cardData.containsKey("drawCount")) card.setDrawCount(((Number) cardData.get("drawCount")).intValue());
             if (cardData.containsKey("charId")) card.setCharId((String) cardData.get("charId"));
             if (cardData.containsKey("rarity")) card.setRarity((String) cardData.get("rarity"));
+            
+            if (cardData.containsKey("exhaust")) card.setExhaust((Boolean) cardData.get("exhaust"));
+            if (cardData.containsKey("retain")) card.setRetain((Boolean) cardData.get("retain"));
+            if (cardData.containsKey("ethereal")) card.setEthereal((Boolean) cardData.get("ethereal"));
+            
             if (cardData.containsKey("selfDamage") && cardData.get("selfDamage") != null) card.setSelfDamage(((Number) cardData.get("selfDamage")).intValue());
             if (cardData.containsKey("energyGain") && cardData.get("energyGain") != null) card.setEnergyGain(((Number) cardData.get("energyGain")).intValue());
             if (cardData.containsKey("multiHitCount") && cardData.get("multiHitCount") != null) card.setMultiHitCount(((Number) cardData.get("multiHitCount")).intValue());
+            
+            if (cardData.containsKey("exhaustHandCount") && cardData.get("exhaustHandCount") != null) {
+                card.setExhaustHandCount(((Number) cardData.get("exhaustHandCount")).intValue());
+            }
+            if (cardData.containsKey("exhaustHandMode") && cardData.get("exhaustHandMode") != null) {
+                card.setExhaustHandMode((String) cardData.get("exhaustHandMode"));
+            }
             
             deck.add(card);
         }
@@ -325,7 +395,9 @@ public class BattleService {
             cardInfo.put("exhaust", c.isExhaust()); cardInfo.put("retain", c.isRetain()); cardInfo.put("ethereal", c.isEthereal());
             cardInfo.put("drawCount", c.getDrawCount()); cardInfo.put("charId", c.getCharId()); cardInfo.put("rarity", c.getRarity());
             cardInfo.put("selfDamage", c.getSelfDamage()); cardInfo.put("energyGain", c.getEnergyGain());
-            cardInfo.put("multiHitCount", c.getMultiHitCount()); // 🆕 传给前端
+            cardInfo.put("multiHitCount", c.getMultiHitCount()); 
+            cardInfo.put("exhaustHandCount", c.getExhaustHandCount()); 
+            cardInfo.put("exhaustHandMode", c.getExhaustHandMode()); 
             handCards.add(cardInfo);
         }
         state.put("hand", handCards); state.put("log", new ArrayList<>(logList)); state.put("gameOver", gameOver); state.put("winner", winner);
