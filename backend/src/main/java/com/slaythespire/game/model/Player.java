@@ -22,6 +22,7 @@ public class Player extends Combatant {
 
     @Override
     public void onTurnStart() {
+        actualDamageTakenThisTurn = 0;
         clearBlock();
         turnStartLogs.clear(); // 使用父类的 protected 字段
         

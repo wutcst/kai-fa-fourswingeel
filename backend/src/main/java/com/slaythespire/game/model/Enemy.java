@@ -37,8 +37,9 @@ public class Enemy extends Combatant {
     public GameDataRepository getDataRepo() { return this.dataRepo; }
 
     @Override
-    public void onTurnStart() { 
-        clearBlock(); 
+    public void onTurnStart() {
+        actualDamageTakenThisTurn = 0;
+        clearBlock();
         turnStartLogs.clear(); // 使用父类的 protected 字段
         
         // ✅ 遍历副本防止并发修改异常

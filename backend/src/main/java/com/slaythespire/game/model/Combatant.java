@@ -18,6 +18,9 @@ public abstract class Combatant {
     protected List<String> lastTurnEndLogs = new ArrayList<>();
     protected List<String> turnStartLogs = new ArrayList<>();
 
+    /** 本回合已扣除的实际生命（用于每回合伤害上限遗物） */
+    protected int actualDamageTakenThisTurn = 0;
+
     public Combatant(int hp, int maxHp) {
         this.maxHp = maxHp;
         this.hp = Math.max(0, Math.min(hp, maxHp));
@@ -67,11 +70,23 @@ public abstract class Combatant {
         for (Relic r : this.relics) finalDamage = r.onDamageTaken(finalDamage, this);
 
         int blocked = 0;
-        if (!ignoreBlock) { 
+        if (!ignoreBlock) {
             blocked = Math.min(block, finalDamage);
             block -= blocked;
         }
-        hp = Math.max(0, hp - (finalDamage - blocked));
+        int hpLost = finalDamage - blocked;
+
+        // 每回合实际扣血上限（魔法护盾类遗物）
+        int capPerTurn = getDamageCapPerTurn();
+        if (capPerTurn > 0) {
+            int remaining = Math.max(0, capPerTurn - actualDamageTakenThisTurn);
+            if (hpLost > remaining) {
+                hpLost = remaining;
+            }
+        }
+        actualDamageTakenThisTurn += hpLost;
+
+        hp = Math.max(0, hp - hpLost);
         return finalDamage;
     }
 
@@ -106,6 +121,19 @@ public abstract class Combatant {
     public void clearBlock() { block = 0; }
     public void heal(int amount) { if (amount > 0) hp = Math.min(hp + amount, maxHp); }
     public boolean isAlive() { return hp > 0; }
+
+    /** 检查遗物中的每回合伤害上限 */
+    private int getDamageCapPerTurn() {
+        for (Relic r : relics) {
+            if (r instanceof GameRelic) {
+                GameRelic gr = (GameRelic) r;
+                if ("DAMAGE_CAP_PER_TURN".equals(gr.getEffectType())) {
+                    return gr.getValue();
+                }
+            }
+        }
+        return -1;
+    }
     
     public abstract void onTurnStart();
     public abstract GameDataRepository getDataRepo();
