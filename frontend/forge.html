@@ -49,35 +49,25 @@
             if (idx !== -1) {
               const baseCard = saveData.deck[idx];
               const baseId = baseCard.id;
-              let upgradedCardData = null;
-
               if (baseId) {
                 const upgradedId = baseId + '+';
                 try {
                   const resp = await fetch(`/api/card/${encodeURIComponent(upgradedId)}`);
                   if (resp.ok) {
-                    upgradedCardData = await resp.json();
+                    const upgradedCardData = await resp.json();
+                    saveData.deck[idx] = upgradedCardData;
+                    await saveSaveData(saveData);
+                    alert('升级成功！');
+                    sessionStorage.setItem('campfireAction', 'forge');
+                    window.location.href = `campfire.html?char=${char}&nextNode=${encodeURIComponent(nextNode)}`;
+                    return;
                   }
                 } catch (e) {
-                  console.warn('无法获取升级模板，使用降级逻辑', e);
+                  console.warn('无法获取升级模板', e);
                 }
               }
-
-              if (upgradedCardData) {
-                saveData.deck[idx] = upgradedCardData;
-                console.log('升级成功：', upgradedCardData);
-              } else {
-                const c = baseCard;
-                c.upgraded = true;
-                c.name += '+';
-                if (c.damage > 0) c.damage += 3;
-                if (c.block > 0) c.block += 3;
-              }
-
-              await saveSaveData(saveData);
-              alert('升级成功！');
-              sessionStorage.setItem('campfireAction', 'forge');
-              window.location.href = `campfire.html?char=${char}&nextNode=${encodeURIComponent(nextNode)}`;
+              // 如果后端获取失败，不进行手动升级，直接提示
+              alert('无法升级该卡牌（缺少升级模板）');
             }
           });
           listDiv.appendChild(div);

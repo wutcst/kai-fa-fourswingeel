@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>选择 Boss 遗物</title>
+  <script src="save_helper.js"></script>
+  <style>
+    body {
+      background: #1a1a2e; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; min-height: 100vh;
+      margin: 0; font-family: 'Segoe UI', sans-serif; color: #e0e0e0;
+    }
+    h2 { color: #f1c40f; margin-bottom: 30px; }
+    .relic-list { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
+    .relic-card {
+      width: 200px; padding: 25px 15px; border: 2px solid #34495e;
+      border-radius: 12px; background: #16213e; text-align: center;
+      cursor: pointer; transition: all 0.3s;
+    }
+    .relic-card:hover:not(:disabled) {
+      border-color: #e67e22; box-shadow: 0 0 20px #e67e22;
+      transform: translateY(-5px);
+    }
+    .relic-card:disabled { opacity: 0.5; cursor: not-allowed; }
+    .relic-icon { font-size: 50px; margin-bottom: 10px; }
+    .relic-name { font-weight: bold; font-size: 18px; margin: 10px 0; }
+    .relic-desc { font-size: 14px; color: #ccc; }
+  </style>
+</head>
+<body>
+  <h2>🏆 选择一个 Boss 遗物</h2>
+  <div class="relic-list" id="relic-list"></div>
+
+  <script>
+    (async function() {
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      const nextAct = parseInt(params.get('nextAct')) || 2;
+
+      // 三个占位 Boss 遗物
+      const bossRelicOptions = [
+        { id: 'bossRelic_1', name: '混沌之核', icon: '💎', desc: '战斗开始时获得 1 点能量。' },
+        { id: 'bossRelic_2', name: '命运之镜', icon: '🔮', desc: '每次战斗首次受伤时，恢复 5 点生命。' },
+        { id: 'bossRelic_3', name: '无限之石', icon: '🪨', desc: '每回合获得 1 点敏捷。' }
+      ];
+
+      const listDiv = document.getElementById('relic-list');
+      let selected = false;
+
+      bossRelicOptions.forEach(option => {
+        const div = document.createElement('div');
+        div.className = 'relic-card';
+        div.innerHTML = `
+          <div class="relic-icon">${option.icon}</div>
+          <div class="relic-name">${option.name}</div>
+          <div class="relic-desc">${option.desc}</div>
+        `;
+        div.addEventListener('click', async () => {
+          if (selected) return;
+          selected = true;
+          div.style.borderColor = '#f1c40f';
+          div.style.background = 'rgba(241,196,15,0.2)';
+
+          // 获取存档并添加遗物
+          let saveData = await loadSaveData(char);
+          if (!saveData.relics.includes(option.id)) {
+            saveData.relics.push(option.id);
+          }
+          // 设置阶段信息
+          saveData.act = nextAct;
+          saveData.currentNode = 'start';
+          saveData.visitedNodes = ['start'];
+          await saveSaveData(saveData);
+
+          // 清除旧地图缓存，新阶段会重新生成
+          sessionStorage.removeItem(`mapData_act${nextAct}`);
+
+          alert(`已获得 ${option.name}！`);
+          // 跳转到地图
+          window.location.href = `map.html?char=${char}&act=${nextAct}&currentNode=start`;
+        });
+        listDiv.appendChild(div);
+      });
+    })();
+  </script>
+  <script src="status_bar.js"></script>
+</body>
+</html>

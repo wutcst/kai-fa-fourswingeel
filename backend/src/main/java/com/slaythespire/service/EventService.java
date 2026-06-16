@@ -118,11 +118,15 @@ public class EventService {
                     break;
                 }
                 case "ADD_RANDOM_CARD": {
-                    // 从卡牌池随机选一张（未升级）
+                    // 从卡牌池随机选一张（未升级、非起始、匹配角色）
                     List<com.slaythespire.repository.CardTemplate> allCards = dataRepo.getAllCards();
                     List<com.slaythespire.repository.CardTemplate> validCards = new ArrayList<>();
                     for (com.slaythespire.repository.CardTemplate tpl : allCards) {
-                        if (!tpl.isUpgraded()) validCards.add(tpl);
+                        if (tpl.isUpgraded()) continue;
+                        if ("START".equals(tpl.getRarity())) continue;
+                        // 按角色过滤
+                        if (tpl.getCharId() != null && !tpl.getCharId().equals(charId)) continue;
+                        validCards.add(tpl);
                     }
                     if (!validCards.isEmpty()) {
                         com.slaythespire.repository.CardTemplate chosen = validCards.get(random.nextInt(validCards.size()));

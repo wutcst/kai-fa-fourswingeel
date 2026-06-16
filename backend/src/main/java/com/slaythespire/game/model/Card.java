@@ -19,10 +19,11 @@ public class Card {
     private String charId;
     private String rarity;
 
-    // 🆕 新增字段：自身伤害、获得能量、多段攻击次数
     private int selfDamage;
     private int energyGain;
     private int multiHitCount; 
+    private int exhaustHandCount; 
+    private String exhaustHandMode;
 
     public enum CardType { ATTACK, SKILL, POWER }
 
@@ -43,10 +44,11 @@ public class Card {
         this.charId = template.getCharId();
         this.rarity = template.getRarity();
         
-        // 🆕 从模板读取新字段
         this.selfDamage = template.getSelfDamage();
         this.energyGain = template.getEnergyGain();
-        this.multiHitCount = template.getMultiHitCount(); // 🆕 读取多段攻击次数
+        this.multiHitCount = template.getMultiHitCount();
+        this.exhaustHandCount = template.getExhaustHandCount();
+        this.exhaustHandMode = template.getExhaustHandMode();
     }
 
     public Card(String name, int cost, int damage, int block, CardType type) {
@@ -61,10 +63,11 @@ public class Card {
         this.rarity = "COMMON";
         this.selfDamage = 0;
         this.energyGain = 0;
-        this.multiHitCount = 1; // 🆕 默认单次攻击
+        this.multiHitCount = 1;
+        this.exhaustHandCount = 0;
+        this.exhaustHandMode = "RANDOM";
     }
 
-    // ================= Getter =================
     public String getName() { return name; }
     public int getCost() { return cost; }
     public int getDamage() { return damage; }
@@ -80,13 +83,12 @@ public class Card {
     public boolean isUpgraded() { return upgraded; }
     public String getCharId() { return charId; }
     public String getRarity() { return rarity; }
-    
-    // 🆕 新增 Getter
     public int getSelfDamage() { return selfDamage; }
     public int getEnergyGain() { return energyGain; }
-    public int getMultiHitCount() { return multiHitCount; } // 🆕 
+    public int getMultiHitCount() { return multiHitCount; }
+    public int getExhaustHandCount() { return exhaustHandCount; }
+    public String getExhaustHandMode() { return exhaustHandMode; }
 
-    // ================= Setter =================
     public void setName(String name) { this.name = name; }
     public void setDamage(int damage) { this.damage = damage; }
     public void setBlock(int block) { this.block = block; }
@@ -100,9 +102,9 @@ public class Card {
     public void setUpgraded(boolean upgraded) { this.upgraded = upgraded; }
     public void setCharId(String charId) { this.charId = charId; }
     public void setRarity(String rarity) { this.rarity = rarity; }
-    
-    // 🆕 新增 Setter
     public void setSelfDamage(int selfDamage) { this.selfDamage = selfDamage; }
     public void setEnergyGain(int energyGain) { this.energyGain = energyGain; }
-    public void setMultiHitCount(int multiHitCount) { this.multiHitCount = multiHitCount; } // 🆕 
+    public void setMultiHitCount(int multiHitCount) { this.multiHitCount = multiHitCount; }
+    public void setExhaustHandCount(int exhaustHandCount) { this.exhaustHandCount = exhaustHandCount; }
+    public void setExhaustHandMode(String exhaustHandMode) { this.exhaustHandMode = exhaustHandMode; }
 }

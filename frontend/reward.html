@@ -111,7 +111,6 @@
 
       if (!reward) {
         try {
-          // 传已拥有的遗物 ID，避免重复获取
           const saveDataForReward = await loadSaveData(char);
           const owned = (saveDataForReward.relics || []).join(',');
           const resp = await fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}&charId=${char}`);
@@ -139,14 +138,33 @@
         window.history.replaceState(null, '', url.toString());
       }
 
-      async function goBackToMap() {
+      async function goToNextStageOrVictory() {
         const saveData = await loadSaveData(char);
+        const currentAct = saveData.act || 1;
+
+        if (nodeType === 'boss') {
+          if (currentAct < 3) {
+            // 进入下一阶段：先保存，然后重定向到 act_start.html
+            saveData.act = currentAct + 1;
+            saveData.gold = localGotGold ? saveData.gold : saveData.gold + 0; // 保持 gold
+            await saveSaveData(saveData);
+            const nextAct = currentAct + 1;
+            window.location.href = `act_start.html?char=${char}&nextAct=${nextAct}`;
+            return;
+          } else {
+            // 第三阶段 BOSS 击败 → 胜利页面
+            window.location.href = `victory.html?char=${char}`;
+            return;
+          }
+        }
+
+        // 非 BOSS 节点：跳回地图
         saveData.currentNode = nextNode;
         if (!saveData.visitedNodes.includes(nextNode)) {
           saveData.visitedNodes.push(nextNode);
         }
         await saveSaveData(saveData);
-        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
+        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${currentAct}`;
       }
 
       async function giveGold(amount) {
@@ -159,7 +177,6 @@
         updateUrlParam('gotGold', '1');
       }
 
-      // ✅ 获取遗物：存储 ID，MAX_HP 类遗物永久增加血上限
       async function giveRelic(relicId, effectType, value) {
         if (localGotRelic) return;
         const saveData = await loadSaveData(char);
@@ -193,14 +210,16 @@
       });
       panel.appendChild(goldBtn);
 
-      const cardBtn = document.createElement('button');
-      cardBtn.className = 'reward-btn';
-      cardBtn.textContent = ' 选择一张卡牌';
-      if (gotCard) cardBtn.disabled = true;
-      cardBtn.addEventListener('click', goToCardSelect);
-      panel.appendChild(cardBtn);
+      // 宝箱不显示卡牌按钮
+      if (nodeType !== 'chest') {
+        const cardBtn = document.createElement('button');
+        cardBtn.className = 'reward-btn';
+        cardBtn.textContent = ' 选择一张卡牌';
+        if (gotCard) cardBtn.disabled = true;
+        cardBtn.addEventListener('click', goToCardSelect);
+        panel.appendChild(cardBtn);
+      }
 
-      // 遗物按钮：仅在有可用遗物且不是 null 时显示
       if ((nodeType === 'elite' || nodeType === 'chest' || nodeType === 'boss') && reward.relic) {
         const relicBtn = document.createElement('button');
         relicBtn.className = 'reward-btn';
@@ -217,10 +236,11 @@
         panel.appendChild(relicBtn);
       }
 
+      // 跳过按钮：根据节点类型决定去向
       const skipBtn = document.createElement('button');
       skipBtn.className = 'skip-btn';
       skipBtn.textContent = '跳过 →';
-      skipBtn.addEventListener('click', goBackToMap);
+      skipBtn.addEventListener('click', goToNextStageOrVictory);
       panel.appendChild(skipBtn);
     })();
   </script>

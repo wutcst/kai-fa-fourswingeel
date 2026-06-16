@@ -32,20 +32,8 @@
     .status-effects span { padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
     .hand { display: flex; flex-wrap: wrap; justify-content: center; margin: 16px 0; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 12px; min-height: 150px; }
     .card-btn { 
-      padding: 12px 16px; 
-      margin: 8px; 
-      border: 3px solid #34495e; 
-      border-radius: 8px; 
-      color: white; 
-      cursor: pointer; 
-      transition: all 0.3s ease; 
-      display: inline-flex; 
-      flex-direction: column; 
-      align-items: center; 
-      width: 140px;
-      min-height: 120px;
-      position: relative; 
-      box-sizing: border-box;
+      padding: 12px 16px; margin: 8px; border: 3px solid #34495e; border-radius: 8px; color: white; cursor: pointer; 
+      transition: all 0.3s ease; display: inline-flex; flex-direction: column; align-items: center; width: 140px; min-height: 120px; position: relative; box-sizing: border-box;
     }
     .card-btn.disabled { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%) !important; opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); transform: scale(0.95); }
     .card-btn.attack { border-left: 5px solid #e74c3c; } .card-btn.skill { border-left: 5px solid #3498db; }
@@ -53,17 +41,7 @@
     .card-btn:not(.disabled):hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 12px 24px rgba(0,0,0,0.4); z-index: 10; }
     .cost { position: absolute; top: -10px; left: -10px; background: #e74c3c; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 2px solid #c0392b; }
     .name { font-size: 16px; font-weight: bold; margin-bottom: 6px; text-align: center; width: 100%; }
-    .card-effect-text { 
-      font-size: 12px; 
-      opacity: 0.95; 
-      margin: 2px 0; 
-      line-height: 1.4; 
-      color: #ecf0f1; 
-      white-space: normal;
-      word-break: break-word;
-      text-align: center; 
-      width: 100%;
-    }
+    .card-effect-text { font-size: 12px; opacity: 0.95; margin: 2px 0; line-height: 1.4; color: #ecf0f1; white-space: normal; word-break: break-word; text-align: center; width: 100%; }
     .card-type-label { font-size: 10px; color: #ccc; margin-top: 2px; }
     .card-badge { position: absolute; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 3px; top: -6px; right: -6px; }
     .badge-exhaust { background: #e74c3c; color: white; }
@@ -108,12 +86,9 @@
             <p v-if="enemy.nextDamage > 0" style="color:#f39c12;">⚔️ {{ enemy.intentDesc }} ({{ enemy.nextDamage }})</p>
             <p v-else-if="enemy.nextBlock > 0" style="color:#3498db;">🛡️ {{ enemy.intentDesc }} ({{ enemy.nextBlock }})</p>
             <p v-else>{{ enemy.intentDesc }}</p>
-            
-            <!-- ✅ 修改点：优先使用后端传来的 intentStatusName，如果没有再降级使用前端字典 -->
             <p v-if="enemy.intentStatusType" style="color: #f1c40f; font-size:11px;">
               施加{{ enemy.intentStatusName || getStatusName(enemy.intentStatusType) }} {{ enemy.intentStatusCount }} 层
             </p>
-
             <div class="status-effects">
               <span v-for="status in enemy.statuses" :key="status.id" :style="{ background: status.color || '#666', border: '1px solid ' + (status.color || '#666') }">{{ status.name }}: {{ status.count }}</span>
             </div>
@@ -125,7 +100,7 @@
         <button v-for="(card, index) in hand" :key="index" @click="previewCard(index)" :disabled="!canPlayCard(card) || state.gameOver" :class="['card-btn', { 'disabled': !canPlayCard(card), 'attack': card.type === 'ATTACK', 'skill': card.type === 'SKILL', 'power': card.type === 'POWER' }]" :style="{ background: getCardCharStyle(card), borderColor: getRarityBorderColor(card), borderWidth: '3px' }" @mouseenter="showTooltip(index, $event)" @mouseleave="hideTooltip">
           <span class="cost">{{ card.cost }}</span>
           <span class="name">{{ card.name }}</span>
-          <span class="card-type-label">{{ card.type === 'ATTACK' ? '攻击' : card.type === 'SKILL' ? '防御' : '能力' }}</span>
+          <span class="card-type-label">{{ card.type === 'ATTACK' ? '攻击' : card.type === 'SKILL' ? '技能' : '能力' }}</span>
           <span class="card-effect-text">{{ getCardEffectText(card) }}</span>
           <span v-if="card.exhaust" class="card-badge badge-exhaust">消耗</span>
           <span v-if="card.ethereal" class="card-badge badge-ethereal">虚无</span>
@@ -150,6 +125,8 @@
         <button v-if="isFromMap" @click="goAfterFight" style="margin-top:10px; background:#e67e22; color:white; border:none; padding:8px 20px; border-radius:6px; cursor:pointer;">继续</button>
       </div>
     </div>
+    
+    <!-- 🆕 修正后的确认弹窗：严格区分 SELECT 和 RANDOM，并完美支持无牌打出 -->
     <div v-if="showCardConfirm" class="modal-overlay" @click.self="cancelPlay">
       <div class="modal">
         <h3>确认打出卡牌?</h3>
@@ -157,23 +134,71 @@
           <strong>{{ selectedCard.name }}</strong><br>
           <span style="color: #ecf0f1; font-size: 14px;">{{ getCardEffectText(selectedCard) }}</span>
         </p>
-        <div v-if="state && state.enemies && state.enemies.length > 1" style="margin-top: 10px;">
+        
+        <!-- 仅在多敌人且攻击牌时显示目标选择 -->
+        <div v-if="state && state.enemies && state.enemies.length > 1 && selectedCard.type === 'ATTACK'" style="margin-top: 10px;">
           <label>目标敌人:</label>
           <select v-model="selectedEnemyIndex" style="margin-left:8px; padding:4px; background:#34495e; color:white; border:none; border-radius:4px;">
             <option v-for="enemy in state.enemies" :key="enemy.index" :value="enemy.index">{{ enemy.name }} (❤️{{ enemy.hp }})</option>
           </select>
         </div>
+
+        <!-- 1️⃣ 模式为 SELECT 且手中还有其他牌：必须选牌 -->
+        <div v-if="selectedCard && selectedCard.exhaustHandCount > 0 && selectedCard.exhaustHandMode === 'SELECT' && (hand.length - 1) > 0" style="margin-top: 15px; text-align: left;">
+          <label style="display: block; margin-bottom: 8px; color: #f1c40f; font-weight: bold;">
+            🔥 请选择要消耗的手牌 ({{ selectedCard.exhaustHandCount }}张):
+          </label>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+            <template v-for="(card, idx) in hand" :key="idx">
+              <div 
+                v-if="idx !== selectedIndex"
+                @click="selectExhaustHand(idx)"
+                :style="{
+                  padding: '6px 10px', 
+                  background: selectedExhaustHandIndex === idx ? '#e74c3c' : '#34495e', 
+                  color: 'white', 
+                  borderRadius: '4px', 
+                  cursor: 'pointer',
+                  border: selectedExhaustHandIndex === idx ? '2px solid #f1c40f' : '1px solid #2c3e50',
+                  fontSize: '12px'
+                }"
+              >
+                {{ card.name }} ({{ card.cost }}费)
+              </div>
+            </template>
+          </div>
+          <p v-if="selectedExhaustHandIndex === -1" style="color: #e74c3c; font-size: 12px; margin-top: 6px;">* 必须选择一张牌才能打出</p>
+        </div>
+
+        <!-- 2️⃣ 模式为 RANDOM 且手中还有其他牌：仅提示，不强制选 -->
+        <div v-if="selectedCard && selectedCard.exhaustHandCount > 0 && selectedCard.exhaustHandMode === 'RANDOM' && (hand.length - 1) > 0" style="margin-top: 15px; text-align: left; color: #bdc3c7; font-size: 13px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+          🎲 打出后将 <b>随机消耗</b> {{ selectedCard.exhaustHandCount }} 张手牌。
+        </div>
+
+        <!-- 3️⃣ 手中无其他牌（只有当前这张牌）：直接打出，不消耗 -->
+        <div v-if="selectedCard && selectedCard.exhaustHandCount > 0 && (hand.length - 1) === 0" style="margin-top: 10px; color: #e67e22; font-size: 14px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+          ⚠️ 手中无其他牌，将直接打出（不消耗）
+        </div>
+
         <div class="modal-actions">
-          <button class="btn-confirm" @click="confirmPlay">确认打出</button>
+          <!-- 🆕 智能判断：只有 SELECT 模式且没选牌时才禁用，RANDOM 或无牌时均可直接点击 -->
+          <button class="btn-confirm" @click="confirmPlay" :disabled="isConfirmDisabled">确认打出</button>
           <button class="btn-cancel" @click="cancelPlay">取消</button>
         </div>
       </div>
     </div>
   </div>
+
   <script>
     const API_BASE = '/api/game';
     const app = Vue.createApp({
-      data() { return { state: null, loading: false, error: null, showCardConfirm: false, selectedCard: null, selectedIndex: -1, selectedEnemyIndex: 0, isFromMap: false, prevNodeId: null, nextNodeId: null, tooltipCard: null, tooltipX: 0, tooltipY: 0 }; },
+      data() { 
+        return { 
+          state: null, loading: false, error: null, showCardConfirm: false, selectedCard: null, selectedIndex: -1, 
+          selectedEnemyIndex: 0, selectedExhaustHandIndex: -1, 
+          isFromMap: false, prevNodeId: null, nextNodeId: null, tooltipCard: null, tooltipX: 0, tooltipY: 0 
+        }; 
+      },
       mounted() {
         const params = new URLSearchParams(window.location.search);
         if (params.get('from') === 'map') { this.isFromMap = true; this.prevNodeId = params.get('prevNode') || 'start'; this.nextNodeId = params.get('nextNode'); }
@@ -184,6 +209,19 @@
         tooltipInfo() {
           if (!this.tooltipCard || !this.tooltipCard.applyStatusType) return null;
           return CARD_UI.STATUS_INFO[this.tooltipCard.applyStatusType] || null;
+        },
+        // 🆕 核心逻辑：智能判断确认按钮是否应该被禁用
+        isConfirmDisabled() {
+            if (!this.selectedCard) return true;
+            // 如果需要消耗手牌，且手中还有其他牌
+            if (this.selectedCard.exhaustHandCount > 0 && (this.hand.length - 1) > 0) {
+                // 只有 SELECT 模式且没选牌时，才禁用按钮
+                if (this.selectedCard.exhaustHandMode === 'SELECT' && this.selectedExhaustHandIndex === -1) {
+                    return true;
+                }
+            }
+            // RANDOM 模式，或者手中无其他牌 (hand.length - 1 === 0) 时，直接返回 false (按钮可用)
+            return false;
         }
       },
       methods: {
@@ -192,6 +230,8 @@
         getCardCharStyle(card) { return CARD_UI.getCardCharStyle(card); },
         getRarityBorderColor(card) { return CARD_UI.getRarityBorderColor(card); },
         selectEnemy(index) { this.selectedEnemyIndex = index; },
+        selectExhaustHand(idx) { this.selectedExhaustHandIndex = idx; },
+        
         async newGame() {
           this.error = null; this.loading = true;
           try {
@@ -205,24 +245,40 @@
             }
           } catch (e) { this.error = '无法开始战斗：' + e.message; } finally { this.loading = false; }
         },
+        
         previewCard(index) {
           if (!this.state) return;
           const card = this.hand[index];
           if (!this.canPlayCard(card)) { this.error = `能量不足！`; return; }
-          this.selectedCard = card; this.selectedIndex = index; this.showCardConfirm = true;
+          this.selectedCard = card; 
+          this.selectedIndex = index; 
+          this.selectedExhaustHandIndex = -1; // 每次打开弹窗重置选择
+          this.showCardConfirm = true;
         },
+        
         async confirmPlay() {
           if (this.selectedIndex >= 0) {
             let url = `${API_BASE}/play?index=${this.selectedIndex}`;
-            if (this.state && this.state.enemies && this.state.enemies.length > 1) {
+            const card = this.selectedCard;
+            
+            // 仅攻击牌且多敌人时传递 targetIndex
+            if (card && card.type === 'ATTACK' && this.state && this.state.enemies && this.state.enemies.length > 1) {
               url += `&targetIndex=${this.selectedEnemyIndex}`;
             }
+            
+            // 🆕 只有在 SELECT 模式下且玩家确实选择了一张牌时，才传递 exhaustHandIndex
+            if (card && card.exhaustHandCount > 0 && this.selectedExhaustHandIndex !== -1) {
+              url += `&exhaustHandIndex=${this.selectedExhaustHandIndex}`;
+            }
+            
             await this.playCard(this.selectedIndex, url);
           }
           this.showCardConfirm = false;
         },
+        
         cancelPlay() { this.showCardConfirm = false; },
         getCardEffectText(card) { return CARD_UI.getCardEffectText(card); },
+        
         showTooltip(index, event) {
           const card = this.hand[index];
           if (card && card.applyStatusType) {
@@ -235,6 +291,7 @@
           }
         },
         hideTooltip() { this.tooltipCard = null; },
+        
         async playCard(index, customUrl) {
           this.error = null;
           try {
@@ -243,11 +300,13 @@
             this.state = await resp.json();
           } catch (e) { this.error = '打出卡牌失败'; }
         },
+        
         async endTurn() {
           this.error = null;
           if (!this.state || this.state.gameOver) return;
           try { const resp = await fetch(`${API_BASE}/endTurn`, { method: 'POST' }); this.state = await resp.json(); } catch (e) { this.error = '结束回合失败'; }
         },
+        
         async goAfterFight() {
           if (!this.state) return;
           const charParam = new URLSearchParams(window.location.search).get('char') || '1';

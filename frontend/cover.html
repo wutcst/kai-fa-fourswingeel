@@ -67,7 +67,6 @@
           const resp = await fetch('/api/load?charId=1');
           if (resp.ok) {
             const data = await resp.json();
-            // 有角色数据（至少包含 charId）即认为存在有效存档
             if (data && data.charId) {
               continueBtn.style.display = 'inline-block';
             }
@@ -78,7 +77,8 @@
       })();
 
       continueBtn.addEventListener('click', async () => {
-        // 继续游戏：直接跳转到地图，默认角色为1
+        // 继续游戏：确保 localStorage 中有 char 键
+        localStorage.setItem('char', '1');
         window.location.href = `map.html?char=1`;
       });
 
@@ -103,7 +103,7 @@
           const mapResp = await fetch('/api/map');
           if (mapResp.ok) {
             const mapText = await mapResp.text();
-            sessionStorage.setItem('mapData', mapText);
+            sessionStorage.setItem('mapData_act1', mapText);
           } else {
             console.warn('地图接口返回错误');
           }
@@ -116,6 +116,17 @@
         if (!selectedCharacter) { alert('请先选择一个角色！'); return; }
         startBtn.disabled = true;
         try {
+          // 清除上一局的所有本地数据
+          localStorage.removeItem('playerHP');
+          localStorage.removeItem('maxHP');
+          localStorage.removeItem('gold');
+          localStorage.removeItem('deck');
+          localStorage.removeItem('relics');
+          localStorage.removeItem('visitedNodes');
+          localStorage.removeItem('shopDeleteCount');
+          localStorage.removeItem('startRelicDone');
+          sessionStorage.clear();
+
           const resp = await fetch(`/api/character/${selectedCharacter}`);
           if (!resp.ok) throw new Error('获取角色数据失败');
           const charData = await resp.json();
@@ -129,7 +140,8 @@
             deck: charData.startingDeck,
             relics: startingRelicId ? [startingRelicId] : [],
             visitedNodes: ['start'],
-            currentNode: 'start'
+            currentNode: 'start',
+            act: 1
           };
           await fetch('/api/init', {
             method: 'POST',
@@ -137,11 +149,23 @@
             body: JSON.stringify(saveData)
           });
 
+          // 同步到 localStorage，保证 status_bar 立即读取正确
+          localStorage.setItem('char', selectedCharacter);
+          localStorage.setItem('playerHP', saveData.playerHp);
+          localStorage.setItem('maxHP', saveData.maxHp);
+          localStorage.setItem('gold', saveData.gold);
+          localStorage.setItem('deck', JSON.stringify(saveData.deck));
+          localStorage.setItem('relics', JSON.stringify(saveData.relics));
+          localStorage.setItem('visitedNodes', JSON.stringify(saveData.visitedNodes));
+
           await fetchAndStoreMap();
 
-          localStorage.removeItem('startRelicDone');
-          sessionStorage.setItem('mapMode', 'api');
-          window.location.href = `map.html?char=${selectedCharacter}`;
+          // 清除旧 stage 地图缓存
+          for (let i = 1; i <= 3; i++) {
+            sessionStorage.removeItem(`mapData_act${i}`);
+          }
+
+          window.location.href = `map.html?char=${selectedCharacter}&act=1`;
         } catch (e) {
           console.error(e);
           alert('初始化角色失败：' + e.message);

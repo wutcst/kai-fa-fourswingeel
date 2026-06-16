@@ -35,23 +35,19 @@ public class GameConfigController {
 
     private final Random random = new Random();
 
-    // ================ 重写的地图生成 ================
+    // ================ 地图生成 ================
 
-    /**
-     * 生成15层随机地图：起点一个，合并与扩展保持顺序且无死路；
-     * 每层节点数偏好3~4，1、2、5为少数；
-     * boss前一层全篝火，前两层只有小怪/未知，降低精英、商店、篝火概率。
-     */
     @GetMapping("/map")
     public Map<String, Object> getMapData() {
         Map<String, Object> mapData = new LinkedHashMap<>();
         List<Map<String, Object>> nodes = new ArrayList<>();
         List<Map<String, String>> edges = new ArrayList<>();
 
-        final int FLOOR_COUNT = 15; // 0~14
-        List<List<Map<String, Object>>> floors = new ArrayList<>();
+        final int TOTAL_FLOORS = 17; 
+        final int BOSS_FLOOR = 16;
+        final int CHEST_FLOOR = 9;   
+        final int CAMPFIRE_FLOOR = 15; 
 
-        // ===== 第0层（底部）单一起点 =====
         List<Map<String, Object>> floor0 = new ArrayList<>();
         Map<String, Object> startNode = new LinkedHashMap<>();
         startNode.put("id", "start");
@@ -59,199 +55,308 @@ public class GameConfigController {
         startNode.put("icon", "🏁");
         startNode.put("label", "起点");
         startNode.put("x", 50.0);
-        startNode.put("y", 90.0);
+        startNode.put("y", 95.0);
         nodes.add(startNode);
         floor0.add(startNode);
+
+        List<List<Map<String, Object>>> floors = new ArrayList<>();
         floors.add(floor0);
 
-        // ===== 第1~13层 =====
-        for (int floorIdx = 1; floorIdx <= 13; floorIdx++) {
-            List<Map<String, Object>> prevFloor = floors.get(floorIdx - 1);
-            int prevCount = prevFloor.size();
+        int[] nodeCount = new int[TOTAL_FLOORS];
+        nodeCount[0] = 1;
+        nodeCount[BOSS_FLOOR] = 1;
 
+        for (int floorIdx = 1; floorIdx <= BOSS_FLOOR - 1; floorIdx++) {
+            int prevCount = nodeCount[floorIdx - 1];
             int targetCount;
 
-            // ---- 第1层（起点后）：强制3~4个怪物节点 ----
             if (floorIdx == 1) {
-                targetCount = 3 + random.nextInt(2); // 3或4
+                targetCount = 3 + random.nextInt(2); 
             } else {
-                // 根据权重选择节点数（偏好3~4）
                 double r = random.nextDouble();
-                if (r < 0.05)         targetCount = 1;
-                else if (r < 0.15)    targetCount = 2;
-                else if (r < 0.50)    targetCount = 3;
-                else if (r < 0.85)    targetCount = 4;
-                else                  targetCount = 5;
-                // 与上层差别不超过1，保证变化平滑
-                targetCount = Math.min(5, Math.max(1,
-                        prevCount + (random.nextBoolean() ? 1 : -1) * random.nextInt(2)));
-                // 再次应用权重偏好，但若不满足则修正
-                if (targetCount > 4) targetCount = 4;
-                if (targetCount < 2) targetCount = 2;
-                // 再随机调整到3或4为主
-                // 最终：若上层较小则可能为2，较大则可能为4，中间大多3或4
-                targetCount = Math.min(5, Math.max(1, targetCount));
+                if (r < 0.02) targetCount = 1;
+                else if (r < 0.05) targetCount = 2;
+                else if (r < 0.20) targetCount = 3;
+                else if (r < 0.55) targetCount = 4;
+                else if (r < 0.90) targetCount = 5;
+                else targetCount = 6;
+                if (targetCount > prevCount + 2) targetCount = prevCount + 2;
+                if (targetCount < prevCount - 2) targetCount = prevCount - 2;
+                targetCount = Math.max(1, Math.min(6, targetCount));
             }
+            nodeCount[floorIdx] = targetCount;
+        }
 
-            // 构建 parentSeq（子节点对应的父节点索引列表）
-            List<Integer> parentSeq = new ArrayList<>();
-            for (int i = 0; i < prevCount; i++) parentSeq.add(i);
-
-            // 用于记录被合并的父节点 -> 合并到的父节点
-            Map<Integer, Integer> mergedMap = new HashMap<>();
-
-            // 扩展：插入副本（使同一父节点对应多个子节点）
-            while (parentSeq.size() < targetCount) {
-                int idx = random.nextInt(parentSeq.size());
-                int val = parentSeq.get(idx);
-                parentSeq.add(idx + 1, val);
-            }
-            // 合并：删除相邻元素，同时记录被删元素
-            while (parentSeq.size() > targetCount) {
-                int idx = random.nextInt(parentSeq.size() - 1);
-                int removedIdx = parentSeq.get(idx + 1);
-                int keptIdx = parentSeq.get(idx);
-                parentSeq.remove(idx + 1);
-                mergedMap.put(removedIdx, keptIdx);
-            }
-
-            // 生成子节点，同时记录每个父节点对应的第一个子节点（用于额外边）
-            Map<Integer, Map<String, Object>> firstChildForParent = new HashMap<>();
+        for (int floorIdx = 1; floorIdx <= BOSS_FLOOR - 1; floorIdx++) {
+            int count = nodeCount[floorIdx];
             List<Map<String, Object>> curFloor = new ArrayList<>();
-            int totalChildren = parentSeq.size();
 
-            for (int k = 0; k < totalChildren; k++) {
-                int parentIndex = parentSeq.get(k);
-                Map<String, Object> parentNode = prevFloor.get(parentIndex);
-
+            for (int k = 0; k < count; k++) {
                 Map<String, Object> childNode = new LinkedHashMap<>();
                 String id = "n" + nodes.size();
                 childNode.put("id", id);
+                childNode.put("type", null);   
+                childNode.put("icon", null);
+                childNode.put("label", null);
 
-                // 节点类型
-                String type;
-                String icon;
-                String label;
-                if (floorIdx == 13) {
-                    type = "campfire";
-                    icon = "🔥";
-                    label = "篝火";
-                } else if (floorIdx == 1) {
-                    // 第1层强制为怪物
-                    type = "monster";
-                    icon = "👾";
-                    label = "小怪";
-                } else if (floorIdx == 2) {
-                    // 第2层小怪或未知
-                    type = random.nextBoolean() ? "monster" : "question";
-                    icon = type.equals("monster") ? "👾" : "❓";
-                    label = type.equals("monster") ? "小怪" : "?";
+                double yPercent = 95.0 - floorIdx * (93.0 / BOSS_FLOOR);
+                double xPercent;
+                if (count == 1) {
+                    xPercent = 50.0;
                 } else {
-                    double rr = random.nextDouble();
-                    if (rr < 0.45) {
-                        type = "monster";
-                    } else if (rr < 0.75) {
-                        type = "question";
-                    } else if (rr < 0.85) {
-                        type = "chest";
-                    } else if (rr < 0.90) {
-                        type = "elite";
-                    } else if (rr < 0.95) {
-                        type = "shop";
-                    } else {
-                        type = "campfire";
-                    }
-                    switch (type) {
-                        case "monster": icon = "👾"; label = "小怪"; break;
-                        case "elite":   icon = "💀"; label = "精英"; break;
-                        case "shop":    icon = "🛒"; label = "商店"; break;
-                        case "campfire":icon = "🔥"; label = "篝火"; break;
-                        case "chest":   icon = "📦"; label = "宝箱"; break;
-                        default:        icon = "❓"; label = "?";   break;
-                    }
+                    xPercent = 5.0 + 90.0 * k / (count - 1);
                 }
-                childNode.put("type", type);
-                childNode.put("icon", icon);
-                childNode.put("label", label);
-
-                // 位置
-                double yPercent = 90.0 - floorIdx * 6.0;
-                double xPercent = 100.0 * (k + 1) / (totalChildren + 1);
                 childNode.put("x", xPercent);
                 childNode.put("y", yPercent);
 
                 nodes.add(childNode);
                 curFloor.add(childNode);
-
-                // 正常边：父节点 -> 当前子节点
-                addEdge(edges, parentNode, childNode);
-
-                // 记录该父节点的第一个子节点（若尚未记录）
-                if (!firstChildForParent.containsKey(parentIndex)) {
-                    firstChildForParent.put(parentIndex, childNode);
-                }
             }
-
-            // 额外边：被合并的父节点连接到其合并目标父节点所对应的子节点
-            for (Map.Entry<Integer, Integer> entry : mergedMap.entrySet()) {
-                int removedIdx = entry.getKey();
-                int keptIdx = entry.getValue();
-                Map<String, Object> removedParent = prevFloor.get(removedIdx);
-                Map<String, Object> childOfKept = firstChildForParent.get(keptIdx);
-                if (childOfKept != null) {
-                    addEdge(edges, removedParent, childOfKept);
-                }
-            }
-
             floors.add(curFloor);
         }
 
-        // ===== 第14层（顶部）Boss =====
-        List<Map<String, Object>> floor14 = new ArrayList<>();
+        List<Map<String, Object>> bossFloor = new ArrayList<>();
         Map<String, Object> bossNode = new LinkedHashMap<>();
         bossNode.put("id", "boss");
         bossNode.put("type", "boss");
         bossNode.put("icon", "👑");
         bossNode.put("label", "BOSS");
         bossNode.put("x", 50.0);
-        bossNode.put("y", 6.0);
+        bossNode.put("y", 2.0);
         nodes.add(bossNode);
-        floor14.add(bossNode);
-        floors.add(floor14);
+        bossFloor.add(bossNode);
+        floors.add(bossFloor);
 
-        // 第13层 -> Boss 连线
-        List<Map<String, Object>> prevFloor = floors.get(13);
-        for (Map<String, Object> pn : prevFloor) {
-            addEdge(edges, pn, bossNode);
+        for (int floorIdx = 1; floorIdx <= BOSS_FLOOR - 1; floorIdx++) {
+            List<Map<String, Object>> prevFloor = floors.get(floorIdx - 1);
+            List<Map<String, Object>> curFloor = floors.get(floorIdx);
+            boolean reverse = (floorIdx % 2 == 0);
+            generateMonotonicEdges(edges, prevFloor, curFloor, reverse);
+        }
+        generateMonotonicEdges(edges, floors.get(15), bossFloor, false);
+
+        int totalSpecialNodes = 0;
+        for (int floorIdx = 2; floorIdx <= 14; floorIdx++) {
+            if (floorIdx == CHEST_FLOOR || floorIdx == CAMPFIRE_FLOOR) continue;
+            totalSpecialNodes += nodeCount[floorIdx];
         }
 
-        // ===== 额外交汇（增加第二条入边）30% =====
-        for (int floorIdx = 0; floorIdx < FLOOR_COUNT - 1; floorIdx++) {
-            List<Map<String, Object>> fromList = floors.get(floorIdx);
-            List<Map<String, Object>> toList = floors.get(floorIdx + 1);
-            int toCount = toList.size();
-            int[] inEdges = new int[toCount];
-            // 统计入度
-            for (Map<String, String> e : edges) {
-                String toId = e.get("to");
-                for (int t = 0; t < toCount; t++) {
-                    if (toList.get(t).get("id").equals(toId)) {
-                        inEdges[t]++;
-                        break;
+        int shopCount = (int) Math.round(totalSpecialNodes * 0.05);
+        int questionCount = (int) Math.round(totalSpecialNodes * 0.22);
+        int eliteCount = (int) Math.round(totalSpecialNodes * 0.08);
+        int monsterCount = totalSpecialNodes - shopCount - questionCount - eliteCount;
+
+        int remainingShop = shopCount;
+        int remainingCampfire = 0;  
+        int remainingQuestion = questionCount;
+        int remainingElite = eliteCount;
+        int remainingMonster = monsterCount;
+
+        for (int floorIdx = 1; floorIdx <= BOSS_FLOOR - 1; floorIdx++) {
+            List<Map<String, Object>> curFloor = floors.get(floorIdx);
+            for (Map<String, Object> node : curFloor) {
+                String type;
+                String icon;
+                String label;
+                if (floorIdx == 1) {
+                    type = "monster"; icon = "👾"; label = "小怪";
+                } else if (floorIdx == CHEST_FLOOR) {
+                    type = "chest"; icon = "📦"; label = "宝箱";
+                } else if (floorIdx == CAMPFIRE_FLOOR) {
+                    type = "campfire"; icon = "🔥"; label = "篝火";
+                } else {
+                    type = null; icon = null; label = null;
+                }
+                node.put("type", type);
+                node.put("icon", icon);
+                node.put("label", label);
+            }
+        }
+
+        for (int floorIdx = 2; floorIdx <= 14; floorIdx++) {
+            if (floorIdx == CHEST_FLOOR || floorIdx == CAMPFIRE_FLOOR) continue;
+            List<Map<String, Object>> curFloor = floors.get(floorIdx);
+            for (Map<String, Object> node : curFloor) {
+                String nodeId = (String) node.get("id");
+                List<Map<String, String>> parentEdges = new ArrayList<>();
+                for (Map<String, String> e : edges) {
+                    if (e.get("to").equals(nodeId)) parentEdges.add(e);
+                }
+                Set<String> parentTypes = new HashSet<>();
+                for (Map<String, String> e : parentEdges) {
+                    String fromId = e.get("from");
+                    Map<String, Object> fromNode = getNodeById(fromId, nodes);
+                    if (fromNode != null) {
+                        String pt = (String) fromNode.get("type");
+                        if (pt != null) parentTypes.add(pt);
                     }
                 }
-            }
-            for (int t = 0; t < toCount; t++) {
-                if (inEdges[t] == 1 && random.nextDouble() < 0.3) {
-                    int f = random.nextInt(fromList.size());
-                    addEdge(edges, fromList.get(f), toList.get(t));
+                boolean forbidElite = (floorIdx <= 5);
+                boolean forbidShop = parentTypes.contains("shop");
+                boolean forbidEliteCont = parentTypes.contains("elite");
+
+                String type = rollBucketType(floorIdx,
+                        remainingShop, remainingCampfire, remainingQuestion, remainingElite, remainingMonster,
+                        forbidShop, true, forbidEliteCont, forbidElite);
+                switch (type) {
+                    case "shop":     remainingShop--; break;
+                    case "campfire": remainingCampfire--; break;
+                    case "question": remainingQuestion--; break;
+                    case "elite":    remainingElite--; break;
+                    case "monster":  remainingMonster--; break;
                 }
+                node.put("type", type);
+                String icon, label;
+                switch (type) {
+                    case "monster":  icon = "👾"; label = "小怪"; break;
+                    case "elite":    icon = "💀"; label = "精英"; break;
+                    case "shop":     icon = "🛒"; label = "商店"; break;
+                    case "campfire": icon = "🔥"; label = "篝火"; break;
+                    case "chest":    icon = "📦"; label = "宝箱"; break;
+                    default:         icon = "❓"; label = "?";   break;
+                }
+                node.put("icon", icon);
+                node.put("label", label);
             }
         }
 
         mapData.put("nodes", nodes);
         mapData.put("edges", edges);
         return mapData;
+    }
+
+    private Map<String, Object> getNodeById(String id, List<Map<String, Object>> nodes) {
+        for (Map<String, Object> n : nodes) {
+            if (id.equals(n.get("id"))) return n;
+        }
+        return null;
+    }
+
+    private String rollBucketType(int floorIdx,
+                                   int remShop, int remCampfire, int remQuestion, int remElite, int remMonster,
+                                   boolean forbidShop, boolean forbidCampfire,
+                                   boolean forbidEliteCont, boolean forbidElite) {
+        List<String> types = new ArrayList<>();
+        List<Integer> weights = new ArrayList<>();
+
+        if (remShop > 0 && !forbidShop) {
+            types.add("shop");
+            weights.add(remShop);
+        }
+        if (remCampfire > 0 && !forbidCampfire) {
+            types.add("campfire");
+            weights.add(remCampfire);
+        }
+        if (remQuestion > 0) {
+            types.add("question");
+            weights.add(remQuestion);
+        }
+        if (remElite > 0 && !forbidElite && !forbidEliteCont) {
+            types.add("elite");
+            weights.add(remElite);
+        }
+        if (remMonster > 0) {
+            types.add("monster");
+            weights.add(remMonster);
+        }
+
+        if (types.isEmpty()) return "monster";
+
+        int totalWeight = 0;
+        for (int w : weights) totalWeight += w;
+        int roll = random.nextInt(totalWeight);
+        int cumulative = 0;
+        for (int i = 0; i < types.size(); i++) {
+            cumulative += weights.get(i);
+            if (roll < cumulative) return types.get(i);
+        }
+        return types.get(types.size() - 1);
+    }
+
+    private void generateMonotonicEdges(List<Map<String, String>> edges,
+                                    List<Map<String, Object>> curFloor,
+                                    List<Map<String, Object>> nextFloor,
+                                    boolean reverse) {
+        int curCount = curFloor.size();
+        int nextCount = nextFloor.size();
+        if (curCount == 0 || nextCount == 0) return;
+
+        int[] childEdgeCount = new int[nextCount];
+
+        if (curCount == 1) {
+            for (int i = 0; i < nextCount; i++) {
+                addEdge(edges, curFloor.get(0), nextFloor.get(i));
+                childEdgeCount[i]++;
+            }
+        } else if (!reverse) {
+            int childIdx = 0; 
+            int lastIdx = nextCount - 1;
+
+            for (int p = 0; p < curCount; p++) {
+                int maxConnect = Math.min(3, lastIdx - childIdx + 1);
+                
+                int remainingParents = curCount - 1 - p;
+                if (lastIdx - childIdx + 1 - maxConnect > remainingParents * 3) {
+                    maxConnect = Math.min(3, lastIdx - childIdx + 1 - remainingParents * 1);
+                }
+                if (p == curCount - 1) {
+                    maxConnect = lastIdx - childIdx + 1;
+                }
+
+                int connectCount = maxConnect > 0 ? (1 + random.nextInt(maxConnect)) : 1;
+                
+                for (int j = 0; j < connectCount; j++) {
+                    if (childIdx > lastIdx) break;
+                    
+                    addEdge(edges, curFloor.get(p), nextFloor.get(childIdx));
+                    childEdgeCount[childIdx]++; 
+                    childIdx++;
+                }
+                
+                if (childIdx > 0) {
+                    childIdx--;
+                }
+            }
+        } else {
+            int childIdx = nextCount - 1; 
+
+            for (int p = curCount - 1; p >= 0; p--) {
+                int maxConnect = Math.min(3, childIdx + 1);
+                
+                int remainingParents = p; 
+                if (childIdx + 1 - maxConnect > remainingParents * 3) {
+                    maxConnect = Math.min(3, childIdx + 1 - remainingParents * 1);
+                }
+                if (p == 0) {
+                    maxConnect = childIdx + 1;
+                }
+
+                int connectCount = maxConnect > 0 ? (1 + random.nextInt(maxConnect)) : 1;
+
+                for (int j = 0; j < connectCount; j++) {
+                    if (childIdx < 0) break;
+                    
+                    addEdge(edges, curFloor.get(p), nextFloor.get(childIdx));
+                    childEdgeCount[childIdx]++; 
+                    childIdx--; 
+                }
+
+                if (childIdx < nextCount - 1) {
+                    childIdx++;
+                }
+            }
+        }
+
+        for (int i = 0; i < nextCount; i++) {
+            if (childEdgeCount[i] == 0) {
+                if (!reverse) {
+                    addEdge(edges, curFloor.get(curCount - 1), nextFloor.get(i));
+                } else {
+                    addEdge(edges, curFloor.get(0), nextFloor.get(i));
+                }
+                childEdgeCount[i]++;
+            }
+        }
     }
 
     private void addEdge(List<Map<String, String>> edges,
@@ -263,7 +368,7 @@ public class GameConfigController {
         edges.add(edge);
     }
 
-    // ================ 以下原方法保持不变 ================
+    // ================ 商店、角色、卡牌接口 ================
 
     @GetMapping("/shop")
     public Map<String, Object> getShopData(@RequestParam(defaultValue = "1") String charParam,
@@ -273,7 +378,10 @@ public class GameConfigController {
         List<CardTemplate> allCards = dataRepo.getAllCards();
         List<CardTemplate> normalCards = new ArrayList<>();
         for (CardTemplate tpl : allCards) {
-            if (!tpl.isUpgraded()) normalCards.add(tpl);
+            if (tpl.isUpgraded()) continue;
+            if ("START".equals(tpl.getRarity())) continue;
+            if (tpl.getCharId() != null && !tpl.getCharId().equals(charParam)) continue;
+            normalCards.add(tpl);
         }
 
         List<Map<String, Object>> shopCards = new ArrayList<>();
@@ -295,7 +403,19 @@ public class GameConfigController {
                 cardMap.put("applyStatusTarget", tpl.getApplyStatusTarget());
                 cardMap.put("charId", tpl.getCharId());
                 cardMap.put("drawCount", tpl.getDrawCount());
-                cardMap.put("rarity", tpl.getRarity());  // ✅ 添加稀有度
+                cardMap.put("rarity", tpl.getRarity());
+                
+                // 🆕 补全商店卡牌缺失的字段
+                cardMap.put("upgraded", tpl.isUpgraded());
+                cardMap.put("selfDamage", tpl.getSelfDamage());
+                cardMap.put("energyGain", tpl.getEnergyGain());
+                cardMap.put("multiHitCount", tpl.getMultiHitCount());
+                cardMap.put("exhaust", tpl.isExhaust());
+                cardMap.put("ethereal", tpl.isEthereal());
+                cardMap.put("retain", tpl.isRetain());
+                cardMap.put("exhaustHandCount", tpl.getExhaustHandCount());
+                cardMap.put("exhaustHandMode", tpl.getExhaustHandMode());
+                
                 int price = 50 + (tpl.getCost() * 25);
                 if (tpl.getDamage() > 10 || tpl.getBlock() > 10) price += 20;
                 cardMap.put("price", price);
@@ -332,7 +452,11 @@ public class GameConfigController {
             info.put("name", "铁甲战士");
             info.put("maxHp", 70);
             info.put("gold", 0);
-            List<String> starterIds = Arrays.asList("strike", "strike", "strike", "defend", "defend");
+            List<String> starterIds = Arrays.asList(
+                "strike", "strike", "strike", "strike", "strike",
+                "defend", "defend", "defend", "defend",
+                "bash"
+            );
             List<Map<String, Object>> deck = new ArrayList<>();
             for (String id : starterIds) {
                 CardTemplate tpl = dataRepo.getCardById(id);
@@ -349,7 +473,19 @@ public class GameConfigController {
                     cardMap.put("applyStatusTarget", tpl.getApplyStatusTarget());
                     cardMap.put("charId", tpl.getCharId());
                     cardMap.put("drawCount", tpl.getDrawCount());
-                    cardMap.put("rarity", tpl.getRarity());  // ✅ 添加稀有度
+                    cardMap.put("rarity", tpl.getRarity());
+                    
+                    // 🆕 补全初始卡组缺失的字段
+                    cardMap.put("upgraded", tpl.isUpgraded());
+                    cardMap.put("selfDamage", tpl.getSelfDamage());
+                    cardMap.put("energyGain", tpl.getEnergyGain());
+                    cardMap.put("multiHitCount", tpl.getMultiHitCount());
+                    cardMap.put("exhaust", tpl.isExhaust());
+                    cardMap.put("ethereal", tpl.isEthereal());
+                    cardMap.put("retain", tpl.isRetain());
+                    cardMap.put("exhaustHandCount", tpl.getExhaustHandCount());
+                    cardMap.put("exhaustHandMode", tpl.getExhaustHandMode());
+                    
                     deck.add(cardMap);
                 }
             }
@@ -398,7 +534,18 @@ public class GameConfigController {
         map.put("applyStatusTarget", tpl.getApplyStatusTarget());
         map.put("drawCount", tpl.getDrawCount());
         map.put("upgraded", tpl.isUpgraded());
-        map.put("rarity", tpl.getRarity());  // ✅ 添加稀有度
+        map.put("rarity", tpl.getRarity());
+        
+        // 🆕 补全单卡查询缺失的字段
+        map.put("selfDamage", tpl.getSelfDamage());
+        map.put("energyGain", tpl.getEnergyGain());
+        map.put("multiHitCount", tpl.getMultiHitCount());
+        map.put("exhaust", tpl.isExhaust());
+        map.put("ethereal", tpl.isEthereal());
+        map.put("retain", tpl.isRetain());
+        map.put("exhaustHandCount", tpl.getExhaustHandCount());
+        map.put("exhaustHandMode", tpl.getExhaustHandMode());
+        
         return map;
     }
 }
