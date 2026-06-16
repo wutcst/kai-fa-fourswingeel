@@ -11,6 +11,7 @@
   { "id": "gold_paper", "name": "金纸", "description": "每当你消耗一张牌，抽一张牌。", "effectType": "DRAW_ON_EXHAUST", "value": 1, "rarity": "RARE", "charId": null },
 
   { "id": "lantern", "name": "灯笼", "description": "每场战斗的第一回合获得 1 点能量。", "effectType": "ENERGY_FIRST_TURN", "value": 1, "rarity": "COMMON", "charId": null },
+  { "id": "rune_pyramid", "name": "符文金字塔", "description": "回合结束时，手牌不会洗入弃牌堆。", "effectType": "RUNE_PYRAMID", "value": 0, "rarity": "LEGENDARY", "charId": null },
   { "id": "ring", "name": "头环", "description": "无效果。当你拥有所有遗物时，它将作为替代奖励出现。", "effectType": "NO_EFFECT", "value": 0, "rarity": "SPECIAL", "charId": null },
     { "id": "neow_remove", "name": "净化卷轴", "description": "初始恩惠：从卡组中删除一张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },
   { "id": "neow_blood", "name": "血之契约", "description": "初始恩惠：失去10点生命，从卡组中删除两张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },

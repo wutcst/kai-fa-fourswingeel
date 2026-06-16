@@ -279,16 +279,17 @@ public class BattleService {
             decrementIntangible(e);
         }
 
+        boolean hasRunePyramid = RelicEffectHandler.hasEffect(player, "RUNE_PYRAMID");
         List<Card> retained = new ArrayList<>();
         for (Card card : hand) {
-            if (card.isEthereal()) { 
-                exhaustPile.add(card); 
-                logList.add(card.getName() + "因【虚无】被消耗"); 
+            if (card.isEthereal()) {
+                exhaustPile.add(card);
+                logList.add(card.getName() + "因【虚无】被消耗");
             triggerDrawOnExhaust();
-            } else if (card.isRetain()) { 
-                retained.add(card); 
-            } else { 
-                discardPile.add(card); 
+            } else if (hasRunePyramid || card.isRetain()) {
+                retained.add(card);
+            } else {
+                discardPile.add(card);
             }
         }
         hand.clear(); 
