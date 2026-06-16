@@ -28,6 +28,7 @@ public class BattleController {
         List<String> playerRelics = null;
         int playerHp = 70;
         int playerMaxHp = 70;
+        String nodeType = null;
 
         if (payload != null) {
             // 解析卡组
@@ -51,10 +52,13 @@ public class BattleController {
             if (payload.containsKey("playerMaxHp")) {
                 playerMaxHp = ((Number) payload.get("playerMaxHp")).intValue();
             }
+            if (payload.containsKey("nodeType")) {
+                nodeType = (String) payload.get("nodeType");
+            }
         }
         
         // 将数据传递给 Service
-        return battleService.newBattle(playerDeck, playerRelics, playerHp, playerMaxHp);
+        return battleService.newBattle(playerDeck, playerRelics, playerHp, playerMaxHp, nodeType);
     }
 
     /**

@@ -297,8 +297,11 @@
           this.error = null; this.loading = true;
           try {
             const charParam = new URLSearchParams(window.location.search).get('char') || '1';
+            const nodeTypeParam = new URLSearchParams(window.location.search).get('nodeType') || '';
             const saveData = await loadSaveData(charParam);
-            const resp = await fetch(`${API_BASE}/new`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deck: saveData.deck, relics: saveData.relics, playerHp: saveData.playerHp, playerMaxHp: saveData.maxHp }) });
+            const bodyData = { deck: saveData.deck, relics: saveData.relics, playerHp: saveData.playerHp, playerMaxHp: saveData.maxHp };
+            if (nodeTypeParam) bodyData.nodeType = nodeTypeParam;
+            const resp = await fetch(`${API_BASE}/new`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyData) });
             if (!resp.ok) throw new Error(`请求失败 ${resp.status}`);
             this.state = await resp.json();
             if (this.state && this.state.enemies && this.state.enemies.length > 0) {

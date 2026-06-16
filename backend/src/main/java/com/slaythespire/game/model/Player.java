@@ -32,4 +32,17 @@ public class Player extends Combatant {
         
         for (Relic r : getRelics()) r.onTurnStart(this);
     }
+
+    /** 添加状态牌（灼伤、晕眩等）到玩家的弃牌堆/手中 */
+    public void addStatusCard(String statusCardType) {
+        // 状态牌暂为简化实现：直接造成伤害或效果
+        if ("burn".equals(statusCardType)) {
+            // 灼伤：可考虑在未来实现为牌堆中的负面状态牌
+            this.takeDamage(2, null, false);
+        } else if ("dazed".equals(statusCardType)) {
+            // 晕眩：目前简化实现，后续可扩展为塞入弃牌堆
+            // 空实现，作为占位
+        }
+    }
+
 }

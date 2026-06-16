@@ -26,7 +26,7 @@ public class BattleService {
     private boolean gameOver;
     private String winner;
 
-    public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp) {
+    public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp, String nodeType) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
         if (playerRelics != null) {
             for (String relicId : playerRelics) {
@@ -37,7 +37,17 @@ public class BattleService {
 
         List<EnemyGroupTemplate> groups = dataRepo.getAllEnemyGroups();
         if (groups.isEmpty()) throw new IllegalStateException("敌方阵容配置为空");
-        EnemyGroupTemplate chosenGroup = groups.get(new Random().nextInt(groups.size()));
+        // 根据节点类型筛选阵容
+        // 统一节点类型映射：前端传 "monster/elite/boss"，JSON 中用 "NORMAL/ELITE/BOSS"
+        String nodeTypeUpper = (nodeType != null) ? nodeType.toUpperCase() : null;
+        if ("MONSTER".equals(nodeTypeUpper)) nodeTypeUpper = "NORMAL";
+        List<EnemyGroupTemplate> filteredGroups = new ArrayList<>();
+        for (EnemyGroupTemplate g : groups) {
+            if (nodeTypeUpper != null && !g.getType().equalsIgnoreCase(nodeTypeUpper)) continue;
+            filteredGroups.add(g);
+        }
+        if (filteredGroups.isEmpty()) filteredGroups = groups;
+        EnemyGroupTemplate chosenGroup = filteredGroups.get(new Random().nextInt(filteredGroups.size()));
         
         this.enemies = new ArrayList<>();
         for (String eid : chosenGroup.getEnemies()) {
@@ -114,6 +124,22 @@ public class BattleService {
             energy = 0;
         } else {
             energy -= card.getCost();
+        }
+
+        // 🆕 地精大块头被动：玩家打出技能牌时，激怒敌人
+        if (card.getType() == Card.CardType.SKILL) {
+            for (Enemy e : enemies) {
+                for (StatusEffect s : e.getStatuses()) {
+                    if ("ANGRY".equals(s.getId())) {
+                        int angryPower = (int) (s.getCount() + 1);
+                        StatusEffect strength = com.slaythespire.game.model.factory.StatusFactory.create("STRENGTH", angryPower, dataRepo);
+                        if (strength != null) {
+                            e.addStatus(strength);
+                            logList.add("🔥 " + e.getEnemyName() + "因【激怒】获得 " + angryPower + " 点力量！");
+                        }
+                    }
+                }
+            }
         }
 
         if (card.getBlock() > 0) {
@@ -198,7 +224,9 @@ public class BattleService {
             int count = Math.min(card.getExhaustHandCount(), hand.size() - 1);
             for (int i = 0; i < count; i++) {
                 int targetIdx = resolveHandInteractionIndex(i, exhaustHandIndex, playedCardIndex, hand.size(), "消耗");
-                hand.remove(targetIdx);
+                Card exhaustedCard = hand.remove(targetIdx);
+                exhaustPile.add(exhaustedCard);
+                logList.add("🔥 消耗了手中的 " + exhaustedCard.getName());
                 if (targetIdx < playedCardIndex) {
                     playedCardIndex--;
                 }
@@ -462,7 +490,7 @@ public class BattleService {
         for (int i = 0; i < enemies.size(); i++) {
             Enemy e = enemies.get(i);
             Map<String, Object> eMap = new LinkedHashMap<>();
-            eMap.put("index", i); eMap.put("name", e.getEnemyName()); eMap.put("hp", e.getHp()); eMap.put("maxHp", e.getMaxHp());
+            eMap.put("index", i); eMap.put("name", e.getEnemyName()); eMap.put("hp", e.getHp()); eMap.put("maxHp", e.getMaxHp()); eMap.put("enemyType", e.getEnemyType());
             eMap.put("block", e.getBlock()); eMap.put("nextDamage", e.getNextDamage()); eMap.put("nextBlock", e.getNextBlock()); eMap.put("intentDesc", e.getIntentDesc());
             
             IntentTemplate intent = e.getCurrentIntentTemplate();
