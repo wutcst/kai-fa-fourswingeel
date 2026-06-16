@@ -12,13 +12,25 @@ const CARD_UI = {
     'INTANGIBLE':   { name: '无实体',   desc: '持续一回合，受到的所有伤害降低为 1。',                         decay: false }
   },
   RARITY_COLORS: { 'START': '#999999', 'COMMON': '#bdc3c7', 'UNCOMMON': '#5dade2', 'RARE': '#f1c40f', 'LEGENDARY': '#e74c3c', 'SPECIAL': '#8e44ad' },
-  
+
   getStatusName(type) { return this.STATUS_INFO[type]?.name || type; },
+
+  /** 获取卡牌的所有效果（优先读 effects 数组，降级读旧单字段） */
+  getCardEffects(card) {
+    if (!card) return [];
+    if (Array.isArray(card.effects) && card.effects.length > 0) {
+      return card.effects;
+    }
+    if (card.applyStatusType) {
+      return [{ type: card.applyStatusType, count: card.applyStatusCount || 0, target: card.applyStatusTarget || 'ENEMY' }];
+    }
+    return [];
+  },
 
   getCardEffectText(card) {
     if (!card) return '无效果';
     const parts = [];
-    
+
     if (card.xCost) parts.push(`X耗能 (消耗所有能量，效果触发X次)`);
     if (card.damage > 0) {
         const dmgText = card.multiHitCount > 1 ? `造成 ${card.damage} 点伤害 ${card.multiHitCount} 次` : `造成 ${card.damage} 点伤害`;
@@ -27,8 +39,8 @@ const CARD_UI = {
     if (card.block > 0) parts.push(`获得 ${card.block} 点格挡`);
     if (card.selfDamage > 0) parts.push(`失去 ${card.selfDamage} 点生命`);
     if (card.energyGain > 0) parts.push(`获得 ${card.energyGain} 点能量`);
-    
-    // 🆕 【核心调整】根据 drawFirst 决定抽牌、消耗、丢弃的文本顺序
+
+    // 🆕 根据 drawFirst 决定抽牌、消耗、丢弃的文本顺序
     if (card.drawFirst) {
         if (card.drawCount > 0) parts.push(`抽 ${card.drawCount} 张牌`);
         if (card.exhaustHandCount > 0) {
@@ -44,14 +56,17 @@ const CARD_UI = {
         if (card.discardCount > 0) parts.push(`丢弃 ${card.discardCount} 张手牌`);
         if (card.drawCount > 0) parts.push(`抽 ${card.drawCount} 张牌`);
     }
-    
-    if (card.applyStatusType) {
-        const sn = this.getStatusName(card.applyStatusType);
-        const isSelf = card.applyStatusTarget === 'SELF';
-        const aoeText = card.aoe && !isSelf ? '所有敌人' : (isSelf ? '自身' : '目标');
-        parts.push(`给${aoeText}${isSelf ? '获得' : '施加'} ${card.applyStatusCount} 层${sn}`);
-    }
-    
+
+    // 🆕 多效果系统：循环 effects 数组
+    const effects = this.getCardEffects(card);
+    effects.forEach(eff => {
+      if (!eff.type) return;
+      const sn = this.getStatusName(eff.type);
+      const isSelf = eff.target === 'SELF';
+      const aoeText = card.aoe && !isSelf ? '所有敌人' : (isSelf ? '自身' : '目标');
+      parts.push(`给${aoeText}${isSelf ? '获得' : '施加'} ${eff.count} 层${sn}`);
+    });
+
     if (card.unplayable) parts.push('无法被打出');
     if (card.innate) parts.push('固有');
     if (card.exhaust) parts.push('消耗');
@@ -90,7 +105,10 @@ const CARD_UI = {
     if (typeClass) el.classList.add(typeClass);
     const borderColor = this.getRarityBorderColor(card);
     el.style.borderColor = borderColor; el.style.borderWidth = '3px';
-    this.bindTooltip(el, card.applyStatusType);
+    // 🆕 多效果：绑定第一个效果的 tooltip
+    const effects = this.getCardEffects(card);
+    const firstType = effects.length > 0 ? effects[0].type : null;
+    this.bindTooltip(el, firstType);
   },
   bindTooltip(el, applyStatusType) {
     if (!applyStatusType) return;

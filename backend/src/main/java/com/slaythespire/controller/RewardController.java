@@ -1,5 +1,6 @@
 package com.slaythespire.controller;
 
+import com.slaythespire.game.model.CardEffect;
 import com.slaythespire.repository.CardTemplate;
 import com.slaythespire.repository.GameDataRepository;
 import com.slaythespire.repository.RelicTemplate;
@@ -104,8 +105,8 @@ public class RewardController {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", tpl.getId()); map.put("name", tpl.getName()); map.put("cost", tpl.getCost());
         map.put("damage", tpl.getDamage()); map.put("block", tpl.getBlock()); map.put("type", tpl.getType().name());
-        map.put("applyStatusType", tpl.getApplyStatusType()); map.put("applyStatusCount", tpl.getApplyStatusCount());
-        map.put("applyStatusTarget", tpl.getApplyStatusTarget()); map.put("charId", tpl.getCharId());
+        map.put("effects", CardEffect.listToMapList(tpl.getEffects()));
+        map.put("charId", tpl.getCharId());
         map.put("drawCount", tpl.getDrawCount()); map.put("upgraded", tpl.isUpgraded()); map.put("rarity", tpl.getRarity());  
         map.put("selfDamage", tpl.getSelfDamage()); map.put("energyGain", tpl.getEnergyGain()); map.put("multiHitCount", tpl.getMultiHitCount());
         map.put("exhaust", tpl.isExhaust()); map.put("ethereal", tpl.isEthereal()); map.put("retain", tpl.isRetain());

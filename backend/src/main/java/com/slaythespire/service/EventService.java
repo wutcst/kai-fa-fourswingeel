@@ -138,9 +138,7 @@ public class EventService {
                         cardMap.put("damage", chosen.getDamage());
                         cardMap.put("block", chosen.getBlock());
                         cardMap.put("type", chosen.getType().name());
-                        cardMap.put("applyStatusType", chosen.getApplyStatusType());
-                        cardMap.put("applyStatusCount", chosen.getApplyStatusCount());
-                        cardMap.put("applyStatusTarget", chosen.getApplyStatusTarget());
+                        cardMap.put("effects", com.slaythespire.game.model.CardEffect.listToMapList(chosen.getEffects()));
                         cardMap.put("exhaust", chosen.isExhaust());
                         cardMap.put("retain", chosen.isRetain());
                         cardMap.put("ethereal", chosen.isEthereal());

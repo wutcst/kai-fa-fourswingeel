@@ -243,8 +243,11 @@
       computed: {
         hand() { return this.state ? this.state.hand : []; },
         tooltipInfo() {
-          if (!this.tooltipCard || !this.tooltipCard.applyStatusType) return null;
-          return CARD_UI.STATUS_INFO[this.tooltipCard.applyStatusType] || null;
+          if (!this.tooltipCard) return null;
+          const effects = CARD_UI.getCardEffects(this.tooltipCard);
+          const firstType = effects.length > 0 ? effects[0].type : null;
+          if (!firstType) return null;
+          return CARD_UI.STATUS_INFO[firstType] || null;
         },
         // 🆕 预估打出该牌并结算抽牌后的手牌数量（用于精准判断是否需要选择消耗/丢弃）
         availableCardsAfterPlay() {
@@ -346,13 +349,16 @@
         
         showTooltip(index, event) {
           const card = this.hand[index];
-          if (card && card.applyStatusType) {
-            this.tooltipCard = card;
-            const w = window.innerWidth;
-            const x = event.clientX;
-            const y = event.clientY;
-            this.tooltipX = (x + 280 > w) ? x - 270 : x + 15;
-            this.tooltipY = Math.min(y, window.innerHeight - 120);
+          if (card) {
+            const effects = CARD_UI.getCardEffects(card);
+            if (effects.length > 0) {
+              this.tooltipCard = card;
+              const w = window.innerWidth;
+              const x = event.clientX;
+              const y = event.clientY;
+              this.tooltipX = (x + 280 > w) ? x - 270 : x + 15;
+              this.tooltipY = Math.min(y, window.innerHeight - 120);
+            }
           }
         },
         hideTooltip() { this.tooltipCard = null; },
