@@ -473,6 +473,9 @@ public class BattleService {
             if (cardData.containsKey("discardCount") && cardData.get("discardCount") != null) {
                 card.setDiscardCount(((Number) cardData.get("discardCount")).intValue());
             }
+            if (cardData.containsKey("discardMode") && cardData.get("discardMode") != null) {
+                card.setDiscardMode((String) cardData.get("discardMode"));
+            }
             if (cardData.containsKey("xCost")) card.setXCost((Boolean) cardData.get("xCost"));
             if (cardData.containsKey("aoe")) card.setAoe((Boolean) cardData.get("aoe"));
             
