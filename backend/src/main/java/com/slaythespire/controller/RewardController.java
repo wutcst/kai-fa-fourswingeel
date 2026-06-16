@@ -38,7 +38,9 @@ public class RewardController {
                 break;
             case "chest":
                 gold = 30 + random.nextInt(20);
-                relics.add(drawRelicMap(charId, ownedRelics, "common"));
+                // 宝箱按权重抽取：普通60% 稀有35% 传说5%
+                RelicTemplate chestRelic = relicPoolService.drawRelic(charId, ownedRelics);
+                if (chestRelic != null) relics.add(relicToMap(chestRelic));
                 break;
             case "monster":
             default:

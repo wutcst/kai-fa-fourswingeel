@@ -401,6 +401,7 @@ public class BattleService {
                     if (cardData.containsKey("selfDamage") && cardData.get("selfDamage") != null) card.setSelfDamage(((Number) cardData.get("selfDamage")).intValue());
                     if (cardData.containsKey("energyGain") && cardData.get("energyGain") != null) card.setEnergyGain(((Number) cardData.get("energyGain")).intValue());
                     if (cardData.containsKey("multiHitCount") && cardData.get("multiHitCount") != null) card.setMultiHitCount(((Number) cardData.get("multiHitCount")).intValue());
+                    if (cardData.containsKey("innate") && cardData.get("innate") != null) card.setInnate((Boolean) cardData.get("innate"));
                 }
             }
             if (card == null) {
