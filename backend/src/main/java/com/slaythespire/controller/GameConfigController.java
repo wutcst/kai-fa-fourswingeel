@@ -466,6 +466,9 @@ public class GameConfigController {
                 "oneshot"
             );
         } else if ("2".equals(charId)) {
+            info.put("name", "静默猎手");
+            info.put("maxHp", 70);  
+            info.put("gold", 99);              
             starterIds = Arrays.asList(
                 "strike_silent", "strike_silent", "strike_silent", "strike_silent", "strike_silent",
                 "defend_silent", "defend_silent", "defend_silent", "defend_silent","defend_slient",
@@ -476,6 +479,8 @@ public class GameConfigController {
             info.put("name", "未知角色");
             info.put("maxHp", 50);
             info.put("gold", 0);
+            info.put("startingDeck", Collections.emptyList());
+            info.put("startingRelicId", null);
         }
         
             List<Map<String, Object>> deck = new ArrayList<>();
