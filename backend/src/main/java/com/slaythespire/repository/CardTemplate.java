@@ -25,7 +25,13 @@ public class CardTemplate {
     private final int energyGain;
     private final int multiHitCount;
     private final int exhaustHandCount;
-    private final String exhaustHandMode; // "RANDOM" 或 "SELECT"
+    private final String exhaustHandMode;
+    private final boolean unplayable;
+    private final boolean innate;
+    private final int discardCount;
+    private final boolean xCost;
+    private final boolean aoe;
+    private final boolean drawFirst; // 🆕 新增：是否先抽牌再执行其他手牌交互
 
     @JsonCreator
     public CardTemplate(
@@ -41,7 +47,13 @@ public class CardTemplate {
             @JsonProperty("selfDamage") Integer selfDamage, @JsonProperty("energyGain") Integer energyGain,
             @JsonProperty("multiHitCount") Integer multiHitCount,
             @JsonProperty("exhaustHandCount") Integer exhaustHandCount,
-            @JsonProperty("exhaustHandMode") String exhaustHandMode) {
+            @JsonProperty("exhaustHandMode") String exhaustHandMode,
+            @JsonProperty("unplayable") Boolean unplayable,
+            @JsonProperty("innate") Boolean innate,
+            @JsonProperty("discardCount") Integer discardCount,
+            @JsonProperty("xCost") Boolean xCost,
+            @JsonProperty("aoe") Boolean aoe,
+            @JsonProperty("drawFirst") Boolean drawFirst) { // 🆕 新增参数
         
         this.id = id; this.name = name; this.cost = cost; this.damage = damage; this.block = block;
         this.type = type; this.applyStatusType = applyStatusType; this.applyStatusCount = applyStatusCount;
@@ -54,34 +66,24 @@ public class CardTemplate {
         this.multiHitCount = multiHitCount != null && multiHitCount > 0 ? multiHitCount : 1;
         this.exhaustHandCount = exhaustHandCount != null ? exhaustHandCount : 0;
         this.exhaustHandMode = exhaustHandMode != null ? exhaustHandMode.toUpperCase() : "RANDOM";
+        this.unplayable = unplayable != null ? unplayable : false;
+        this.innate = innate != null ? innate : false;
+        this.discardCount = discardCount != null ? discardCount : 0;
+        this.xCost = xCost != null ? xCost : false;
+        this.aoe = aoe != null ? aoe : false;
+        this.drawFirst = drawFirst != null ? drawFirst : false; // 🆕 默认 false (先丢弃/消耗，后抽牌)
     }
 
-    public String getId() { return id; } 
-    public String getName() { return name; } 
-    public int getCost() { return cost; }
-    public int getDamage() { return damage; } 
-    public int getBlock() { return block; } 
-    public CardType getType() { return type; }
-    public String getApplyStatusType() { return applyStatusType; } 
-    public int getApplyStatusCount() { return applyStatusCount; }
-    public String getApplyStatusTarget() { return applyStatusTarget; } 
-    public boolean isExhaust() { return exhaust; }
-    public boolean isRetain() { return retain; } 
-    public boolean isEthereal() { return ethereal; } 
-    public int getDrawCount() { return drawCount; }
-    public boolean isUpgraded() { return upgraded; } 
-    public String getCharId() { return charId; } 
-    public String getRarity() { return rarity; }
-    public int getSelfDamage() { return selfDamage; } 
-    public int getEnergyGain() { return energyGain; }
-    public int getMultiHitCount() { return multiHitCount; }
-    public int getExhaustHandCount() { return exhaustHandCount; }
+    public String getId() { return id; } public String getName() { return name; } public int getCost() { return cost; }
+    public int getDamage() { return damage; } public int getBlock() { return block; } public CardType getType() { return type; }
+    public String getApplyStatusType() { return applyStatusType; } public int getApplyStatusCount() { return applyStatusCount; }
+    public String getApplyStatusTarget() { return applyStatusTarget; } public boolean isExhaust() { return exhaust; }
+    public boolean isRetain() { return retain; } public boolean isEthereal() { return ethereal; } public int getDrawCount() { return drawCount; }
+    public boolean isUpgraded() { return upgraded; } public String getCharId() { return charId; } public String getRarity() { return rarity; }
+    public int getSelfDamage() { return selfDamage; } public int getEnergyGain() { return energyGain; }
+    public int getMultiHitCount() { return multiHitCount; } public int getExhaustHandCount() { return exhaustHandCount; }
     public String getExhaustHandMode() { return exhaustHandMode; }
-
-    @Override
-    public String toString() {
-        return String.format("CardTemplate{id='%s', name='%s', cost=%d, damage=%d, block=%d, type=%s, " +
-                        "exhaust=%s, exhaustHandCount=%d, exhaustHandMode=%s, upgraded=%s}",
-                id, name, cost, damage, block, type, exhaust, exhaustHandCount, exhaustHandMode, upgraded);
-    }
+    public boolean isUnplayable() { return unplayable; } public boolean isInnate() { return innate; }
+    public int getDiscardCount() { return discardCount; } public boolean isXCost() { return xCost; } public boolean isAoe() { return aoe; }
+    public boolean isDrawFirst() { return drawFirst; } // 🆕 新增 Getter
 }

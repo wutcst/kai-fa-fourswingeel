@@ -405,7 +405,7 @@ public class GameConfigController {
                 cardMap.put("drawCount", tpl.getDrawCount());
                 cardMap.put("rarity", tpl.getRarity());
                 
-                // 🆕 补全商店卡牌缺失的字段
+                // 🆕 补全商店卡牌缺失的所有新机制字段
                 cardMap.put("upgraded", tpl.isUpgraded());
                 cardMap.put("selfDamage", tpl.getSelfDamage());
                 cardMap.put("energyGain", tpl.getEnergyGain());
@@ -415,6 +415,12 @@ public class GameConfigController {
                 cardMap.put("retain", tpl.isRetain());
                 cardMap.put("exhaustHandCount", tpl.getExhaustHandCount());
                 cardMap.put("exhaustHandMode", tpl.getExhaustHandMode());
+                cardMap.put("unplayable", tpl.isUnplayable());
+                cardMap.put("innate", tpl.isInnate());
+                cardMap.put("discardCount", tpl.getDiscardCount());
+                cardMap.put("xCost", tpl.isXCost());
+                cardMap.put("aoe", tpl.isAoe());
+                cardMap.put("drawFirst", tpl.isDrawFirst()); // 🆕 最新补充
                 
                 int price = 50 + (tpl.getCost() * 25);
                 if (tpl.getDamage() > 10 || tpl.getBlock() > 10) price += 20;
@@ -475,7 +481,7 @@ public class GameConfigController {
                     cardMap.put("drawCount", tpl.getDrawCount());
                     cardMap.put("rarity", tpl.getRarity());
                     
-                    // 🆕 补全初始卡组缺失的字段
+                    // 🆕 补全初始卡组缺失的所有新机制字段
                     cardMap.put("upgraded", tpl.isUpgraded());
                     cardMap.put("selfDamage", tpl.getSelfDamage());
                     cardMap.put("energyGain", tpl.getEnergyGain());
@@ -485,6 +491,12 @@ public class GameConfigController {
                     cardMap.put("retain", tpl.isRetain());
                     cardMap.put("exhaustHandCount", tpl.getExhaustHandCount());
                     cardMap.put("exhaustHandMode", tpl.getExhaustHandMode());
+                    cardMap.put("unplayable", tpl.isUnplayable());
+                    cardMap.put("innate", tpl.isInnate());
+                    cardMap.put("discardCount", tpl.getDiscardCount());
+                    cardMap.put("xCost", tpl.isXCost());
+                    cardMap.put("aoe", tpl.isAoe());
+                    cardMap.put("drawFirst", tpl.isDrawFirst()); // 🆕 最新补充
                     
                     deck.add(cardMap);
                 }
@@ -536,7 +548,7 @@ public class GameConfigController {
         map.put("upgraded", tpl.isUpgraded());
         map.put("rarity", tpl.getRarity());
         
-        // 🆕 补全单卡查询缺失的字段
+        // 🆕 补全单卡查询缺失的所有新机制字段
         map.put("selfDamage", tpl.getSelfDamage());
         map.put("energyGain", tpl.getEnergyGain());
         map.put("multiHitCount", tpl.getMultiHitCount());
@@ -545,6 +557,12 @@ public class GameConfigController {
         map.put("retain", tpl.isRetain());
         map.put("exhaustHandCount", tpl.getExhaustHandCount());
         map.put("exhaustHandMode", tpl.getExhaustHandMode());
+        map.put("unplayable", tpl.isUnplayable());
+        map.put("innate", tpl.isInnate());
+        map.put("discardCount", tpl.getDiscardCount());
+        map.put("xCost", tpl.isXCost());
+        map.put("aoe", tpl.isAoe());
+        map.put("drawFirst", tpl.isDrawFirst()); // 🆕 最新补充
         
         return map;
     }

@@ -2,12 +2,8 @@ package com.slaythespire.game.model;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import com.slaythespire.repository.GameDataRepository;
 
-/**
- * 战斗实体基类 - 统一处理血量、格挡、状态和遗物的触发逻辑
- */
 public abstract class Combatant {
     protected int hp;
     protected int maxHp;
@@ -17,6 +13,7 @@ public abstract class Combatant {
     
     protected List<String> lastTurnEndLogs = new ArrayList<>();
     protected List<String> turnStartLogs = new ArrayList<>();
+    protected List<String> lastCombatLogs = new ArrayList<>();
 
     /** 本回合已扣除的实际生命（用于每回合伤害上限遗物） */
     protected int actualDamageTakenThisTurn = 0;
@@ -51,6 +48,12 @@ public abstract class Combatant {
         turnStartLogs.clear();
         return copy;
     }
+
+    public List<String> getLastCombatLogs() {
+        List<String> copy = new ArrayList<>(lastCombatLogs);
+        lastCombatLogs.clear();
+        return copy;
+    }
     
     protected void addTurnStartLog(String log) {
         if (log != null) turnStartLogs.add(log);
@@ -61,13 +64,34 @@ public abstract class Combatant {
     }
 
     public int takeDamage(int rawDamage, Combatant source, boolean ignoreBlock) {
+        lastCombatLogs.clear();
         int finalDamage = rawDamage;
+        
         if (source != null) {
             for (StatusEffect s : source.statuses) finalDamage = s.onDamageDealt(finalDamage, source, this);
             for (Relic r : source.relics) finalDamage = r.onDamageDealt(finalDamage, source, this);
         }
         for (StatusEffect s : this.statuses) finalDamage = s.onDamageTaken(finalDamage, source, this);
         for (Relic r : this.relics) finalDamage = r.onDamageTaken(finalDamage, this);
+
+        // ==========================================
+        // 🛡️ 【无实体】判定：持续一回合，不消耗层数
+        // ==========================================
+        StatusEffect intangible = null;
+        for (StatusEffect s : this.statuses) {
+            if ("INTANGIBLE".equals(s.getId()) && s.getCount() > 0) {
+                intangible = s;
+                break;
+            }
+        }
+        
+        if (intangible != null && finalDamage > 1) {
+            finalDamage = 1; // 伤害强制截断为 1
+            // 🆕 不再减少层数，因为现在是“持续一回合”
+            
+            String entityName = (this instanceof Player) ? "玩家" : ((Enemy) this).getEnemyName();
+            lastCombatLogs.add(String.format("👻 %s 的【无实体】生效，伤害被截断为 1", entityName));
+        }
 
         int blocked = 0;
         if (!ignoreBlock) {
@@ -80,9 +104,7 @@ public abstract class Combatant {
         int capPerTurn = getDamageCapPerTurn();
         if (capPerTurn > 0) {
             int remaining = Math.max(0, capPerTurn - actualDamageTakenThisTurn);
-            if (hpLost > remaining) {
-                hpLost = remaining;
-            }
+            if (hpLost > remaining) hpLost = remaining;
         }
         actualDamageTakenThisTurn += hpLost;
 
@@ -103,8 +125,10 @@ public abstract class Combatant {
         }
         List<StatusEffect> toRemove = new ArrayList<>();
         
-        // ✅ 修复：遍历副本，防止 onTurnEnd 内部添加新状态导致 ConcurrentModificationException
         for (StatusEffect s : new ArrayList<>(statuses)) {
+            // 🆕 【关键修改】跳过无实体的自动衰减，由 BattleService 在特定时机精确控制
+            if ("INTANGIBLE".equals(s.getId())) continue; 
+            
             String log = s.onTurnEnd(this); 
             if (log != null) lastTurnEndLogs.add(log);
             s.decrement();
