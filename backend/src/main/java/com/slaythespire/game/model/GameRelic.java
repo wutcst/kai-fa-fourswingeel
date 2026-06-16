@@ -9,6 +9,9 @@ public class GameRelic implements Relic {
     private final String effectType;
     private final int value;
 
+    /** 每回合已承受的伤害（用于每回合伤害上限） */
+    private int damageTakenThisTurn = 0;
+
     public GameRelic(RelicTemplate template) {
         this.id = template.getId();
         this.name = template.getName();
@@ -25,6 +28,7 @@ public class GameRelic implements Relic {
 
     @Override
     public void onTurnStart(Combatant owner) {
+        damageTakenThisTurn = 0;
         if ("NO_EFFECT".equals(effectType)) return;
         if ("HEAL_START_TURN".equals(effectType)) owner.heal(value);
         if ("BLOCK_START_TURN".equals(effectType)) owner.gainBlock(value);
@@ -41,6 +45,13 @@ public class GameRelic implements Relic {
     public int onDamageTaken(int amount, Combatant owner) {
         if ("NO_EFFECT".equals(effectType)) return amount;
         if ("DAMAGE_CAP".equals(effectType)) return Math.min(amount, value);
+        // 每回合伤害上限：累计超过 value 的部分归零
+        if ("DAMAGE_CAP_PER_TURN".equals(effectType)) {
+            int remaining = Math.max(0, value - damageTakenThisTurn);
+            int actual = Math.min(amount, remaining);
+            damageTakenThisTurn += actual;
+            return actual;
+        }
         return amount;
     }
 }
