@@ -418,7 +418,7 @@ public class GameConfigController {
                 cardMap.put("unplayable", tpl.isUnplayable());
                 cardMap.put("innate", tpl.isInnate());
                 cardMap.put("discardCount", tpl.getDiscardCount());
-                cardMap.put("xCost", tpl.isXCost());
+                cardMap.put("discardMode", tpl.getDiscardMode());
                 cardMap.put("aoe", tpl.isAoe());
                 cardMap.put("drawFirst", tpl.isDrawFirst()); // 🆕 最新补充
                 
@@ -471,7 +471,7 @@ public class GameConfigController {
             info.put("gold", 99);              
             starterIds = Arrays.asList(
                 "strike_silent", "strike_silent", "strike_silent", "strike_silent", "strike_silent",
-                "defend_silent", "defend_silent", "defend_silent", "defend_silent","defend_slient",
+                "defend_silent", "defend_silent", "defend_silent", "defend_silent","defend_silent",
                 "survivor","neutralize",
                 "oneshot"
             );
@@ -514,7 +514,7 @@ public class GameConfigController {
                     cardMap.put("unplayable", tpl.isUnplayable());
                     cardMap.put("innate", tpl.isInnate());
                     cardMap.put("discardCount", tpl.getDiscardCount());
-                    cardMap.put("xCost", tpl.isXCost());
+                    cardMap.put("discardMode", tpl.getDiscardMode());
                     cardMap.put("aoe", tpl.isAoe());
                     cardMap.put("drawFirst", tpl.isDrawFirst()); // 🆕 最新补充
                     

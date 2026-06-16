@@ -546,7 +546,6 @@ public class BattleService {
         }
 
         state.put("energy", energy); state.put("drawPileSize", drawPile.size()); state.put("discardPileSize", discardPile.size()); state.put("exhaustPileSize", exhaustPile.size()); state.put("handSize", hand.size()); state.put("handLimit", HAND_LIMIT);
-        state.put("exhaustPileSize", exhaustPile.size()); state.put("handSize", hand.size()); state.put("handLimit", HAND_LIMIT);
 
         List<Map<String, Object>> handCards = new ArrayList<>();
         for (int i = 0; i < hand.size(); i++) {
@@ -565,6 +564,7 @@ public class BattleService {
             cardInfo.put("unplayable", c.isUnplayable());
             cardInfo.put("innate", c.isInnate());
             cardInfo.put("discardCount", c.getDiscardCount());
+            cardInfo.put("discardMode", c.getDiscardMode());
             cardInfo.put("xCost", c.isXCost());
             cardInfo.put("aoe", c.isAoe());
             cardInfo.put("drawFirst", c.isDrawFirst()); // 🆕 传递给前端
@@ -604,6 +604,11 @@ public class BattleService {
             info.put("exhaustHandCount", c.getExhaustHandCount());
             info.put("exhaustHandMode", c.getExhaustHandMode());
             info.put("innate", c.isInnate()); info.put("aoe", c.isAoe());
+            info.put("unplayable", c.isUnplayable());
+            info.put("discardCount", c.getDiscardCount());
+            info.put("discardMode", c.getDiscardMode());
+            info.put("xCost", c.isXCost());
+            info.put("drawFirst", c.isDrawFirst());
             info.put("upgraded", c.isUpgraded());
             list.add(info);
         }

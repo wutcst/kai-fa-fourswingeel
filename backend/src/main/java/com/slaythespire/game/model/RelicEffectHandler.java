@@ -39,17 +39,6 @@ public class RelicEffectHandler {
         }
     }
 
-    /** 受到伤害时触发，返回调整后的伤害值 */
-    public static int onDamageTaken(int amount, Combatant owner) {
-        for (Relic r : owner.getRelics()) {
-            GameRelic gr = (GameRelic) r;
-            switch (gr.getEffectType()) {
-                case "DAMAGE_CAP" -> amount = Math.min(amount, gr.getValue());
-            }
-        }
-        return amount;
-    }
-
     /** 检查是否有指定效果的遗物 */
     public static boolean hasEffect(Combatant combatant, String effectType) {
         for (Relic r : combatant.getRelics()) {

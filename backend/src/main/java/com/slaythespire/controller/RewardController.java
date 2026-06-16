@@ -110,7 +110,7 @@ public class RewardController {
         map.put("selfDamage", tpl.getSelfDamage()); map.put("energyGain", tpl.getEnergyGain()); map.put("multiHitCount", tpl.getMultiHitCount());
         map.put("exhaust", tpl.isExhaust()); map.put("ethereal", tpl.isEthereal()); map.put("retain", tpl.isRetain());
         map.put("exhaustHandCount", tpl.getExhaustHandCount()); map.put("exhaustHandMode", tpl.getExhaustHandMode());
-        map.put("unplayable", tpl.isUnplayable()); map.put("innate", tpl.isInnate()); map.put("discardCount", tpl.getDiscardCount());
+        map.put("unplayable", tpl.isUnplayable()); map.put("innate", tpl.isInnate()); map.put("discardCount", tpl.getDiscardCount()); map.put("discardMode", tpl.getDiscardMode());
         map.put("xCost", tpl.isXCost()); map.put("aoe", tpl.isAoe());
         map.put("drawFirst", tpl.isDrawFirst()); // 🆕 补全新字段
         return map;
