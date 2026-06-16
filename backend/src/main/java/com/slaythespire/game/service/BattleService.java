@@ -90,8 +90,14 @@ public class BattleService {
         player.onTurnStart();
         logList.addAll(player.getLastTurnStartLogs());
         energy = 3;
+        if (RelicEffectHandler.hasEffect(player, "ENERGY_FIRST_TURN")) {
+            int val = RelicEffectHandler.getEffectValue(player, "ENERGY_FIRST_TURN");
+            energy += val;
+            logList.add("🏮 灯笼使初始能量 +" + val);
+        }
         
         int drawCount = Math.max(0, 5 - innateCards.size());
+        if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) drawCount++;
         drawCards(drawCount);
         
         return getCurrentState();
@@ -259,6 +265,7 @@ public class BattleService {
         } else if (finalCard.isExhaust()) {
             exhaustPile.add(finalCard);
             logList.add(finalCard.getName() + "被消耗");
+            triggerDrawOnExhaust();
         } else {
             discardPile.add(finalCard);
         }
@@ -301,15 +308,17 @@ public class BattleService {
             decrementIntangible(e);
         }
 
+        boolean hasRunePyramid = RelicEffectHandler.hasEffect(player, "RUNE_PYRAMID");
         List<Card> retained = new ArrayList<>();
         for (Card card : hand) {
-            if (card.isEthereal()) { 
-                exhaustPile.add(card); 
-                logList.add(card.getName() + "因【虚无】被消耗"); 
-            } else if (card.isRetain()) { 
-                retained.add(card); 
-            } else { 
-                discardPile.add(card); 
+            if (card.isEthereal()) {
+                exhaustPile.add(card);
+                logList.add(card.getName() + "因【虚无】被消耗");
+            triggerDrawOnExhaust();
+            } else if (hasRunePyramid || card.isRetain()) {
+                retained.add(card);
+            } else {
+                discardPile.add(card);
             }
         }
         hand.clear(); 
@@ -354,7 +363,9 @@ public class BattleService {
         if (!player.isAlive()) { gameOver = true; winner = "敌人"; logList.add("💀 玩家倒下..."); return getCurrentState(); }
 
         energy = 3;
-        drawCards(5);
+        int turnDrawCount = 5 - retained.size();
+        if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) turnDrawCount++;
+        drawCards(Math.max(0, turnDrawCount));
         for (Enemy enemy : enemies) enemy.advanceIntent();
         return getCurrentState();
     }
@@ -421,6 +432,7 @@ public class BattleService {
                     if (cardData.containsKey("selfDamage") && cardData.get("selfDamage") != null) card.setSelfDamage(((Number) cardData.get("selfDamage")).intValue());
                     if (cardData.containsKey("energyGain") && cardData.get("energyGain") != null) card.setEnergyGain(((Number) cardData.get("energyGain")).intValue());
                     if (cardData.containsKey("multiHitCount") && cardData.get("multiHitCount") != null) card.setMultiHitCount(((Number) cardData.get("multiHitCount")).intValue());
+                    if (cardData.containsKey("innate") && cardData.get("innate") != null) card.setInnate((Boolean) cardData.get("innate"));
                 }
             }
             if (card == null) {
@@ -563,6 +575,13 @@ public class BattleService {
         state.put("exhaustPile", cardsToStateList(exhaustPile));
         state.put("log", new ArrayList<>(logList)); state.put("gameOver", gameOver); state.put("winner", winner);
         return state;
+    }
+
+    private void triggerDrawOnExhaust() {
+        if (RelicEffectHandler.hasEffect(player, "DRAW_ON_EXHAUST")) {
+            drawCards(1);
+            logList.add("📄 金纸触发，抽了一张牌");
+        }
     }
 
     private void validateBattleActive() { if (gameOver) throw new IllegalStateException("战斗已经结束"); }

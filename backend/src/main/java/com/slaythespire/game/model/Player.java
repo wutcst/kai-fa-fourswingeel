@@ -22,15 +22,16 @@ public class Player extends Combatant {
 
     @Override
     public void onTurnStart() {
+        actualDamageTakenThisTurn = 0;
         clearBlock();
-        turnStartLogs.clear(); // 使用父类的 protected 字段
-        
-        // ✅ 遍历副本防止并发修改异常
+        turnStartLogs.clear();
+
         for (StatusEffect s : new ArrayList<>(statuses)) {
-            addTurnStartLog(s.onTurnStart(this)); // 使用父类提供的方法
+            addTurnStartLog(s.onTurnStart(this));
         }
-        
-        for (Relic r : getRelics()) r.onTurnStart(this);
+
+        // 遗物效果统一由 RelicEffectHandler 处理
+        RelicEffectHandler.onPlayerTurnStart(this);
     }
 
     /** 添加状态牌（灼伤、晕眩等）到玩家的弃牌堆/手中 */

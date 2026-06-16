@@ -44,8 +44,11 @@ public class Enemy extends Combatant {
 
     @Override
     public void onTurnStart() {
+        actualDamageTakenThisTurn = 0;
         clearBlock();
-        turnStartLogs.clear();
+        turnStartLogs.clear(); // 使用父类的 protected 字段
+        
+        // ✅ 遍历副本防止并发修改异常
         for (StatusEffect s : new ArrayList<>(statuses)) {
             addTurnStartLog(s.onTurnStart(this));
         }

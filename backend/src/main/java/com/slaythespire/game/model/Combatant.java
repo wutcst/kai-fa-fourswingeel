@@ -15,6 +15,9 @@ public abstract class Combatant {
     protected List<String> turnStartLogs = new ArrayList<>();
     protected List<String> lastCombatLogs = new ArrayList<>();
 
+    /** 本回合已扣除的实际生命（用于每回合伤害上限遗物） */
+    protected int actualDamageTakenThisTurn = 0;
+
     public Combatant(int hp, int maxHp) {
         this.maxHp = maxHp;
         this.hp = Math.max(0, Math.min(hp, maxHp));
@@ -91,12 +94,27 @@ public abstract class Combatant {
         }
 
         int blocked = 0;
-        if (!ignoreBlock) { 
+        if (!ignoreBlock) {
             blocked = Math.min(block, finalDamage);
             block -= blocked;
         }
-        
-        hp = Math.max(0, hp - (finalDamage - blocked));
+        int hpLost = finalDamage - blocked;
+
+        // 每回合实际扣血上限（魔法护盾类遗物）
+        int capPerTurn = getDamageCapPerTurn();
+        if (capPerTurn > 0) {
+            int remaining = Math.max(0, capPerTurn - actualDamageTakenThisTurn);
+            if (hpLost > remaining) hpLost = remaining;
+        }
+        actualDamageTakenThisTurn += hpLost;
+
+        hp = Math.max(0, hp - hpLost);
+
+        // 荆棘甲反伤（对攻击者造成固定伤害）
+        if (hpLost > 0 && source != null) {
+            RelicEffectHandler.handleThornsDamage(source, this);
+        }
+
         return finalDamage;
     }
 
@@ -133,6 +151,11 @@ public abstract class Combatant {
     public void clearBlock() { block = 0; }
     public void heal(int amount) { if (amount > 0) hp = Math.min(hp + amount, maxHp); }
     public boolean isAlive() { return hp > 0; }
+
+    /** 检查遗物中的每回合伤害上限（委托给处理器） */
+    private int getDamageCapPerTurn() {
+        return RelicEffectHandler.getDamageCapPerTurn(this);
+    }
     
     public abstract void onTurnStart();
     public abstract GameDataRepository getDataRepo();

@@ -19,12 +19,33 @@ public class RewardController {
                                           @RequestParam(required = false) List<String> ownedRelics,
                                           @RequestParam(defaultValue = "1") String charId) {
         Map<String, Object> reward = new LinkedHashMap<>();
-        int gold = 0; Map<String, Object> relic = null;
+        int gold = 0;
+        List<Map<String, Object>> relics = new ArrayList<>();
+
         switch (nodeType.toLowerCase()) {
-            case "elite": gold = 40 + random.nextInt(15); relic = drawRelicMap(charId, ownedRelics, "rare"); break;
-            case "boss": gold = 100 + random.nextInt(50); relic = drawRelicMap(charId, ownedRelics, "rare"); break;
-            case "chest": gold = 30 + random.nextInt(20); relic = drawRelicMap(charId, ownedRelics, "common"); break;
-            case "monster": default: gold = 15 + random.nextInt(15); relic = null; break;
+            case "elite":
+                gold = 40 + random.nextInt(15);
+                relics.add(drawRelicMap(charId, ownedRelics, "rare"));
+                break;
+            case "boss":
+                gold = 100 + random.nextInt(50);
+                // 第1个：必定传说
+                Map<String, Object> leg = drawRelicMap(charId, ownedRelics, "legendary");
+                relics.add(leg);
+                // 第2个：稀有/普通 35/65
+                String secondTier = random.nextInt(100) < 35 ? "rare" : "common";
+                relics.add(drawRelicMap(charId, ownedRelics != null ? ownedRelics : new ArrayList<>(), secondTier));
+                break;
+            case "chest":
+                gold = 30 + random.nextInt(20);
+                // 宝箱按权重抽取：普通60% 稀有35% 传说5%
+                RelicTemplate chestRelic = relicPoolService.drawRelic(charId, ownedRelics);
+                if (chestRelic != null) relics.add(relicToMap(chestRelic));
+                break;
+            case "monster":
+            default:
+                gold = 15 + random.nextInt(15);
+                break;
         }
         reward.put("gold", gold); reward.put("relic", relic);
         

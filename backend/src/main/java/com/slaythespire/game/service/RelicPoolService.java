@@ -19,15 +19,16 @@ public class RelicPoolService {
 
     private final Random random = new Random();
 
-    /** 各稀有度权重，key按优先级排列（后续可移到配置文件） */
+    /** 各稀有度权重，key按优先级排列 */
     private static final LinkedHashMap<String, Integer> TIER_WEIGHTS = new LinkedHashMap<>();
     static {
-        TIER_WEIGHTS.put("COMMON", 70);
-        TIER_WEIGHTS.put("RARE", 30);
+        TIER_WEIGHTS.put("COMMON", 60);
+        TIER_WEIGHTS.put("RARE", 35);
+        TIER_WEIGHTS.put("LEGENDARY", 5);
     }
 
     /** 稀有度降级链（从高到低），用于指定稀有度抽取时空了自动降级 */
-    private static final List<String> TIER_FALLBACK = Arrays.asList("RARE", "COMMON");
+    private static final List<String> TIER_FALLBACK = Arrays.asList("LEGENDARY", "RARE", "COMMON");
 
     /**
      * 按权重随机抽取遗物（用于商店等不限定稀有度的场景）

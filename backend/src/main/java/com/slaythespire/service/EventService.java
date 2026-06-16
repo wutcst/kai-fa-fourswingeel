@@ -100,7 +100,7 @@ public class EventService {
                     if (tier != null) {
                         relic = relicPoolService.drawRelic(charId, saveData.getRelics(), tier);
                     }
-                    if (relic == null) {
+                    if (relic == null || "ring".equals(relic.getId())) {
                         // 降级到任何稀有度
                         relic = relicPoolService.drawRelic(charId, saveData.getRelics());
                     }

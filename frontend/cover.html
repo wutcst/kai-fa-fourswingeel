@@ -137,7 +137,7 @@
             playerHp: charData.maxHp,
             maxHp: charData.maxHp,
             gold: charData.gold || 0,
-            deck: charData.startingDeck,
+            deck: [...(charData.startingDeck || []), { id: 'strike', name: '调试', cost: 0, damage: 999, block: 0, type: 'ATTACK', innate: true, charId: '1', rarity: 'COMMON' }],
             relics: startingRelicId ? [startingRelicId] : [],
             visitedNodes: ['start'],
             currentNode: 'start',
