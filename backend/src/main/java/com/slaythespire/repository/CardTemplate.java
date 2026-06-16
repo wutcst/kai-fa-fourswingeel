@@ -29,9 +29,10 @@ public class CardTemplate {
     private final boolean unplayable;
     private final boolean innate;
     private final int discardCount;
+    private final String discardMode;     // 🆕 新增
     private final boolean xCost;
     private final boolean aoe;
-    private final boolean drawFirst; // 🆕 新增：是否先抽牌再执行其他手牌交互
+    private final boolean drawFirst; 
 
     @JsonCreator
     public CardTemplate(
@@ -51,9 +52,10 @@ public class CardTemplate {
             @JsonProperty("unplayable") Boolean unplayable,
             @JsonProperty("innate") Boolean innate,
             @JsonProperty("discardCount") Integer discardCount,
+            @JsonProperty("discardMode") String discardMode,   // 🆕 新增参数
             @JsonProperty("xCost") Boolean xCost,
             @JsonProperty("aoe") Boolean aoe,
-            @JsonProperty("drawFirst") Boolean drawFirst) { // 🆕 新增参数
+            @JsonProperty("drawFirst") Boolean drawFirst) {
         
         this.id = id; this.name = name; this.cost = cost; this.damage = damage; this.block = block;
         this.type = type; this.applyStatusType = applyStatusType; this.applyStatusCount = applyStatusCount;
@@ -69,9 +71,10 @@ public class CardTemplate {
         this.unplayable = unplayable != null ? unplayable : false;
         this.innate = innate != null ? innate : false;
         this.discardCount = discardCount != null ? discardCount : 0;
+        this.discardMode = discardMode != null ? discardMode.toUpperCase() : "RANDOM"; // 🆕 默认 RANDOM
         this.xCost = xCost != null ? xCost : false;
         this.aoe = aoe != null ? aoe : false;
-        this.drawFirst = drawFirst != null ? drawFirst : false; // 🆕 默认 false (先丢弃/消耗，后抽牌)
+        this.drawFirst = drawFirst != null ? drawFirst : false;
     }
 
     public String getId() { return id; } public String getName() { return name; } public int getCost() { return cost; }
@@ -84,6 +87,7 @@ public class CardTemplate {
     public int getMultiHitCount() { return multiHitCount; } public int getExhaustHandCount() { return exhaustHandCount; }
     public String getExhaustHandMode() { return exhaustHandMode; }
     public boolean isUnplayable() { return unplayable; } public boolean isInnate() { return innate; }
-    public int getDiscardCount() { return discardCount; } public boolean isXCost() { return xCost; } public boolean isAoe() { return aoe; }
-    public boolean isDrawFirst() { return drawFirst; } // 🆕 新增 Getter
+    public int getDiscardCount() { return discardCount; } public String getDiscardMode() { return discardMode; } // 🆕
+    public boolean isXCost() { return xCost; } public boolean isAoe() { return aoe; }
+    public boolean isDrawFirst() { return drawFirst; }
 }

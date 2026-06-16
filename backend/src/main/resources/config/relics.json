@@ -1,24 +1,17 @@
 [
   { "id": "burning_blood", "name": "燃烧之血", "description": "每场战斗胜利后，恢复 6 点生命。", "effectType": "NO_EFFECT", "value": 6, "rarity": "STARTER", "charId": "1" },
   { "id": "red_skull", "name": "红头骨", "description": "最大生命值 +10。", "effectType": "MAX_HP", "value": 10, "rarity": "COMMON", "charId": null },
-
   { "id": "spike_armor", "name": "尖刺护甲", "description": "每回合结束时，获得 3 点格挡。", "effectType": "BLOCK_END_TURN", "value": 3, "rarity": "COMMON", "charId": null },
-
   { "id": "magic_shield", "name": "魔法护盾", "description": "每回合最多失去 20 点生命。", "effectType": "DAMAGE_CAP_PER_TURN", "value": 20, "rarity": "LEGENDARY", "charId": null },
-
   { "id": "blood_dagger", "name": "带血匕首", "description": "回合开始时，若生命低于 50%，获得 2 点力量。", "effectType": "STRENGTH_IF_HALF_HP", "value": 2, "rarity": "RARE", "charId": null },
-
   { "id": "gold_paper", "name": "金纸", "description": "每当你消耗一张牌，抽一张牌。", "effectType": "DRAW_ON_EXHAUST", "value": 1, "rarity": "RARE", "charId": null },
-
   { "id": "lantern", "name": "灯笼", "description": "每场战斗的第一回合获得 1 点能量。", "effectType": "ENERGY_FIRST_TURN", "value": 1, "rarity": "COMMON", "charId": null },
-
   { "id": "thorns", "name": "荆棘甲", "description": "受到攻击时，对攻击者造成 3 点伤害。", "effectType": "THORNS", "value": 3, "rarity": "COMMON", "charId": null },
-
   { "id": "tactical_note", "name": "战术笔记", "description": "每回合第一次抽牌多抽 1 张。", "effectType": "FIRST_DRAW_BONUS", "value": 1, "rarity": "RARE", "charId": null },
-
   { "id": "rune_pyramid", "name": "符文金字塔", "description": "回合结束时，手牌不会洗入弃牌堆。", "effectType": "RUNE_PYRAMID", "value": 0, "rarity": "LEGENDARY", "charId": null },
   { "id": "ring", "name": "头环", "description": "无效果。当你拥有所有遗物时，它将作为替代奖励出现。", "effectType": "NO_EFFECT", "value": 0, "rarity": "SPECIAL", "charId": null },
-    { "id": "neow_remove", "name": "净化卷轴", "description": "初始恩惠：从卡组中删除一张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },
+  { "id": "neow_remove", "name": "净化卷轴", "description": "初始恩惠：从卡组中删除一张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },
   { "id": "neow_blood", "name": "血之契约", "description": "初始恩惠：失去10点生命，从卡组中删除两张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },
-  { "id": "neow_upgrade", "name": "锻造圣锤", "description": "初始恩惠：升级卡组中的一张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null }
+  { "id": "neow_upgrade", "name": "锻造圣锤", "description": "初始恩惠：升级卡组中的一张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },
+  { "id": "snake_eye_ring", "name": "蛇眼戒指", "description": "每场战斗的第一回合，多抽2张牌。", "effectType": "FIRST_DRAW_BONUS", "value": 2, "rarity": "STARTER", "charId": "2" }
 ]

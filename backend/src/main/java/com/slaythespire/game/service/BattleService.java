@@ -233,6 +233,8 @@ public class BattleService {
                 Card exhaustedCard = hand.remove(targetIdx);
                 exhaustPile.add(exhaustedCard);
                 logList.add("🔥 消耗了手中的 " + exhaustedCard.getName());
+                // 🆕 消耗手牌时触发金纸抽牌
+                triggerDrawOnExhaust();
                 if (targetIdx < playedCardIndex) {
                     playedCardIndex--;
                 }

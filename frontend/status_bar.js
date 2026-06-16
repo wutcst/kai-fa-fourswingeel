@@ -14,7 +14,10 @@
 
     function updateBar() {
         const data = getPlayerData();
-        const charNames = { '1': '🦾 铁甲战士', '2': '❓ ???' };
+        const charNames = {
+            '1': '🦾 铁甲战士',
+            '2': '🔪 静默猎手'
+        };
         
         const charEl = document.getElementById('bar-char');
         const hpEl = document.getElementById('bar-hp');
@@ -58,10 +61,12 @@
     function ensureInitialRelics() {
         const char = localStorage.getItem('char') || '1';
         let relicsStr = localStorage.getItem('relics');
-        // 如果不存在或为空数组，并且是铁甲战士，则补充燃烧之血
+        // 如果不存在或为空数组，则补充初始遗物
         if (!relicsStr || relicsStr === '[]') {
             if (char === '1') {
                 localStorage.setItem('relics', JSON.stringify(['burning_blood']));
+            } else if (char === '2') {
+                localStorage.setItem('relics', JSON.stringify(['snake_eye_ring']));
             }
         }
     }

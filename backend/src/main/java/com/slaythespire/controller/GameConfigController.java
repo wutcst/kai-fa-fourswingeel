@@ -454,16 +454,30 @@ public class GameConfigController {
     @GetMapping("/character/{charId}")
     public Map<String, Object> getCharacterInfo(@PathVariable String charId) {
         Map<String, Object> info = new LinkedHashMap<>();
+        List<String> starterIds=Arrays.asList();
         if ("1".equals(charId)) {
             info.put("name", "铁甲战士");
-            info.put("maxHp", 70);
-            info.put("gold", 0);
-            List<String> starterIds = Arrays.asList(
+            info.put("maxHp", 80);               // ✅ 战士初始血量 80
+            info.put("gold", 99);                // ✅ 金币统一 99
+            starterIds = Arrays.asList(
                 "strike", "strike", "strike", "strike", "strike",
                 "defend", "defend", "defend", "defend",
                 "bash",
                 "oneshot"
             );
+        } else if ("2".equals(charId)) {
+            starterIds = Arrays.asList(
+                "strike_silent", "strike_silent", "strike_silent", "strike_silent", "strike_silent",
+                "defend_silent", "defend_silent", "defend_silent", "defend_silent","defend_slient",
+                "survivor","neutralize",
+                "oneshot"
+            );
+        }else{
+            info.put("name", "未知角色");
+            info.put("maxHp", 50);
+            info.put("gold", 0);
+        }
+        
             List<Map<String, Object>> deck = new ArrayList<>();
             for (String id : starterIds) {
                 CardTemplate tpl = dataRepo.getCardById(id);
@@ -504,13 +518,6 @@ public class GameConfigController {
             }
             info.put("startingDeck", deck);
             info.put("startingRelicId", "burning_blood");
-        } else {
-            info.put("name", "未知角色");
-            info.put("maxHp", 50);
-            info.put("gold", 0);
-            info.put("startingDeck", Collections.emptyList());
-            info.put("startingRelicId", null);
-        }
         return info;
     }
 
@@ -545,11 +552,10 @@ public class GameConfigController {
         map.put("applyStatusType", tpl.getApplyStatusType());
         map.put("applyStatusCount", tpl.getApplyStatusCount());
         map.put("applyStatusTarget", tpl.getApplyStatusTarget());
+        map.put("charId", tpl.getCharId());
         map.put("drawCount", tpl.getDrawCount());
-        map.put("upgraded", tpl.isUpgraded());
         map.put("rarity", tpl.getRarity());
-        
-        // 🆕 补全单卡查询缺失的所有新机制字段
+        map.put("upgraded", tpl.isUpgraded());
         map.put("selfDamage", tpl.getSelfDamage());
         map.put("energyGain", tpl.getEnergyGain());
         map.put("multiHitCount", tpl.getMultiHitCount());
@@ -561,10 +567,10 @@ public class GameConfigController {
         map.put("unplayable", tpl.isUnplayable());
         map.put("innate", tpl.isInnate());
         map.put("discardCount", tpl.getDiscardCount());
+        map.put("discardMode", tpl.getDiscardMode());
         map.put("xCost", tpl.isXCost());
         map.put("aoe", tpl.isAoe());
-        map.put("drawFirst", tpl.isDrawFirst()); // 🆕 最新补充
-        
+        map.put("drawFirst", tpl.isDrawFirst());
         return map;
     }
 }

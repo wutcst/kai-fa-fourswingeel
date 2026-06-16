@@ -47,7 +47,8 @@ public class RewardController {
                 gold = 15 + random.nextInt(15);
                 break;
         }
-        reward.put("gold", gold); reward.put("relic", relic);
+        reward.put("gold", gold);
+        reward.put("relics", relics);
         
         // 为Boss战生成Boss遗物选项（占位符，后续从配置读取）
         if ("boss".equalsIgnoreCase(nodeType)) {
