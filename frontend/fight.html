@@ -53,6 +53,19 @@
     .tooltip-desc { font-size: 12px; color: #bdc3c7; line-height: 1.5; margin-bottom: 4px; }
     .tooltip-decay { font-size: 11px; color: #e67e22; }
     .deck-info { text-align: center; color: #bdc3c7; margin-bottom: 12px; }
+    .pile-btn { background: none; border: none; color: #f1c40f; cursor: pointer; font-size: 14px; padding: 0 4px; text-decoration: underline; transition: color 0.2s; }
+    .pile-btn:hover { color: #e67e22; }
+    .pile-popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 100; }
+    .pile-popup { background: #16213e; border: 2px solid #f1c40f; border-radius: 16px; max-width: 600px; width: 90%; max-height: 80vh; display: flex; flex-direction: column; }
+    .pile-popup-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #34495e; }
+    .pile-popup-header h3 { margin: 0; color: #f1c40f; }
+    .pile-popup-close { background: #e74c3c; color: white; border: none; border-radius: 6px; padding: 6px 14px; cursor: pointer; }
+    .pile-popup-body { padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; }
+    .pile-popup-card { width: 130px; padding: 10px; border-radius: 8px; text-align: center; color: white; border: 2px solid #34495e; font-size: 12px; flex-shrink: 0; }
+    .pile-popup-card .pp-name { font-weight: bold; font-size: 13px; margin-bottom: 4px; }
+    .pile-popup-card .pp-cost { display: inline-block; background: #e74c3c; border-radius: 50%; width: 22px; height: 22px; line-height: 22px; font-weight: bold; margin-bottom: 4px; }
+    .pile-popup-card .pp-effect { font-size: 11px; color: #ecf0f1; line-height: 1.3; }
+    .pile-popup-empty { color: #95a5a6; font-size: 14px; padding: 30px; text-align: center; width: 100%; }
     .log { background: #0f3460; padding: 12px; border-radius: 8px; max-height: 200px; overflow-y: auto; }
     .log-title { font-weight: bold; margin-bottom: 8px; color: #3498db; }
     .log-entry { margin: 4px 0; line-height: 1.5; }
@@ -117,8 +130,28 @@
         <div class="tooltip-decay" v-if="tooltipInfo.decay">每回合结束层数减一</div>
       </div>
       <div class="deck-info">
-        手牌 {{ state.handSize }}/{{ state.handLimit }} | 抽牌堆 {{ state.drawPileSize }} | 弃牌堆 {{ state.discardPileSize }} | 消耗堆 <span style="color:#e74c3c;">{{ state.exhaustPileSize || 0 }}</span>
+        手牌 {{ state.handSize }}/{{ state.handLimit }} | <button class="pile-btn" @click="showPilePopup('drawPile')">抽牌堆 ({{ state.drawPileSize }})</button> | <button class="pile-btn" @click="showPilePopup('discardPile')">弃牌堆 ({{ state.discardPileSize }})</button> | <button class="pile-btn" @click="showPilePopup('exhaustPile')" style="color:#e74c3c;">消耗堆 ({{ state.exhaustPileSize || 0 }})</button>
       </div>
+      
+      <!-- 牌堆弹窗 -->
+      <div v-if="pilePopupVisible" class="pile-popup-overlay" @click.self="pilePopupVisible = false">
+        <div class="pile-popup">
+          <div class="pile-popup-header">
+            <h3>{{ pilePopupTitle }}</h3>
+            <button class="pile-popup-close" @click="pilePopupVisible = false">关闭</button>
+          </div>
+          <div class="pile-popup-body">
+            <div v-if="pilePopupCards.length === 0" class="pile-popup-empty">该牌堆为空</div>
+            <div v-for="(card, idx) in pilePopupCards" :key="idx" class="pile-popup-card"
+                 :style="{ background: getCardCharStyle(card), borderColor: getRarityBorderColor(card) }">
+              <div class="pp-name">{{ card.name }}</div>
+              <div class="pp-cost">{{ card.cost }}</div>
+              <div class="pp-effect">{{ getCardEffectText(card) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="log">
         <div class="log-title">📜 战斗日志:</div>
         <div class="log-entry" v-for="(entry, i) in state.log" :key="i">{{ entry }}</div>
@@ -199,7 +232,7 @@
         return { 
           state: null, loading: false, error: null, showCardConfirm: false, selectedCard: null, selectedIndex: -1, 
           selectedEnemyIndex: 0, selectedExhaustHandIndex: -1, selectedDiscardHandIndex: -1, 
-          isFromMap: false, prevNodeId: null, nextNodeId: null, tooltipCard: null, tooltipX: 0, tooltipY: 0 
+          isFromMap: false, prevNodeId: null, nextNodeId: null, tooltipCard: null, tooltipX: 0, tooltipY: 0, pilePopupVisible: false, pilePopupTitle: '', pilePopupCards: [] 
         }; 
       },
       mounted() {
@@ -320,6 +353,14 @@
           }
         },
         hideTooltip() { this.tooltipCard = null; },
+        
+        showPilePopup(pileName) {
+          if (!this.state || !this.state[pileName]) return;
+          var names = { 'drawPile': '✨ 抽牌堆', 'discardPile': '♻️ 弃牌堆', 'exhaustPile': '⚡ 消耗堆' };
+          this.pilePopupTitle = names[pileName] || pileName;
+          this.pilePopupCards = this.state[pileName];
+          this.pilePopupVisible = true;
+        },
         
         async playCard(index, customUrl) {
           this.error = null;

@@ -503,7 +503,7 @@ public class BattleService {
             state.put("enemyName", ""); state.put("enemyHp", 0); state.put("enemyMaxHp", 0); state.put("enemyStatuses", new ArrayList<>());
         }
 
-        state.put("energy", energy); state.put("drawPileSize", drawPile.size()); state.put("discardPileSize", discardPile.size());
+        state.put("energy", energy); state.put("drawPileSize", drawPile.size()); state.put("discardPileSize", discardPile.size()); state.put("exhaustPileSize", exhaustPile.size()); state.put("handSize", hand.size()); state.put("handLimit", HAND_LIMIT);
         state.put("exhaustPileSize", exhaustPile.size()); state.put("handSize", hand.size()); state.put("handLimit", HAND_LIMIT);
 
         List<Map<String, Object>> handCards = new ArrayList<>();
@@ -529,10 +529,36 @@ public class BattleService {
             
             handCards.add(cardInfo);
         }
-        state.put("hand", handCards); state.put("log", new ArrayList<>(logList)); state.put("gameOver", gameOver); state.put("winner", winner);
+        state.put("hand", handCards);
+        state.put("drawPile", cardsToStateList(drawPile));
+        state.put("discardPile", cardsToStateList(discardPile));
+        state.put("exhaustPile", cardsToStateList(exhaustPile));
+        state.put("log", new ArrayList<>(logList)); state.put("gameOver", gameOver); state.put("winner", winner);
         return state;
     }
 
     private void validateBattleActive() { if (gameOver) throw new IllegalStateException("战斗已经结束"); }
     private void validateCardIndex(int index) { if (index < 0 || index >= hand.size()) throw new IllegalArgumentException("无效的卡牌编号"); }
+
+    private List<Map<String, Object>> cardsToStateList(List<Card> cards) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (Card c : cards) {
+            Map<String, Object> info = new LinkedHashMap<>();
+            info.put("name", c.getName()); info.put("cost", c.getCost());
+            info.put("damage", c.getDamage()); info.put("block", c.getBlock()); info.put("type", c.getType().name());
+            info.put("applyStatusType", c.getApplyStatusType()); info.put("applyStatusCount", c.getApplyStatusCount());
+            info.put("applyStatusTarget", c.getApplyStatusTarget());
+            info.put("exhaust", c.isExhaust()); info.put("retain", c.isRetain()); info.put("ethereal", c.isEthereal());
+            info.put("drawCount", c.getDrawCount()); info.put("charId", c.getCharId()); info.put("rarity", c.getRarity());
+            info.put("selfDamage", c.getSelfDamage()); info.put("energyGain", c.getEnergyGain());
+            info.put("multiHitCount", c.getMultiHitCount());
+            info.put("exhaustHandCount", c.getExhaustHandCount());
+            info.put("exhaustHandMode", c.getExhaustHandMode());
+            info.put("innate", c.isInnate()); info.put("aoe", c.isAoe());
+            info.put("upgraded", c.isUpgraded());
+            list.add(info);
+        }
+        return list;
+    }
+
 }
