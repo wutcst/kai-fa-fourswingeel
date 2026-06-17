@@ -25,11 +25,12 @@
       font-size: 16px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
-    /* 稀有度颜色：白色/普通、蓝色/稀有、金色/传说 */
+    /* 稀有度颜色：白色/普通、蓝色/稀有、金色/传说、紫色/特殊、赤红/Boss */
     .relic-item.rarity-common    { border-left-color: #bdc3c7; }
     .relic-item.rarity-rare      { border-left-color: #3498db; }
     .relic-item.rarity-legendary { border-left-color: #ffd700; }
     .relic-item.rarity-special   { border-left-color: #9b59b6; }
+    .relic-item.rarity-boss      { border-left-color: #ff4757; box-shadow: 0 0 12px rgba(255,71,87,0.3); }
     .relic-icon { font-size: 32px; flex-shrink: 0; margin-top: 2px;}
     .relic-info { flex: 1; }
     .relic-name { font-weight: bold; font-size: 18px; margin-bottom: 5px;}
@@ -42,6 +43,8 @@
     .rarity-legendary .relic-rarity-badge { background: #ffd700; color: #1a1a2e; }
     .rarity-special .relic-name { color: #9b59b6; }
     .rarity-special .relic-rarity-badge { background: #9b59b6; color: white; }
+    .rarity-boss .relic-name { color: #ff4757; }
+    .rarity-boss .relic-rarity-badge { background: #ff4757; color: white; }
     .relic-desc { font-size: 14px; color: #bdc3c7; line-height: 1.4;}
     .empty { color: #aaa; margin-top: 40px; font-size: 18px; }
     .back-btn {
@@ -102,6 +105,7 @@
           if (rarity === 'RARE') { rarityClass = 'rare'; rarityLabel = '稀有'; }
           else if (rarity === 'LEGENDARY') { rarityClass = 'legendary'; rarityLabel = '传说'; }
           else if (rarity === 'SPECIAL') { rarityClass = 'special'; rarityLabel = '特殊'; }
+          else if (rarity === 'BOSS') { rarityClass = 'boss'; rarityLabel = 'BOSS'; }
           else if (rarity === 'STARTER') { rarityClass = 'common'; rarityLabel = '初始'; }
           div.className = 'relic-item rarity-' + rarityClass;
           div.innerHTML = `

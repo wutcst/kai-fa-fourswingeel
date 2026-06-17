@@ -28,6 +28,7 @@ public class BattleService {
 
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp, String nodeType) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
+        this.player.resetBattleFlags();
         if (playerRelics != null) {
             for (String relicId : playerRelics) {
                 RelicTemplate tpl = dataRepo.getRelicById(relicId);
@@ -93,13 +94,39 @@ public class BattleService {
         if (RelicEffectHandler.hasEffect(player, "ENERGY_FIRST_TURN")) {
             int val = RelicEffectHandler.getEffectValue(player, "ENERGY_FIRST_TURN");
             energy += val;
-            logList.add("🏮 灯笼使初始能量 +" + val);
+            logList.add("🏮 灯笼/战场号角使初始能量 +" + val);
         }
-        
+        if (RelicEffectHandler.hasEffect(player, "ENERGY_PER_TURN")) {
+            int val = RelicEffectHandler.getEffectValue(player, "ENERGY_PER_TURN");
+            energy += val;
+            logList.add("✳️ 能量方块使初始能量 +" + val);
+        }
+
         int drawCount = Math.max(0, 5 - innateCards.size());
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) drawCount++;
+        if (RelicEffectHandler.hasEffect(player, "DRAW_PER_TURN")) drawCount++;
         drawCards(drawCount);
-        
+
+        // 🆕 Boss 遗物：混沌之核 — 战斗开始获得力量
+        int strengthVal = RelicEffectHandler.getEffectValue(player, "STRENGTH_START_BATTLE");
+        if (strengthVal > 0) {
+            StatusEffect strength = StatusFactory.create("STRENGTH", strengthVal, dataRepo);
+            if (strength != null) {
+                player.addStatus(strength);
+                logList.add("🌀 混沌之核触发，获得 " + strengthVal + " 层力量");
+            }
+        }
+
+        // 🆕 Boss 遗物：暗影斗篷 — 战斗开始获得无实体
+        int intangibleVal = RelicEffectHandler.getEffectValue(player, "INTANGIBLE_START");
+        if (intangibleVal > 0) {
+            StatusEffect intangible = StatusFactory.create("INTANGIBLE", intangibleVal, dataRepo);
+            if (intangible != null) {
+                player.addStatus(intangible);
+                logList.add("🌑 暗影斗篷触发，获得 " + intangibleVal + " 层无实体");
+            }
+        }
+
         return getCurrentState();
     }
 
@@ -365,8 +392,12 @@ public class BattleService {
         if (!player.isAlive()) { gameOver = true; winner = "敌人"; logList.add("💀 玩家倒下..."); return getCurrentState(); }
 
         energy = 3;
+        if (RelicEffectHandler.hasEffect(player, "ENERGY_PER_TURN")) {
+            energy += RelicEffectHandler.getEffectValue(player, "ENERGY_PER_TURN");
+        }
         int turnDrawCount = 5 - retained.size();
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) turnDrawCount++;
+        if (RelicEffectHandler.hasEffect(player, "DRAW_PER_TURN")) turnDrawCount++;
         drawCards(Math.max(0, turnDrawCount));
         for (Enemy enemy : enemies) enemy.advanceIntent();
         return getCurrentState();

@@ -13,5 +13,16 @@
   { "id": "neow_remove", "name": "净化卷轴", "description": "初始恩惠：从卡组中删除一张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },
   { "id": "neow_blood", "name": "血之契约", "description": "初始恩惠：失去10点生命，从卡组中删除两张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },
   { "id": "neow_upgrade", "name": "锻造圣锤", "description": "初始恩惠：升级卡组中的一张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },
-  { "id": "snake_eye_ring", "name": "蛇眼戒指", "description": "每场战斗的第一回合，多抽2张牌。", "effectType": "FIRST_DRAW_BONUS", "value": 2, "rarity": "STARTER", "charId": "2" }
+  { "id": "snake_eye_ring", "name": "蛇眼戒指", "description": "每场战斗的第一回合，多抽2张牌。", "effectType": "FIRST_DRAW_BONUS", "value": 2, "rarity": "STARTER", "charId": "2" },
+
+  { "id": "energy_cube", "name": "能量方块", "description": "每回合获得 1 点额外能量。", "effectType": "ENERGY_PER_TURN", "value": 1, "rarity": "BOSS", "charId": null },
+  { "id": "rune_cube", "name": "符文立方体", "description": "每回合多抽 1 张牌。", "effectType": "DRAW_PER_TURN", "value": 1, "rarity": "BOSS", "charId": null },
+  { "id": "chaos_core", "name": "混沌之核", "description": "战斗开始时获得 3 层力量。", "effectType": "STRENGTH_START_BATTLE", "value": 3, "rarity": "BOSS", "charId": null },
+  { "id": "infinite_stone", "name": "无限之石", "description": "每回合开始获得 1 层敏捷。", "effectType": "DEXTERITY_PER_TURN", "value": 1, "rarity": "BOSS", "charId": null },
+  { "id": "soul_furnace", "name": "灵魂之炉", "description": "每场战斗首次受伤时，恢复 8 点生命。", "effectType": "FIRST_HIT_HEAL", "value": 8, "rarity": "BOSS", "charId": null },
+  { "id": "phoenix_feather", "name": "凤凰之羽", "description": "每场战斗首次濒死时，恢复至 30% 生命。", "effectType": "DEATH_SAVE", "value": 30, "rarity": "BOSS", "charId": null },
+  { "id": "shadow_cloak", "name": "暗影斗篷", "description": "战斗开始时获得 2 层无实体。", "effectType": "INTANGIBLE_START", "value": 2, "rarity": "BOSS", "charId": null },
+  { "id": "battle_horn", "name": "战场号角", "description": "每场战斗的第一回合获得 2 点能量。", "effectType": "ENERGY_FIRST_TURN", "value": 2, "rarity": "BOSS", "charId": null },
+  { "id": "prophet_eye", "name": "先知之眼", "description": "每回合第一次抽牌多抽 3 张。", "effectType": "FIRST_DRAW_BONUS", "value": 3, "rarity": "BOSS", "charId": null },
+  { "id": "giant_power", "name": "巨人之力", "description": "最大生命值 +25。", "effectType": "MAX_HP", "value": 25, "rarity": "BOSS", "charId": null }
 ]

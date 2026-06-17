@@ -24,6 +24,14 @@ public class RelicEffectHandler {
                         }
                     }
                 }
+                // 🆕 Boss 遗物：无限之石 — 每回合开始获得 1 层敏捷
+                case "DEXTERITY_PER_TURN" -> {
+                    StatusEffect dex = StatusFactory.create("DEXTERITY", gr.getValue(), player.getDataRepo());
+                    if (dex != null) {
+                        player.addStatus(dex);
+                        player.addTurnStartLog("🪨 无限之石触发，获得 " + gr.getValue() + " 层敏捷");
+                    }
+                }
             }
         }
     }

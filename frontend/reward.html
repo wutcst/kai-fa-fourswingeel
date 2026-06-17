@@ -219,7 +219,8 @@
         panel.appendChild(cardBtn);
       }
 
-      if (nodeType === 'elite' || nodeType === 'chest' || nodeType === 'boss') {
+      // Boss 战不给普通遗物，通过独立的三选一界面发放 Boss 遗物
+      if (nodeType === 'elite' || nodeType === 'chest') {
         (reward.relics || []).forEach((relicData) => {
           if (!relicData) return;
           const relicBtn = document.createElement('button');
