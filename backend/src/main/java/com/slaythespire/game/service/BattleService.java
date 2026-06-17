@@ -281,6 +281,7 @@ public class BattleService {
                     logList.add(String.format("💥 AOE对 %s 造成 %d 点伤害，HP: %d", e.getEnemyName(), actualDmg, e.getHp()));
                     if (actualDmg > 0) triggerManaFlower();
                     if (!e.isAlive()) triggerGoblinHorn();
+                }
             } else {
                 int hitCount = Math.max(1, card.getMultiHitCount());
                 for (int i = 0; i < hitCount; i++) {
