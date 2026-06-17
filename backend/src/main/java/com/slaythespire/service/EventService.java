@@ -121,6 +121,15 @@ public class EventService {
                             saveData.setMaxHp(saveData.getMaxHp() + relic.getValue());
                             saveData.setPlayerHp(Math.min(saveData.getPlayerHp() + relic.getValue(), saveData.getMaxHp()));
                         }
+                        // 处理拾起金币遗物
+                        String rid = relic.getId();
+                        if ("small_gold_bag".equals(rid)) saveData.setGold(saveData.getGold() + 50);
+                        else if ("treasure_bag".equals(rid)) saveData.setGold(saveData.getGold() + 150);
+                        else if ("ancient_coin".equals(rid)) saveData.setGold(saveData.getGold() + 500);
+                        // 处理拾起回血遗物
+                        else if ("small_blood".equals(rid)) saveData.setPlayerHp(Math.min(saveData.getPlayerHp() + 10, saveData.getMaxHp()));
+                        else if ("apple".equals(rid)) saveData.setPlayerHp(Math.min(saveData.getPlayerHp() + 5, saveData.getMaxHp()));
+                        else if ("pear".equals(rid)) saveData.setPlayerHp(Math.min(saveData.getPlayerHp() + 20, saveData.getMaxHp()));
                         logs.add("获得遗物: " + relic.getName());
                     } else {
                         logs.add("没有可获得的遗物");
