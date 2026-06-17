@@ -25,7 +25,7 @@ public class BattleService {
     private List<String> logList;
     private boolean gameOver;
     private String winner;
-    private int attackCountThisTurn; // 本回合已打出的攻击牌数量（黄金戒指）
+    private int attackCountThisTurn; // 本场战斗累计攻击牌计数（黄金戒指，跨回合累计）
 
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp, String nodeType) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
@@ -214,7 +214,7 @@ public class BattleService {
                 }
             }
         }
-        // 🆕 黄金戒指：每打出3张攻击牌获得1层敏捷
+        // 🆕 黄金戒指：每打出3张攻击牌获得1层敏捷（跨回合累计）
         if (card.getType() == Card.CardType.ATTACK) {
             attackCountThisTurn++;
             if (attackCountThisTurn % 3 == 0 && RelicEffectHandler.hasEffect(player, "ATTACK_DEXTERITY")) {
@@ -446,7 +446,6 @@ public class BattleService {
         decrementIntangible(player);
 
         // ================= 4. 玩家新回合开始 =================
-        attackCountThisTurn = 0;
         player.onTurnStart();
         logList.addAll(player.getLastTurnStartLogs());
         if (!player.isAlive()) { gameOver = true; winner = "敌人"; logList.add("💀 玩家倒下..."); return getCurrentState(); }
