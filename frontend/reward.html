@@ -380,7 +380,7 @@ fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}
 
         const saveData = await loadSaveData(char);
 
-        saveData.relics.push(relicId);
+        if (!saveData.relics.includes(relicId)) saveData.relics.push(relicId);
 
         if (effectType === 'MAX_HP' && value > 0) {
 

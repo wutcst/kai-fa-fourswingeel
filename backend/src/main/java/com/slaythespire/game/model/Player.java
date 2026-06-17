@@ -65,7 +65,7 @@ public class Player extends Combatant {
         // 状态牌暂为简化实现：直接造成伤害或效果
         if ("burn".equals(statusCardType)) {
             // 灼伤：可考虑在未来实现为牌堆中的负面状态牌
-            this.takeDamage(2, null, false);
+            this.takeDamage(2, null, true);
         } else if ("dazed".equals(statusCardType)) {
             // 晕眩：目前简化实现，后续可扩展为塞入弃牌堆
             // 空实现，作为占位
