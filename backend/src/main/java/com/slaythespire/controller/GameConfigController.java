@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.slaythespire.game.model.CardEffect;
 import com.slaythespire.model.SaveData;
 import com.slaythespire.game.service.RelicPoolService;
 import com.slaythespire.repository.CardTemplate;
@@ -433,9 +434,7 @@ public class GameConfigController {
                 cardMap.put("damage", tpl.getDamage());
                 cardMap.put("block", tpl.getBlock());
                 cardMap.put("type", tpl.getType().name());
-                cardMap.put("applyStatusType", tpl.getApplyStatusType());
-                cardMap.put("applyStatusCount", tpl.getApplyStatusCount());
-                cardMap.put("applyStatusTarget", tpl.getApplyStatusTarget());
+                cardMap.put("effects", CardEffect.listToMapList(tpl.getEffects()));
                 cardMap.put("charId", tpl.getCharId());
                 cardMap.put("drawCount", tpl.getDrawCount());
                 cardMap.put("rarity", tpl.getRarity());
@@ -452,7 +451,7 @@ public class GameConfigController {
                 cardMap.put("unplayable", tpl.isUnplayable());
                 cardMap.put("innate", tpl.isInnate());
                 cardMap.put("discardCount", tpl.getDiscardCount());
-                cardMap.put("xCost", tpl.isXCost());
+                cardMap.put("discardMode", tpl.getDiscardMode());
                 cardMap.put("aoe", tpl.isAoe());
                 cardMap.put("drawFirst", tpl.isDrawFirst()); 
                 
@@ -505,7 +504,7 @@ public class GameConfigController {
             info.put("gold", 99);              
             starterIds = Arrays.asList(
                 "strike_silent", "strike_silent", "strike_silent", "strike_silent", "strike_silent",
-                "defend_silent", "defend_silent", "defend_silent", "defend_silent","defend_slient",
+                "defend_silent", "defend_silent", "defend_silent", "defend_silent","defend_silent",
                 "survivor","neutralize",
                 "oneshot"
             );
@@ -528,9 +527,7 @@ public class GameConfigController {
                     cardMap.put("damage", tpl.getDamage());
                     cardMap.put("block", tpl.getBlock());
                     cardMap.put("type", tpl.getType().name());
-                    cardMap.put("applyStatusType", tpl.getApplyStatusType());
-                    cardMap.put("applyStatusCount", tpl.getApplyStatusCount());
-                    cardMap.put("applyStatusTarget", tpl.getApplyStatusTarget());
+                    cardMap.put("effects", CardEffect.listToMapList(tpl.getEffects()));
                     cardMap.put("charId", tpl.getCharId());
                     cardMap.put("drawCount", tpl.getDrawCount());
                     cardMap.put("rarity", tpl.getRarity());
@@ -547,7 +544,7 @@ public class GameConfigController {
                     cardMap.put("unplayable", tpl.isUnplayable());
                     cardMap.put("innate", tpl.isInnate());
                     cardMap.put("discardCount", tpl.getDiscardCount());
-                    cardMap.put("xCost", tpl.isXCost());
+                    cardMap.put("discardMode", tpl.getDiscardMode());
                     cardMap.put("aoe", tpl.isAoe());
                     cardMap.put("drawFirst", tpl.isDrawFirst()); 
                     
@@ -587,9 +584,7 @@ public class GameConfigController {
         map.put("damage", tpl.getDamage());
         map.put("block", tpl.getBlock());
         map.put("type", tpl.getType().name());
-        map.put("applyStatusType", tpl.getApplyStatusType());
-        map.put("applyStatusCount", tpl.getApplyStatusCount());
-        map.put("applyStatusTarget", tpl.getApplyStatusTarget());
+        map.put("effects", CardEffect.listToMapList(tpl.getEffects()));
         map.put("charId", tpl.getCharId());
         map.put("drawCount", tpl.getDrawCount());
         map.put("rarity", tpl.getRarity());

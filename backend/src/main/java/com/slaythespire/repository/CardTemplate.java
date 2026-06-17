@@ -3,6 +3,10 @@ package com.slaythespire.repository;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.slaythespire.game.model.Card.CardType;
+import com.slaythespire.game.model.CardEffect;
+
+import java.util.Collections;
+import java.util.List;
 
 public class CardTemplate {
     private final String id;
@@ -11,9 +15,7 @@ public class CardTemplate {
     private final int damage;
     private final int block;
     private final CardType type;
-    private final String applyStatusType;
-    private final int applyStatusCount;
-    private final String applyStatusTarget;
+    private final List<CardEffect> effects;
     private final boolean exhaust;
     private final boolean retain;
     private final boolean ethereal;
@@ -29,18 +31,17 @@ public class CardTemplate {
     private final boolean unplayable;
     private final boolean innate;
     private final int discardCount;
-    private final String discardMode;     // 🆕 新增
+    private final String discardMode;
     private final boolean xCost;
     private final boolean aoe;
-    private final boolean drawFirst; 
+    private final boolean drawFirst;
 
     @JsonCreator
     public CardTemplate(
             @JsonProperty("id") String id, @JsonProperty("name") String name,
             @JsonProperty("cost") int cost, @JsonProperty("damage") int damage,
             @JsonProperty("block") int block, @JsonProperty("type") CardType type,
-            @JsonProperty("applyStatusType") String applyStatusType, @JsonProperty("applyStatusCount") int applyStatusCount,
-            @JsonProperty("applyStatusTarget") String applyStatusTarget,
+            @JsonProperty("effects") List<CardEffect> effects,
             @JsonProperty("exhaust") Boolean exhaust, @JsonProperty("retain") Boolean retain,
             @JsonProperty("ethereal") Boolean ethereal, @JsonProperty("drawCount") Integer drawCount,
             @JsonProperty("upgraded") Boolean upgraded, @JsonProperty("charId") String charId,
@@ -52,14 +53,14 @@ public class CardTemplate {
             @JsonProperty("unplayable") Boolean unplayable,
             @JsonProperty("innate") Boolean innate,
             @JsonProperty("discardCount") Integer discardCount,
-            @JsonProperty("discardMode") String discardMode,   // 🆕 新增参数
+            @JsonProperty("discardMode") String discardMode,
             @JsonProperty("xCost") Boolean xCost,
             @JsonProperty("aoe") Boolean aoe,
             @JsonProperty("drawFirst") Boolean drawFirst) {
-        
+
         this.id = id; this.name = name; this.cost = cost; this.damage = damage; this.block = block;
-        this.type = type; this.applyStatusType = applyStatusType; this.applyStatusCount = applyStatusCount;
-        this.applyStatusTarget = applyStatusTarget;
+        this.type = type;
+        this.effects = effects != null ? effects : Collections.emptyList();
         this.exhaust = exhaust != null ? exhaust : false; this.retain = retain != null ? retain : false;
         this.ethereal = ethereal != null ? ethereal : false; this.drawCount = drawCount != null ? drawCount : 0;
         this.upgraded = upgraded != null ? upgraded : false; this.charId = charId != null ? charId : "1";
@@ -71,7 +72,7 @@ public class CardTemplate {
         this.unplayable = unplayable != null ? unplayable : false;
         this.innate = innate != null ? innate : false;
         this.discardCount = discardCount != null ? discardCount : 0;
-        this.discardMode = discardMode != null ? discardMode.toUpperCase() : "RANDOM"; // 🆕 默认 RANDOM
+        this.discardMode = discardMode != null ? discardMode.toUpperCase() : "RANDOM";
         this.xCost = xCost != null ? xCost : false;
         this.aoe = aoe != null ? aoe : false;
         this.drawFirst = drawFirst != null ? drawFirst : false;
@@ -79,15 +80,29 @@ public class CardTemplate {
 
     public String getId() { return id; } public String getName() { return name; } public int getCost() { return cost; }
     public int getDamage() { return damage; } public int getBlock() { return block; } public CardType getType() { return type; }
-    public String getApplyStatusType() { return applyStatusType; } public int getApplyStatusCount() { return applyStatusCount; }
-    public String getApplyStatusTarget() { return applyStatusTarget; } public boolean isExhaust() { return exhaust; }
+    public List<CardEffect> getEffects() { return effects; }
+    public boolean isExhaust() { return exhaust; }
     public boolean isRetain() { return retain; } public boolean isEthereal() { return ethereal; } public int getDrawCount() { return drawCount; }
     public boolean isUpgraded() { return upgraded; } public String getCharId() { return charId; } public String getRarity() { return rarity; }
     public int getSelfDamage() { return selfDamage; } public int getEnergyGain() { return energyGain; }
     public int getMultiHitCount() { return multiHitCount; } public int getExhaustHandCount() { return exhaustHandCount; }
     public String getExhaustHandMode() { return exhaustHandMode; }
     public boolean isUnplayable() { return unplayable; } public boolean isInnate() { return innate; }
-    public int getDiscardCount() { return discardCount; } public String getDiscardMode() { return discardMode; } // 🆕
+    public int getDiscardCount() { return discardCount; } public String getDiscardMode() { return discardMode; }
     public boolean isXCost() { return xCost; } public boolean isAoe() { return aoe; }
     public boolean isDrawFirst() { return drawFirst; }
+
+    // ---- 降级方法：兼容旧代码中直接读取单状态的用法 ----
+    /** 取第一个效果的 type，无效果时返回 null */
+    public String getApplyStatusType() {
+        return effects.isEmpty() ? null : effects.get(0).getType();
+    }
+    /** 取第一个效果的 count */
+    public int getApplyStatusCount() {
+        return effects.isEmpty() ? 0 : effects.get(0).getCount();
+    }
+    /** 取第一个效果的 target */
+    public String getApplyStatusTarget() {
+        return effects.isEmpty() ? null : effects.get(0).getTarget();
+    }
 }

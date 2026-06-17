@@ -109,7 +109,7 @@
             div.className = 'card-btn';
             div.style.background = CARD_UI.getCardCharStyle(card);
             div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div><div style="font-size:11px;color:#ecf0f1;margin-top:4px;">${CARD_UI.getCardEffectText(card)}</div>`;
-            CARD_UI.bindTooltip(div, card.applyStatusType);
+                      var _eff = CARD_UI.getCardEffects(card); CARD_UI.bindTooltip(div, _eff.length > 0 ? _eff[0].type : null);
             
             div.addEventListener('click', () => {
               if (removed >= countToRemove) return;
@@ -151,7 +151,7 @@
           div.className = 'card-btn';
           div.style.background = CARD_UI.getCardCharStyle(card);
           div.innerHTML = `<div><strong>${card.name}</strong></div><div>⚡ ${card.cost}</div><div style="font-size:11px;color:#ecf0f1;margin-top:4px;">${CARD_UI.getCardEffectText(card)}</div>`;
-          CARD_UI.bindTooltip(div, card.applyStatusType);
+                    var _eff = CARD_UI.getCardEffects(card); CARD_UI.bindTooltip(div, _eff.length > 0 ? _eff[0].type : null);
           
           div.addEventListener('click', async () => {
             const baseCard = card;

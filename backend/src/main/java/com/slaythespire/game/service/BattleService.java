@@ -192,23 +192,30 @@ public class BattleService {
             }
         }
 
-        if (card.getApplyStatusType() != null && !card.getApplyStatusType().isEmpty()) {
-            StatusEffect status = StatusFactory.create(card.getApplyStatusType(), card.getApplyStatusCount() * xValue, dataRepo);
-            if (status != null) {
-                String targetStr = card.getApplyStatusTarget();
-                if (targetStr == null || targetStr.isEmpty()) targetStr = (card.getType() == Card.CardType.ATTACK) ? "ENEMY" : "SELF";
-                
+        // 🆕 多效果系统：循环施加所有效果
+        List<CardEffect> effects = card.getEffects();
+        if (effects != null && !effects.isEmpty()) {
+            for (CardEffect effect : effects) {
+                if (effect.getType() == null || effect.getType().isEmpty()) continue;
+                StatusEffect status = StatusFactory.create(effect.getType(), effect.getCount() * xValue, dataRepo);
+                if (status == null) continue;
+
+                String targetStr = effect.getTarget();
+                if (targetStr == null || targetStr.isEmpty()) {
+                    targetStr = (card.getType() == Card.CardType.ATTACK) ? "ENEMY" : "SELF";
+                }
+
                 if ("ENEMY".equals(targetStr)) {
                     if (card.isAoe()) {
-                        for (Enemy e : aliveEnemies) e.addStatus(status);
-                        logList.add(String.format("给所有敌人施加了 %d 层 %s", card.getApplyStatusCount() * xValue, status.getName()));
+                        for (Enemy e : aliveEnemies) e.addStatus(StatusFactory.create(effect.getType(), effect.getCount() * xValue, dataRepo));
+                        logList.add(String.format("给所有敌人施加了 %d 层 %s", effect.getCount() * xValue, status.getName()));
                     } else {
-                        target.addStatus(status);
-                        logList.add(String.format("给 %s 施加了 %d 层 %s", target.getEnemyName(), card.getApplyStatusCount() * xValue, status.getName()));
+                        target.addStatus(StatusFactory.create(effect.getType(), effect.getCount() * xValue, dataRepo));
+                        logList.add(String.format("给 %s 施加了 %d 层 %s", target.getEnemyName(), effect.getCount() * xValue, status.getName()));
                     }
                 } else {
-                    player.addStatus(status);
-                    logList.add(String.format("给自己施加了 %d 层 %s", card.getApplyStatusCount() * xValue, status.getName()));
+                    player.addStatus(StatusFactory.create(effect.getType(), effect.getCount() * xValue, dataRepo));
+                    logList.add(String.format("给自己施加了 %d 层 %s", effect.getCount() * xValue, status.getName()));
                 }
             }
         }
@@ -446,6 +453,20 @@ public class BattleService {
                 card = new Card(name, cost, damage, block, type);
                 card.setRarity("COMMON");
             }
+
+            // 🆕 多效果存档兼容：优先读取 effects 数组，无则降级读取旧字段
+            if (cardData.containsKey("effects") && cardData.get("effects") != null) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> effectsData = (List<Map<String, Object>>) cardData.get("effects");
+                List<CardEffect> effects = new ArrayList<>();
+                for (Map<String, Object> eMap : effectsData) {
+                    String eType = (String) eMap.get("type");
+                    int eCount = eMap.containsKey("count") ? ((Number) eMap.get("count")).intValue() : 1;
+                    String eTarget = (String) eMap.get("target");
+                    effects.add(new CardEffect(eType, eCount, eTarget));
+                }
+                card.setEffects(effects);
+            }
             if (cardData.containsKey("applyStatusType")) card.setApplyStatusType((String) cardData.get("applyStatusType"));
             if (cardData.containsKey("applyStatusCount")) card.setApplyStatusCount(((Number) cardData.get("applyStatusCount")).intValue());
             if (cardData.containsKey("applyStatusTarget")) card.setApplyStatusTarget((String) cardData.get("applyStatusTarget"));
@@ -472,6 +493,9 @@ public class BattleService {
             if (cardData.containsKey("innate")) card.setInnate((Boolean) cardData.get("innate"));
             if (cardData.containsKey("discardCount") && cardData.get("discardCount") != null) {
                 card.setDiscardCount(((Number) cardData.get("discardCount")).intValue());
+            }
+            if (cardData.containsKey("discardMode") && cardData.get("discardMode") != null) {
+                card.setDiscardMode((String) cardData.get("discardMode"));
             }
             if (cardData.containsKey("xCost")) card.setXCost((Boolean) cardData.get("xCost"));
             if (cardData.containsKey("aoe")) card.setAoe((Boolean) cardData.get("aoe"));
@@ -546,7 +570,6 @@ public class BattleService {
         }
 
         state.put("energy", energy); state.put("drawPileSize", drawPile.size()); state.put("discardPileSize", discardPile.size()); state.put("exhaustPileSize", exhaustPile.size()); state.put("handSize", hand.size()); state.put("handLimit", HAND_LIMIT);
-        state.put("exhaustPileSize", exhaustPile.size()); state.put("handSize", hand.size()); state.put("handLimit", HAND_LIMIT);
 
         List<Map<String, Object>> handCards = new ArrayList<>();
         for (int i = 0; i < hand.size(); i++) {
@@ -554,7 +577,7 @@ public class BattleService {
             Map<String, Object> cardInfo = new LinkedHashMap<>();
             cardInfo.put("index", i); cardInfo.put("name", c.getName()); cardInfo.put("cost", c.getCost());
             cardInfo.put("damage", c.getDamage()); cardInfo.put("block", c.getBlock()); cardInfo.put("type", c.getType().name());
-            cardInfo.put("applyStatusType", c.getApplyStatusType()); cardInfo.put("applyStatusCount", c.getApplyStatusCount());
+            cardInfo.put("effects", effectsToStateList(c.getEffects()));
             cardInfo.put("exhaust", c.isExhaust()); cardInfo.put("retain", c.isRetain()); cardInfo.put("ethereal", c.isEthereal());
             cardInfo.put("drawCount", c.getDrawCount()); cardInfo.put("charId", c.getCharId()); cardInfo.put("rarity", c.getRarity());
             cardInfo.put("selfDamage", c.getSelfDamage()); cardInfo.put("energyGain", c.getEnergyGain());
@@ -565,6 +588,7 @@ public class BattleService {
             cardInfo.put("unplayable", c.isUnplayable());
             cardInfo.put("innate", c.isInnate());
             cardInfo.put("discardCount", c.getDiscardCount());
+            cardInfo.put("discardMode", c.getDiscardMode());
             cardInfo.put("xCost", c.isXCost());
             cardInfo.put("aoe", c.isAoe());
             cardInfo.put("drawFirst", c.isDrawFirst()); // 🆕 传递给前端
@@ -595,8 +619,7 @@ public class BattleService {
             Map<String, Object> info = new LinkedHashMap<>();
             info.put("name", c.getName()); info.put("cost", c.getCost());
             info.put("damage", c.getDamage()); info.put("block", c.getBlock()); info.put("type", c.getType().name());
-            info.put("applyStatusType", c.getApplyStatusType()); info.put("applyStatusCount", c.getApplyStatusCount());
-            info.put("applyStatusTarget", c.getApplyStatusTarget());
+            info.put("effects", effectsToStateList(c.getEffects()));
             info.put("exhaust", c.isExhaust()); info.put("retain", c.isRetain()); info.put("ethereal", c.isEthereal());
             info.put("drawCount", c.getDrawCount()); info.put("charId", c.getCharId()); info.put("rarity", c.getRarity());
             info.put("selfDamage", c.getSelfDamage()); info.put("energyGain", c.getEnergyGain());
@@ -604,8 +627,27 @@ public class BattleService {
             info.put("exhaustHandCount", c.getExhaustHandCount());
             info.put("exhaustHandMode", c.getExhaustHandMode());
             info.put("innate", c.isInnate()); info.put("aoe", c.isAoe());
+            info.put("unplayable", c.isUnplayable());
+            info.put("discardCount", c.getDiscardCount());
+            info.put("discardMode", c.getDiscardMode());
+            info.put("xCost", c.isXCost());
+            info.put("drawFirst", c.isDrawFirst());
             info.put("upgraded", c.isUpgraded());
             list.add(info);
+        }
+        return list;
+    }
+
+    /** 将 CardEffect 列表转为前端可用的 Map 列表 */
+    private List<Map<String, Object>> effectsToStateList(List<CardEffect> effects) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        if (effects == null) return list;
+        for (CardEffect e : effects) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("type", e.getType());
+            m.put("count", e.getCount());
+            m.put("target", e.getTarget());
+            list.add(m);
         }
         return list;
     }
