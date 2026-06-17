@@ -27,6 +27,39 @@
   </style>
 </head>
 <body>
+  <!-- 封面背景音乐（自管理，不依赖 status_bar.js） -->
+  <script>
+    (function() {
+      function initCoverBGM() {
+        const audio = document.createElement('audio');
+        audio.id = 'cover-bgm';
+        audio.src = 'music/Cover.mp3';
+        audio.loop = true;
+        audio.preload = 'auto';
+        audio.style.display = 'none';
+        document.body.appendChild(audio);
+        // 尝试自动播放（浏览器可能阻止，需要用户交互）
+        audio.play().catch(() => {
+          // 第一次用户点击、按键或触摸时播放
+          const resume = function() {
+            audio.play().catch(() => {});
+            document.removeEventListener('click', resume);
+            document.removeEventListener('keydown', resume);
+            document.removeEventListener('touchstart', resume);
+          };
+          document.addEventListener('click', resume, { once: true });
+          document.addEventListener('keydown', resume, { once: true });
+          document.addEventListener('touchstart', resume, { once: true });
+        });
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCoverBGM);
+      } else {
+        initCoverBGM();
+      }
+    })();
+  </script>
+
   <div id="cover-screen">
     <h1>⚔️ 杀戮尖塔</h1>
     <button class="btn" id="select-character-btn">选择角色</button>
@@ -183,5 +216,6 @@
       charScreen.style.display = 'none';
     })();
   </script>
+  <!-- 不再引用 status_bar.js -->
 </body>
 </html>

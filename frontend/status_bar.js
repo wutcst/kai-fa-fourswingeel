@@ -259,4 +259,107 @@
     } else {
         createStatusBar();
     }
+
+    /* =================  BGM 背景音乐管理（增强版） ================= */
+    (function bgmInit() {
+        const BGM_KEY_TRACK = 'bgmTrack';
+        const BGM_KEY_TIME  = 'bgmTime';
+        const BGM_KEY_PLAY  = 'bgmPlaying';
+
+        function getCurrentPageTrack() {
+            const path = window.location.pathname;
+            const params = new URLSearchParams(location.search);
+            // cover 页面
+            if (path.endsWith('cover.html')) return 'music/Cover.mp3';
+            // fight 页面（区分 boss）
+            if (path.endsWith('fight.html')) {
+                const nodeType = params.get('nodeType');
+                if (nodeType === 'boss') return 'music/Boss.mp3';
+            }
+            // 其余全部使用 main.mp3
+            return 'music/main.mp3';
+        }
+
+        // 工具函数：尝试播放音频，如果被浏览器阻止则绑定用户交互
+        function playAudioWithFallback(audio) {
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    // 添加一次性交互监听
+                    const resume = function() {
+                        audio.play().catch(() => {});
+                        document.removeEventListener('click', resume);
+                        document.removeEventListener('keydown', resume);
+                        document.removeEventListener('touchstart', resume);
+                    };
+                    document.addEventListener('click', resume, { once: true });
+                    document.addEventListener('keydown', resume, { once: true });
+                    document.addEventListener('touchstart', resume, { once: true });
+                });
+            }
+        }
+
+        function initBGM() {
+            let audio = document.getElementById('bgm');
+            if (!audio) {
+                audio = document.createElement('audio');
+                audio.id = 'bgm';
+                audio.preload = 'auto';
+                audio.style.display = 'none';
+                document.body.appendChild(audio);
+            }
+
+            const targetTrack = getCurrentPageTrack();
+            const savedTrack = sessionStorage.getItem(BGM_KEY_TRACK);
+            const savedTime = parseFloat(sessionStorage.getItem(BGM_KEY_TIME)) || 0;
+            const wasPlaying = sessionStorage.getItem(BGM_KEY_PLAY) === 'true';
+
+            // 设置音频源和 loop
+            audio.src = targetTrack;
+            audio.loop = true;
+
+            // 定义音量调整的回调函数
+            const applyAndPlay = () => {
+                if (savedTrack === targetTrack && savedTrack) {
+                    audio.currentTime = savedTime;
+                    if (wasPlaying) {
+                        playAudioWithFallback(audio);
+                    }
+                } else {
+                    audio.currentTime = 0;
+                    playAudioWithFallback(audio);
+                    sessionStorage.setItem(BGM_KEY_TRACK, targetTrack);
+                    sessionStorage.setItem(BGM_KEY_PLAY, 'true');
+                }
+            };
+
+            // 如果音频已经下载完毕（readyState >= HAVE_FUTURE_DATA 即 3），直接执行
+            if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+                applyAndPlay();
+            } else {
+                // 否则监听 canplay
+                audio.addEventListener('canplay', applyAndPlay, { once: true });
+            }
+
+            // 状态保存
+            function saveState() {
+                if (audio && !audio.paused) {
+                    sessionStorage.setItem(BGM_KEY_TIME, audio.currentTime);
+                    sessionStorage.setItem(BGM_KEY_PLAY, 'true');
+                } else {
+                    sessionStorage.setItem(BGM_KEY_PLAY, 'false');
+                }
+            }
+
+            audio.addEventListener('timeupdate', saveState);
+            window.addEventListener('beforeunload', saveState);
+        }
+
+        // 等 DOM 完全加载后初始化 BGM
+        function ready(fn) {
+            if (document.readyState !== 'loading') fn();
+            else document.addEventListener('DOMContentLoaded', fn);
+        }
+        ready(initBGM);
+    })();
 })();
