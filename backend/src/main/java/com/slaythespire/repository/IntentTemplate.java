@@ -17,6 +17,7 @@ public class IntentTemplate {
     private final boolean skipBurnCards;
     private final boolean upgradeBurns;
     private final int healAmount;
+    private final int summonCount;
 
     @JsonCreator
     public IntentTemplate(
@@ -32,7 +33,8 @@ public class IntentTemplate {
             @JsonProperty("stunCards") Integer stunCards,
             @JsonProperty("skipBurnCards") Boolean skipBurnCards,
             @JsonProperty("upgradeBurns") Boolean upgradeBurns,
-            @JsonProperty("healAmount") Integer healAmount) {
+            @JsonProperty("healAmount") Integer healAmount,
+            @JsonProperty("summonCount") Integer summonCount) {
         this.type = type;
         this.value = value;
         this.desc = desc;
@@ -46,6 +48,7 @@ public class IntentTemplate {
         this.skipBurnCards = skipBurnCards != null ? skipBurnCards : false;
         this.upgradeBurns = upgradeBurns != null ? upgradeBurns : false;
         this.healAmount = healAmount != null ? healAmount : 0;
+        this.summonCount = summonCount != null ? summonCount : 0;
     }
 
     public IntentType getType() { return type; }
@@ -61,6 +64,7 @@ public class IntentTemplate {
     public boolean isSkipBurnCards() { return skipBurnCards; }
     public boolean isUpgradeBurns() { return upgradeBurns; }
     public int getHealAmount() { return healAmount; }
+    public int getSummonCount() { return summonCount; }
 
     @Override
     public String toString() {

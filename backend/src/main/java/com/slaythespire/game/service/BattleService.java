@@ -575,6 +575,18 @@ public class BattleService {
             // 🆕 BUFF意图中的治疗：如果意图有heal字段，治疗所有敌人
             IntentTemplate intent = enemy.getCurrentIntentTemplate();
             if (intent != null) {
+                // 🆕 召唤匕首：如果意图是召唤，生成新匕首加入战斗
+                if (intent.getSummonCount() > 0) {
+                    EnemyTemplate daggerTpl = dataRepo.getEnemyById("dagger");
+                    if (daggerTpl != null) {
+                        for (int i = 0; i < intent.getSummonCount(); i++) {
+                            Enemy newDagger = new Enemy(daggerTpl, dataRepo);
+                            newDagger.setDrawer(cardType -> addStatusCardToDrawPile(cardType));
+                            enemies.add(newDagger);
+                            logList.add("🗡️ " + enemy.getEnemyName() + "召唤了一把匕首！");
+                        }
+                    }
+                }
                 if (intent.getHealAmount() > 0) {
                     for (Enemy ally : enemies) {
                         if (ally.isAlive()) {

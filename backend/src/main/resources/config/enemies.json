@@ -123,7 +123,7 @@
     "intents": [
       { "type": "MULTI_ATTACK", "value": 13, "desc": "蛇搏术", "multiHit": 2, "applyStatusType": "WEAK", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" },
       { "type": "ATTACK", "value": 30, "desc": "巨噬" },
-      { "type": "ATTACK", "value": 0, "desc": "召唤匕首" }
+      { "type": "ATTACK", "value": 0, "desc": "召唤匕首", "summonCount": 1 }
     ]
   },
   {
