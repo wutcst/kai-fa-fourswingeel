@@ -64,6 +64,22 @@
     "enemies": ["jaw_worm", "cultist"]
   },
   {
+    "id": "single_louse",
+    "name": "单个虱虫",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["red_louse"]
+  },
+  {
+    "id": "double_louse",
+    "name": "两只虱虫",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["red_louse", "red_louse"]
+  },
+  {
     "id": "jaw_worm_cultist_2",
     "name": "巨口+邪教徒（二层）",
     "type": "NORMAL",

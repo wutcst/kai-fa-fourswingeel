@@ -62,6 +62,10 @@ public class Enemy extends Combatant {
 
         if (type == IntentType.ATTACK) {
             int result = target.takeDamage(currentIntent.getValue(), this);
+            // 🆕 ATTACK类型的治疗（吮吸—攻击时回血）
+            if (currentIntent.getHealAmount() > 0) {
+                this.heal(currentIntent.getHealAmount());
+            }
             if (target instanceof Player) {
                 Player p = (Player) target;
                 if (!currentIntent.isSkipBurnCards() && currentIntent.getBurnCards() > 0) {

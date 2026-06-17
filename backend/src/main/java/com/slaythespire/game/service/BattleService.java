@@ -588,12 +588,16 @@ public class BattleService {
                     }
                 }
                 if (intent.getHealAmount() > 0) {
-                    for (Enemy ally : enemies) {
-                        if (ally.isAlive()) {
-                            ally.heal(intent.getHealAmount());
+                    // 🆕 群体治疗（神秘术士的治愈）vs 单体治疗（虱虫的吮吸）
+                    if (intent.getType() == IntentType.BUFF) {
+                        // BUFF类型治疗 = 群体治疗
+                        for (Enemy ally : enemies) {
+                            if (ally.isAlive()) ally.heal(intent.getHealAmount());
                         }
+                        logList.add("💚 " + enemy.getEnemyName() + "为所有敌人恢复了 " + intent.getHealAmount() + " 点生命");
+                    } else {
+                        // 非BUFF类型治疗 = 单体治疗（吮吸等，已在Enemy.java中处理）
                     }
-                    logList.add("💚 " + enemy.getEnemyName() + "为所有敌人恢复了 " + intent.getHealAmount() + " 点生命");
                 }
                 if (intent.getApplyStatusType() != null) {
                     StatusEffect status = StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo);

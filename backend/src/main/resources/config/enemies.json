@@ -219,7 +219,7 @@
     "description": "首回合随机：脆弱打击(8+脆弱2)/治愈(全体回6+力量2)。不能连续两次同招。",
     "intents": [
       { "type": "ATTACK", "value": 8, "desc": "脆弱打击", "applyStatusType": "FRAIL", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
-      { "type": "BUFF", "value": 0, "desc": "治愈", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ENEMY", "healAmount": 6 }
+      { "type": "BUFF", "value": 0, "desc": "治愈", "healAmount": 6, "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" }
     ]
   },
   {
@@ -247,6 +247,19 @@
       { "type": "ATTACK", "value": 11, "desc": "啃咬" },
       { "type": "ATTACK", "value": 7, "desc": "鞭打", "applyStatusType": "DEXTERITY", "applyStatusCount": 5, "applyStatusTarget": "ENEMY" },
       { "type": "BUFF", "value": 6, "desc": "咆哮", "applyStatusType": "STRENGTH", "applyStatusCount": 3, "applyStatusTarget": "ENEMY" }
+    ]
+  },
+  {
+    "id": "red_louse",
+    "name": "虱虫",
+    "type": "NORMAL",
+    "maxHp": 12,
+    "attackDamage": 6,
+    "description": "第一层小怪。啃咬(6)、吮吸(3+回血3)、甲壳(4盾)。",
+    "intents": [
+      { "type": "ATTACK", "value": 6, "desc": "啃咬" },
+      { "type": "ATTACK", "value": 3, "desc": "吮吸", "healAmount": 3 },
+      { "type": "DEFEND", "value": 4, "desc": "甲壳" }
     ]
   },
   {
