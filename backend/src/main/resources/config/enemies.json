@@ -3,9 +3,9 @@
     "id": "cultist",
     "name": "邪教徒",
     "type": "NORMAL",
-    "maxHp": 50,
+    "maxHp": 48,
     "attackDamage": 6,
-    "description": "第一回合念咒获得仪式，之后每回合造成递增的伤害。",
+    "description": "第一回合念咒获得仪式，之后每回合造成递增的伤害。原版邪教徒HP 48-54。",
     "intents": [
       { "type": "BUFF", "value": 0, "desc": "念咒", "applyStatusType": "RITUAL", "applyStatusCount": 4, "applyStatusTarget": "ENEMY" },
       { "type": "ATTACK", "value": 6, "desc": "黑暗打击" }
@@ -15,13 +15,14 @@
     "id": "acid_slime_large",
     "name": "酸液史莱姆",
     "type": "NORMAL",
-    "maxHp": 30,
+    "maxHp": 65,
     "attackDamage": 11,
-    "description": "酸液史莱姆，能造成伤害并施加虚弱。",
+    "description": "原版酸液史莱姆(大)。HP 65，可分裂。腐蚀喷吐塞2张黏液、重击、舔舔。",
+    "initialStatuses": { "SPLIT": 1 },
     "intents": [
-      { "type": "ATTACK", "value": 11, "desc": "腐蚀喷吐", "applyStatusType": "WEAK", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
+      { "type": "ATTACK", "value": 11, "desc": "腐蚀喷吐", "burnCards": 2 },
       { "type": "ATTACK", "value": 16, "desc": "重击" },
-      { "type": "ATTACK", "value": 11, "desc": "酸液舔舐", "applyStatusType": "WEAK", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" }
+      { "type": "ATTACK", "value": 0, "desc": "舔舔", "applyStatusType": "WEAK", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" }
     ]
   },
   {
@@ -29,27 +30,11 @@
     "name": "尖刺史莱姆",
     "type": "NORMAL",
     "maxHp": 28,
-    "attackDamage": 10,
-    "description": "尖刺史莱姆，攻击附带易伤效果。",
-    "initialStatuses": { "DEXTERITY": 5 },
+    "attackDamage": 8,
+    "description": "原版尖刺史莱姆(中)。HP 28-32，腐蚀喷吐塞1张黏液、舔舔脆弱。",
     "intents": [
-      { "type": "ATTACK", "value": 10, "desc": "尖刺冲撞", "applyStatusType": "VULNERABLE", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" },
-      { "type": "ATTACK", "value": 10, "desc": "针刺", "applyStatusType": "VULNERABLE", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" },
-      { "type": "ATTACK", "value": 15, "desc": "全力穿刺" }
-    ]
-  },
-  {
-    "id": "gremlin_nob",
-    "name": "地精大块头",
-    "type": "ELITE",
-    "maxHp": 84,
-    "attackDamage": 6,
-    "description": "你每使用一张技能牌，地精大块头就获得2点力量！",
-    "passive": { "type": "ANGRY_ON_SKILL", "value": 2, "desc": "激怒：玩家每打出一张技能牌，获得2点力量" },
-    "intents": [
-      { "type": "BUFF", "value": 0, "desc": "咆哮", "applyStatusType": "ANGRY", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" },
-      { "type": "ATTACK", "value": 6, "desc": "颅骨重击", "applyStatusType": "VULNERABLE", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
-      { "type": "ATTACK", "value": 14, "desc": "蛮牛冲撞" }
+      { "type": "ATTACK", "value": 8, "desc": "腐蚀喷吐", "burnCards": 1 },
+      { "type": "DEBUFF", "value": 0, "desc": "舔舔", "applyStatusType": "FRAIL", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" }
     ]
   },
   {
@@ -58,11 +43,113 @@
     "type": "ELITE",
     "maxHp": 38,
     "attackDamage": 9,
-    "description": "哨卫在激光攻击和眩晕攻击之间交替。自带一层人工制品。",
+    "description": "原版哨卫(精英)。三只一组，交替使用激光(9伤)和螺旋催眠(塞2张晕眩)。",
     "initialStatuses": { "ARTIFACT": 1 },
     "intents": [
       { "type": "ATTACK", "value": 9, "desc": "激光" },
       { "type": "DEBUFF", "value": 0, "desc": "螺旋催眠", "stunCards": 2 }
+    ]
+  },
+  {
+    "id": "taskmaster",
+    "name": "奴隶头子",
+    "type": "ELITE",
+    "maxHp": 54,
+    "attackDamage": 7,
+    "description": "第二层精英。与红衣奴隶和蓝衣奴隶一同出现。鞭笞攻击(7伤)带伤口塞牌。",
+    "intents": [
+      { "type": "ATTACK", "value": 7, "desc": "鞭笞", "stunCards": 1 }
+    ]
+  },
+  {
+    "id": "red_slaver",
+    "name": "红衣奴隶",
+    "type": "ELITE",
+    "maxHp": 46,
+    "attackDamage": 13,
+    "description": "第二层精英（奴隶头子随从）。攻击带易伤，可丢网。",
+    "intents": [
+      { "type": "ATTACK", "value": 13, "desc": "刺伤" },
+      { "type": "ATTACK", "value": 8, "desc": "刮伤", "applyStatusType": "VULNERABLE", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" },
+      { "type": "DEBUFF", "value": 0, "desc": "丢网" }
+    ]
+  },
+  {
+    "id": "blue_slaver",
+    "name": "蓝衣奴隶",
+    "type": "ELITE",
+    "maxHp": 46,
+    "attackDamage": 12,
+    "description": "第二层精英（奴隶头子随从）。攻击带虚弱。",
+    "intents": [
+      { "type": "ATTACK", "value": 12, "desc": "刺击" },
+      { "type": "ATTACK", "value": 7, "desc": "耙伤", "applyStatusType": "WEAK", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" }
+    ]
+  },
+  {
+    "id": "champ",
+    "name": "第一勇士",
+    "type": "BOSS",
+    "maxHp": 420,
+    "attackDamage": 12,
+    "description": "第二层Boss。HP420。半血以上攻守兼备，半血以下爆发斩杀。",
+    "intents": [
+      { "type": "DEFEND", "value": 15, "desc": "防御态势", "applyStatusType": "DEXTERITY", "applyStatusCount": 5, "applyStatusTarget": "ENEMY" },
+      { "type": "ATTACK", "value": 12, "desc": "打脸", "applyStatusType": "VULNERABLE", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
+      { "type": "DEBUFF", "value": 0, "desc": "挑衅", "applyStatusType": "WEAK", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
+      { "type": "ATTACK", "value": 16, "desc": "重斩" },
+      { "type": "BUFF", "value": 0, "desc": "强化", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" }
+    ]
+  },
+  {
+    "id": "reptomancer",
+    "name": "拜蛇术士",
+    "type": "ELITE",
+    "maxHp": 180,
+    "attackDamage": 13,
+    "description": "第三层精英。召唤匕首助战，匕首两回合后自爆。本体附带虚弱。",
+    "intents": [
+      { "type": "MULTI_ATTACK", "value": 13, "desc": "蛇搏术", "multiHit": 2, "applyStatusType": "WEAK", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" },
+      { "type": "ATTACK", "value": 30, "desc": "巨噬" },
+      { "type": "ATTACK", "value": 0, "desc": "召唤匕首" }
+    ]
+  },
+  {
+    "id": "dagger",
+    "name": "匕首",
+    "type": "MINION",
+    "maxHp": 20,
+    "attackDamage": 9,
+    "description": "拜蛇术士召唤的匕首。两回合后自爆造成25点伤害。",
+    "intents": [
+      { "type": "ATTACK", "value": 9, "desc": "刺击", "stunCards": 1 },
+      { "type": "ATTACK", "value": 25, "desc": "爆破" }
+    ]
+  },
+  {
+    "id": "donu",
+    "name": "甜圈",
+    "type": "BOSS",
+    "maxHp": 250,
+    "attackDamage": 10,
+    "description": "第三层Boss（与八体成对出现）。每两回合给双方加力量，纯输出机器。",
+    "initialStatuses": { "ARTIFACT": 2 },
+    "intents": [
+      { "type": "BUFF", "value": 0, "desc": "力量之环", "applyStatusType": "STRENGTH", "applyStatusCount": 3, "applyStatusTarget": "ENEMY" },
+      { "type": "MULTI_ATTACK", "value": 10, "desc": "双击", "multiHit": 2 }
+    ]
+  },
+  {
+    "id": "deca",
+    "name": "八体",
+    "type": "BOSS",
+    "maxHp": 250,
+    "attackDamage": 10,
+    "description": "第三层Boss（与甜圈成对出现）。塞晕眩和加群体格挡。",
+    "initialStatuses": { "ARTIFACT": 2 },
+    "intents": [
+      { "type": "MULTI_ATTACK", "value": 10, "desc": "眩目双击", "multiHit": 2, "stunCards": 2 },
+      { "type": "DEFEND", "value": 16, "desc": "防御屏障" }
     ]
   },
   {
@@ -71,17 +158,107 @@
     "type": "BOSS",
     "maxHp": 250,
     "attackDamage": 6,
-    "description": "第一层Boss。每6回合发动一次大范围地狱火攻击，期间会不断塞入灼伤。",
-    "passive": { "type": "HEXAGHOST", "value": 0, "desc": "六火循环：准备→地狱火→灼烧→双击→灼烧→高热→双击→灼烧→地狱火" },
+    "description": "原版六火亡魂。HP250。固定行动：准备→地狱火(特殊)→灼烧→双击→灼烧→高热→双击→灼烧→地狱火(普通)→循环。",
     "intents": [
-      { "type": "BUFF", "value": 0, "desc": "准备（六火亡魂在积蓄力量）" },
-      { "type": "MULTI_ATTACK", "value": 6, "desc": "地狱火", "multiHit": 6, "hpScaling": true },
+      { "type": "BUFF", "value": 0, "desc": "启动" },
+      { "type": "MULTI_ATTACK", "value": 6, "desc": "地狱火", "multiHit": 6, "hpScaling": true, "skipBurnCards": true },
       { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 },
       { "type": "MULTI_ATTACK", "value": 5, "desc": "双击", "multiHit": 2 },
       { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 },
       { "type": "BUFF", "value": 12, "desc": "高热", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" },
       { "type": "MULTI_ATTACK", "value": 5, "desc": "双击", "multiHit": 2 },
-      { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 }
+      { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 },
+      { "type": "MULTI_ATTACK", "value": 6, "desc": "地狱火", "multiHit": 3, "upgradeBurns": true, "burnCards": 3 }
+    ]
+  },
+  {
+    "id": "spheric_guardian",
+    "name": "圆球守护者",
+    "type": "NORMAL",
+    "maxHp": 20,
+    "attackDamage": 10,
+    "description": "第二层小怪。自带40点格挡和3层人工制品，行动完全固定。",
+    "initialStatuses": { "ARTIFACT": 3 },
+    "intents": [
+      { "type": "DEFEND", "value": 25, "desc": "激活（守势）" },
+      { "type": "ATTACK", "value": 10, "desc": "脆弱打击", "applyStatusType": "FRAIL", "applyStatusCount": 5, "applyStatusTarget": "PLAYER" },
+      { "type": "ATTACK", "value": 10, "desc": "硬化打击", "applyStatusType": "DEXTERITY", "applyStatusCount": 1, "applyStatusTarget": "ENEMY" },
+      { "type": "MULTI_ATTACK", "value": 10, "desc": "双击", "multiHit": 2 }
+    ]
+  },
+  {
+    "id": "centurion",
+    "name": "百夫长",
+    "type": "NORMAL",
+    "maxHp": 76,
+    "attackDamage": 12,
+    "description": "第二层小怪。攻击型战士，与神秘术士搭档。",
+    "intents": [
+      { "type": "ATTACK", "value": 12, "desc": "劈斩" },
+      { "type": "MULTI_ATTACK", "value": 6, "desc": "三连击", "multiHit": 3 }
+    ]
+  },
+  {
+    "id": "mystic",
+    "name": "神秘术士",
+    "type": "NORMAL",
+    "maxHp": 48,
+    "attackDamage": 8,
+    "description": "第二层小怪。治疗和强化辅助型怪物，与百夫长搭档。",
+    "intents": [
+      { "type": "ATTACK", "value": 8, "desc": "脆弱打击", "applyStatusType": "FRAIL", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
+      { "type": "BUFF", "value": 0, "desc": "强化", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" }
+    ]
+  },
+  {
+    "id": "shelled_parasite",
+    "name": "带壳寄生怪",
+    "type": "NORMAL",
+    "maxHp": 68,
+    "attackDamage": 6,
+    "description": "第二层小怪。自带14层多层护甲（每回合获得14格挡），攻击带吸血和脆弱。",
+    "intents": [
+      { "type": "MULTI_ATTACK", "value": 6, "desc": "双击", "multiHit": 2 },
+      { "type": "ATTACK", "value": 10, "desc": "汲取" },
+      { "type": "ATTACK", "value": 18, "desc": "脆弱打击", "applyStatusType": "FRAIL", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" }
+    ]
+  },
+  {
+    "id": "jaw_worm",
+    "name": "巨口",
+    "type": "NORMAL",
+    "maxHp": 40,
+    "attackDamage": 11,
+    "description": "第一层小怪。可以强化自己，造成伤害并获取格挡。",
+    "intents": [
+      { "type": "ATTACK", "value": 11, "desc": "啃咬" },
+      { "type": "ATTACK", "value": 7, "desc": "鞭打", "applyStatusType": "DEXTERITY", "applyStatusCount": 5, "applyStatusTarget": "ENEMY" },
+      { "type": "BUFF", "value": 6, "desc": "咆哮", "applyStatusType": "STRENGTH", "applyStatusCount": 3, "applyStatusTarget": "ENEMY" }
+    ]
+  },
+  {
+    "id": "orb_walker",
+    "name": "圆球行者",
+    "type": "NORMAL",
+    "maxHp": 90,
+    "attackDamage": 15,
+    "description": "第三层小怪。每回合结束时获得3点力量，攻击会塞入灼伤。",
+    "intents": [
+      { "type": "ATTACK", "value": 15, "desc": "利爪" },
+      { "type": "ATTACK", "value": 10, "desc": "灼伤射线", "burnCards": 2 }
+    ]
+  },
+  {
+    "id": "spire_growth",
+    "name": "塔内增生组织",
+    "type": "NORMAL",
+    "maxHp": 160,
+    "attackDamage": 16,
+    "description": "第二层小怪。可以使用缠绕束缚玩家。",
+    "intents": [
+      { "type": "ATTACK", "value": 16, "desc": "鞭打" },
+      { "type": "ATTACK", "value": 22, "desc": "重击" },
+      { "type": "DEBUFF", "value": 0, "desc": "缠绕", "applyStatusType": "WEAK", "applyStatusCount": 3, "applyStatusTarget": "PLAYER" }
     ]
   }
 ]

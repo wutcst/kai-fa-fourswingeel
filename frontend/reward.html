@@ -167,6 +167,7 @@
       const nextNode = params.get('nextNode') || 'start';
 
       const nodeType = params.get('nodeType') || 'monster';
+      const act = params.get('act') || '1';
 
       const gotGold = params.get('gotGold') === '1';
 
@@ -332,7 +333,7 @@ fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}
 
         // 🆕 跳转到地图时传递 act 参数
 
-        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${currentAct}`;
+        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
 
       }
 

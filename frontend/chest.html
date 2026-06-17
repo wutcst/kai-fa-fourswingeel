@@ -28,10 +28,11 @@
   const params = new URLSearchParams(window.location.search);
   const char = params.get('char') || '1';
   const currentNode = params.get('currentNode') || '';
-  const nextNode = params.get('nextNode') || currentNode;   // 宝箱前进目标
+  const nextNode = params.get('nextNode') || currentNode;
+  const act = params.get('act') || '1';
 
   document.getElementById('chest').addEventListener('click', () => {
-    window.location.href = `reward.html?source=chest&char=${char}&prevNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}&nodeType=chest`;
+    window.location.href = `reward.html?source=chest&char=${char}&prevNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}&nodeType=chest&act=${act}`;
   });
 </script>
 </body>
