@@ -28,6 +28,7 @@ public class BattleService {
     private int attackCountThisTurn; // 本场战斗累计攻击牌计数（黄金戒指，跨回合累计）
     private int skillCountCombat;    // 本场战斗累计技能牌计数（黄金项链，跨回合累计）
     private boolean hasDealtDamageThisTurn; // 魔力花：本回合是否已造成过伤害
+    private boolean exhaustedThisAction;   // 本次操作是否消耗了卡牌（安东尼之怒）
 
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp, String nodeType) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
@@ -80,6 +81,7 @@ public class BattleService {
         this.attackCountThisTurn = 0;
         this.skillCountCombat = 0;
         this.hasDealtDamageThisTurn = false;
+        this.exhaustedThisAction = false;
 
         // 🆕 【核心机制：固有牌处理】
         List<Card> innateCards = new ArrayList<>();
@@ -184,6 +186,7 @@ public class BattleService {
         if (card.isXCost() && energy <= 0) throw new IllegalStateException("X耗能卡牌需要至少1点能量才能打出！");
         if (!card.isXCost() && card.getCost() > energy) throw new IllegalStateException("能量不足");
 
+        exhaustedThisAction = false;
         logList.clear();
         logList.add("🃏 使用: " + card.getName());
 
@@ -393,6 +396,7 @@ public class BattleService {
     }
 
     public synchronized Map<String, Object> endTurn() {
+        exhaustedThisAction = false;
         validateBattleActive();
         
         // ================= 1. 玩家回合结束 =================
@@ -686,6 +690,7 @@ public class BattleService {
         state.put("drawPile", cardsToStateList(drawPile));
         state.put("discardPile", cardsToStateList(discardPile));
         state.put("exhaustPile", cardsToStateList(exhaustPile));
+        state.put("exhaustHappened", exhaustedThisAction); // 🆕 安东尼之怒
         state.put("log", new ArrayList<>(logList)); state.put("gameOver", gameOver); state.put("winner", winner);
         return state;
     }
@@ -701,6 +706,7 @@ public class BattleService {
     }
 
     private void triggerDrawOnExhaust() {
+        exhaustedThisAction = true; // 🆕 安东尼之怒标记
         if (RelicEffectHandler.hasEffect(player, "DRAW_ON_EXHAUST")) {
             drawCards(1);
             logList.add("📄 金纸触发，抽了一张牌");
