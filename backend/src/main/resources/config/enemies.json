@@ -33,7 +33,7 @@
     "description": "首回合随机：腐蚀喷吐(8+黏液)/舔舔(脆弱1)。不能连续同招。",
     "intents": [
       { "type": "ATTACK", "value": 8, "desc": "腐蚀喷吐", "stunCards": 1 },
-      { "type": "DEBUFF", "value": 0, "desc": "舔舔", "applyStatusType": "FRAIL", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" }
+      { "type": "DEBUFF", "value": 0, "desc": "舔舔", "applyStatusType": "FRAIL", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" }
     ]
   },
   {
