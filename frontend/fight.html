@@ -466,6 +466,17 @@
           <p v-if="selectedDiscardHandIndex === -1" style="color: #e74c3c; font-size: 12px; margin-top: 6px;">* 必须选择一张牌才能打出</p>
         </div>
 
+        <!-- 🔨 升级手牌选择 (武装) -->
+        <div v-if="selectedCard && selectedCard.upgradeHandCount > 0 && selectedCard.upgradeHandMode === 'SELECT' && (hand.length - 1) > 0" style="margin-top: 15px; text-align: left;">
+          <label style="display: block; margin-bottom: 8px; color: #f1c40f; font-weight: bold;">🔨 请选择要临时升级的手牌:</label>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+            <template v-for="(card, idx) in hand" :key="idx">
+              <div v-if="idx !== selectedIndex && !card.upgraded" @click="selectUpgradeHand(idx)" :style="{ padding: '6px 10px', background: selectedUpgradeHandIndex === idx ? '#f1c40f' : '#34495e', color: 'white', borderRadius: '4px', cursor: 'pointer', border: selectedUpgradeHandIndex === idx ? '2px solid #e67e22' : '1px solid #2c3e50', fontSize: '12px' }">{{ card.name }} ({{ card.cost }}费)</div>
+            </template>
+          </div>
+          <p v-if="selectedUpgradeHandIndex === -1" style="color: #e74c3c; font-size: 12px; margin-top: 6px;">* 必须选择一张未升级的牌</p>
+        </div>
+
         <!-- 4️⃣ 先抽牌导致当前无牌可选，只能随机消耗/丢弃的提示 (如：手中只有杂技时) -->
         <div v-if="isDrawFirstWithNoCurrentHand && availableCardsAfterPlay > 0 && (selectedCard.discardCount > 0 || selectedCard.exhaustHandCount > 0)" style="margin-top: 10px; color: #3498db; font-size: 14px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
           🎲 将先抽牌，然后 <b>随机</b> 执行消耗/丢弃。
@@ -490,7 +501,7 @@
       data() { 
         return { 
           state: null, loading: false, error: null, showCardConfirm: false, selectedCard: null, selectedIndex: -1,
-          selectedEnemyIndex: 0, selectedExhaustHandIndex: -1, selectedDiscardHandIndex: -1,
+          selectedEnemyIndex: 0, selectedExhaustHandIndex: -1, selectedDiscardHandIndex: -1, selectedUpgradeHandIndex: -1,
           isFromMap: false, prevNodeId: null, nextNodeId: null, tooltipCard: null, tooltipX: 0, tooltipY: 0, logVisible: true, pilePopupVisible: false, pilePopupTitle: '', pilePopupCards: [],
           playerRelics: [] 
         }; 
@@ -540,20 +551,25 @@
                     if (this.selectedDiscardHandIndex === -1) return true;
                 }
             }
-            
+
+            if (this.selectedCard.upgradeHandCount > 0 && this.selectedCard.upgradeHandMode === 'SELECT' && this.availableCardsAfterPlay > 0) {
+                if (this.selectedUpgradeHandIndex === -1) return true;
+            }
+
             return false;
         }
       },
       methods: {
         getStatusName(type) { return CARD_UI.getStatusName(type); },
-        canPlayCard(card) { 
-            return this.state && card && !card.unplayable && (card.xCost ? this.state.energy > 0 : card.cost <= this.state.energy); 
+        canPlayCard(card) {
+            return this.state && card && !card.unplayable && (card.xCost ? this.state.energy > 0 : card.cost <= this.state.energy) && (!card.requiresEmptyDrawPile || this.state.drawPileSize === 0);
         },
         getCardCharStyle(card) { return CARD_UI.getCardCharStyle(card); },
         getRarityBorderColor(card) { return CARD_UI.getRarityBorderColor(card); },
         selectEnemy(index) { this.selectedEnemyIndex = index; },
         selectExhaustHand(idx) { this.selectedExhaustHandIndex = idx; },
         selectDiscardHand(idx) { this.selectedDiscardHandIndex = idx; },
+        selectUpgradeHand(idx) { this.selectedUpgradeHandIndex = idx; },
         
         async newGame() {
           this.error = null; this.loading = true;
@@ -580,8 +596,9 @@
           if (!this.canPlayCard(card)) { this.error = `能量不足或无法打出！`; return; }
           this.selectedCard = card; 
           this.selectedIndex = index; 
-          this.selectedExhaustHandIndex = -1; 
+          this.selectedExhaustHandIndex = -1;
           this.selectedDiscardHandIndex = -1;
+          this.selectedUpgradeHandIndex = -1;
           this.showCardConfirm = true;
         },
         
@@ -598,6 +615,9 @@
             }
             if (card && card.discardCount > 0 && this.selectedDiscardHandIndex !== -1) {
               url += `&discardHandIndex=${this.selectedDiscardHandIndex}`;
+            }
+            if (card && card.upgradeHandCount > 0 && this.selectedUpgradeHandIndex !== -1) {
+              url += `&upgradeHandIndex=${this.selectedUpgradeHandIndex}`;
             }
             
             await this.playCard(this.selectedIndex, url);

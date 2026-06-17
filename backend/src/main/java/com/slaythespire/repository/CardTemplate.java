@@ -48,6 +48,21 @@ public class CardTemplate {
     private final int addWoundCount;
     private final boolean blockToDamage;
     private final int blockPerAttack;
+    // 🆕 静默猎手专属字段
+    private final int energyGainIfDiscarded;
+    private final String discardAllForCards;
+    private final boolean discardAllForDraw;
+    private final String buffCardName;
+    private final int buffDamageAmount;
+    private final boolean doublePoison;
+    private final int drawPoisonAll;
+    private final boolean extraPoisonTick;
+    private final String addCardId;
+    private final int addCardCount;
+    private final int upgradeHandCount;
+    private final String upgradeHandMode;
+    private final boolean upgradeAllInHand;
+    private final boolean requiresEmptyDrawPile;
 
     @JsonCreator
     public CardTemplate(
@@ -86,7 +101,21 @@ public class CardTemplate {
             @JsonProperty("exhaustNonAttackBlock") Integer exhaustNonAttackBlock,
             @JsonProperty("addWoundCount") Integer addWoundCount,
             @JsonProperty("blockToDamage") Boolean blockToDamage,
-            @JsonProperty("blockPerAttack") Integer blockPerAttack) {
+            @JsonProperty("blockPerAttack") Integer blockPerAttack,
+            @JsonProperty("energyGainIfDiscarded") Integer energyGainIfDiscarded,
+            @JsonProperty("discardAllForCards") String discardAllForCards,
+            @JsonProperty("discardAllForDraw") Boolean discardAllForDraw,
+            @JsonProperty("buffCardName") String buffCardName,
+            @JsonProperty("buffDamageAmount") Integer buffDamageAmount,
+            @JsonProperty("doublePoison") Boolean doublePoison,
+            @JsonProperty("drawPoisonAll") Integer drawPoisonAll,
+            @JsonProperty("extraPoisonTick") Boolean extraPoisonTick,
+            @JsonProperty("addCardId") String addCardId,
+            @JsonProperty("addCardCount") Integer addCardCount,
+            @JsonProperty("upgradeHandCount") Integer upgradeHandCount,
+            @JsonProperty("upgradeHandMode") String upgradeHandMode,
+            @JsonProperty("upgradeAllInHand") Boolean upgradeAllInHand,
+            @JsonProperty("requiresEmptyDrawPile") Boolean requiresEmptyDrawPile) {
 
         this.id = id; 
         this.name = name; 
@@ -125,6 +154,20 @@ public class CardTemplate {
         this.addWoundCount = addWoundCount != null ? addWoundCount : 0;
         this.blockToDamage = blockToDamage != null ? blockToDamage : false;
         this.blockPerAttack = blockPerAttack != null ? blockPerAttack : 0;
+        this.energyGainIfDiscarded = energyGainIfDiscarded != null ? energyGainIfDiscarded : 0;
+        this.discardAllForCards = discardAllForCards;
+        this.discardAllForDraw = discardAllForDraw != null ? discardAllForDraw : false;
+        this.buffCardName = buffCardName;
+        this.buffDamageAmount = buffDamageAmount != null ? buffDamageAmount : 0;
+        this.doublePoison = doublePoison != null ? doublePoison : false;
+        this.drawPoisonAll = drawPoisonAll != null ? drawPoisonAll : 0;
+        this.extraPoisonTick = extraPoisonTick != null ? extraPoisonTick : false;
+        this.addCardId = addCardId;
+        this.addCardCount = addCardCount != null ? addCardCount : 0;
+        this.upgradeHandCount = upgradeHandCount != null ? upgradeHandCount : 0;
+        this.upgradeHandMode = upgradeHandMode != null ? upgradeHandMode.toUpperCase() : "RANDOM";
+        this.upgradeAllInHand = upgradeAllInHand != null ? upgradeAllInHand : false;
+        this.requiresEmptyDrawPile = requiresEmptyDrawPile != null ? requiresEmptyDrawPile : false;
     }
 
     // ==================== Getter 方法 ====================
@@ -170,6 +213,20 @@ public class CardTemplate {
     public int getAddWoundCount() { return addWoundCount; }
     public boolean isBlockToDamage() { return blockToDamage; }
     public int getBlockPerAttack() { return blockPerAttack; }
+    public int getEnergyGainIfDiscarded() { return energyGainIfDiscarded; }
+    public String getDiscardAllForCards() { return discardAllForCards; }
+    public boolean isDiscardAllForDraw() { return discardAllForDraw; }
+    public String getBuffCardName() { return buffCardName; }
+    public int getBuffDamageAmount() { return buffDamageAmount; }
+    public boolean isDoublePoison() { return doublePoison; }
+    public int getDrawPoisonAll() { return drawPoisonAll; }
+    public boolean isExtraPoisonTick() { return extraPoisonTick; }
+    public String getAddCardId() { return addCardId; }
+    public int getAddCardCount() { return addCardCount; }
+    public int getUpgradeHandCount() { return upgradeHandCount; }
+    public String getUpgradeHandMode() { return upgradeHandMode; }
+    public boolean isUpgradeAllInHand() { return upgradeAllInHand; }
+    public boolean isRequiresEmptyDrawPile() { return requiresEmptyDrawPile; }
 
     // ==================== 辅助方法 ====================
 
