@@ -110,6 +110,31 @@ public abstract class Combatant {
 
         hp = Math.max(0, hp - hpLost);
 
+        // ================= Boss 遗物效果：伤害相关 =================
+        // 🩸 灵魂之炉：每场战斗首次受伤时恢复生命（仅限玩家）
+        if (hpLost > 0 && source != null && this instanceof Player) {
+            Player p = (Player) this;
+            if (!p.isFirstDamageTakenThisBattle() && RelicEffectHandler.hasEffect(this, "FIRST_HIT_HEAL")) {
+                int healAmt = RelicEffectHandler.getEffectValue(this, "FIRST_HIT_HEAL");
+                p.heal(healAmt);
+                p.markFirstDamageTaken();
+                lastCombatLogs.add("🔥 灵魂之炉触发，恢复 " + healAmt + " 点生命");
+            }
+        }
+
+        // 🪶 凤凰之羽：整局游戏仅生效一次，濒死时恢复至百分比生命（仅限玩家）
+        if (hp <= 0 && this instanceof Player) {
+            Player p = (Player) this;
+            if (!RelicEffectHandler.isDeathSaveUsedInRun() && !p.isDeathSaveUsedThisBattle()
+                    && RelicEffectHandler.hasEffect(this, "DEATH_SAVE")) {
+                int pct = Math.max(1, Math.min(100, RelicEffectHandler.getEffectValue(this, "DEATH_SAVE")));
+                hp = Math.max(1, maxHp * pct / 100);
+                p.markDeathSaveUsed();
+                RelicEffectHandler.markDeathSaveUsedInRun();
+                lastCombatLogs.add("🪶 凤凰之羽触发，恢复至 " + hp + " 点生命（" + pct + "%）");
+            }
+        }
+
         // 荆棘甲反伤（对攻击者造成固定伤害）
         if (hpLost > 0 && source != null) {
             RelicEffectHandler.handleThornsDamage(source, this);

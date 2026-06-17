@@ -30,12 +30,7 @@ public class RewardController {
                 break;
             case "boss":
                 gold = 100 + random.nextInt(50);
-                // 第1个：必定传说
-                Map<String, Object> leg = drawRelicMap(charId, ownedRelics, "legendary");
-                relics.add(leg);
-                // 第2个：稀有/普通 35/65
-                String secondTier = random.nextInt(100) < 35 ? "rare" : "common";
-                relics.add(drawRelicMap(charId, ownedRelics != null ? ownedRelics : new ArrayList<>(), secondTier));
+                // Boss 不给普通遗物，Boss遗物通过独立的三选一界面发放
                 break;
             case "chest":
                 gold = 30 + random.nextInt(20);
@@ -51,21 +46,20 @@ public class RewardController {
         reward.put("gold", gold);
         reward.put("relics", relics);
         
-        // 为Boss战生成Boss遗物选项（占位符，后续从配置读取）
+        // 为Boss战生成Boss遗物选项（从Boss遗物池抽取3个）
         if ("boss".equalsIgnoreCase(nodeType)) {
+            List<RelicTemplate> bossRelics = relicPoolService.drawBossRelics(charId, ownedRelics, 3);
             List<Map<String, Object>> bossRelicOptions = new ArrayList<>();
-            Map<String, Object> br1 = new LinkedHashMap<>();
-            br1.put("id", "placeholder_boss_relic_1"); br1.put("name", "能量方块"); br1.put("description", "每回合获得1点额外能量。");
-            br1.put("effectType", "NO_EFFECT"); br1.put("value", 0); br1.put("rarity", "SPECIAL");
-            bossRelicOptions.add(br1);
-            Map<String, Object> br2 = new LinkedHashMap<>();
-            br2.put("id", "placeholder_boss_relic_2"); br2.put("name", "灵魂之炉"); br2.put("description", "每场战斗首次受伤时恢复5点生命。");
-            br2.put("effectType", "NO_EFFECT"); br2.put("value", 0); br2.put("rarity", "SPECIAL");
-            bossRelicOptions.add(br2);
-            Map<String, Object> br3 = new LinkedHashMap<>();
-            br3.put("id", "placeholder_boss_relic_3"); br3.put("name", "符文立方体"); br3.put("description", "每回合抽牌数+1。");
-            br3.put("effectType", "NO_EFFECT"); br3.put("value", 0); br3.put("rarity", "SPECIAL");
-            bossRelicOptions.add(br3);
+            for (RelicTemplate tpl : bossRelics) {
+                Map<String, Object> br = new LinkedHashMap<>();
+                br.put("id", tpl.getId());
+                br.put("name", tpl.getName());
+                br.put("description", tpl.getDescription());
+                br.put("effectType", tpl.getEffectType());
+                br.put("value", tpl.getValue());
+                br.put("rarity", tpl.getRarity());
+                bossRelicOptions.add(br);
+            }
             reward.put("bossRelicOptions", bossRelicOptions);
         }
         if ("chest".equalsIgnoreCase(nodeType)) reward.put("cards", Collections.emptyList());
@@ -99,6 +93,27 @@ public class RewardController {
         }
         while (pool.size() < count) pool.add(cardToMap(validCards.get(random.nextInt(validCards.size()))));
         return pool;
+    }
+
+    /**
+     * Boss遗物三选一接口 — 从Boss遗物池抽取3个供玩家选择
+     */
+    @GetMapping("/bossRelics")
+    public List<Map<String, Object>> getBossRelics(@RequestParam(defaultValue = "1") String charId,
+                                                     @RequestParam(required = false) List<String> ownedRelics) {
+        List<RelicTemplate> relics = relicPoolService.drawBossRelics(charId, ownedRelics, 3);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (RelicTemplate tpl : relics) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("id", tpl.getId());
+            map.put("name", tpl.getName());
+            map.put("description", tpl.getDescription());
+            map.put("effectType", tpl.getEffectType());
+            map.put("value", tpl.getValue());
+            map.put("rarity", tpl.getRarity());
+            result.add(map);
+        }
+        return result;
     }
 
     private Map<String, Object> cardToMap(CardTemplate tpl) {

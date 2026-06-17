@@ -230,9 +230,10 @@
     const app = Vue.createApp({
       data() { 
         return { 
-          state: null, loading: false, error: null, showCardConfirm: false, selectedCard: null, selectedIndex: -1, 
-          selectedEnemyIndex: 0, selectedExhaustHandIndex: -1, selectedDiscardHandIndex: -1, 
-          isFromMap: false, prevNodeId: null, nextNodeId: null, tooltipCard: null, tooltipX: 0, tooltipY: 0, pilePopupVisible: false, pilePopupTitle: '', pilePopupCards: [] 
+          state: null, loading: false, error: null, showCardConfirm: false, selectedCard: null, selectedIndex: -1,
+          selectedEnemyIndex: 0, selectedExhaustHandIndex: -1, selectedDiscardHandIndex: -1,
+          isFromMap: false, prevNodeId: null, nextNodeId: null, tooltipCard: null, tooltipX: 0, tooltipY: 0, pilePopupVisible: false, pilePopupTitle: '', pilePopupCards: [],
+          playerRelics: [] 
         }; 
       },
       mounted() {
@@ -302,6 +303,7 @@
             const nodeTypeParam = new URLSearchParams(window.location.search).get('nodeType') || '';
             const actParam = new URLSearchParams(window.location.search).get('act') || '1';
             const saveData = await loadSaveData(charParam);
+            this.playerRelics = saveData.relics || [];
             const bodyData = { deck: saveData.deck, relics: saveData.relics, playerHp: saveData.playerHp, playerMaxHp: saveData.maxHp };
             bodyData.nodeType = (nodeTypeParam || 'monster') + '_act' + actParam;
             const resp = await fetch(`${API_BASE}/new`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyData) });
@@ -377,15 +379,21 @@
             const url = customUrl || `${API_BASE}/play?index=${index}`;
             const resp = await fetch(url, { method: 'POST' });
             this.state = await resp.json();
+            this.checkAnthonyAnger();
           } catch (e) { this.error = '打出卡牌失败'; }
         },
         
         async endTurn() {
           this.error = null;
           if (!this.state || this.state.gameOver) return;
-          try { const resp = await fetch(`${API_BASE}/endTurn`, { method: 'POST' }); this.state = await resp.json(); } catch (e) { this.error = '结束回合失败'; }
+          try { const resp = await fetch(`${API_BASE}/endTurn`, { method: 'POST' }); this.state = await resp.json(); this.checkAnthonyAnger(); } catch (e) { this.error = '结束回合失败'; }
         },
         
+        checkAnthonyAnger() {
+          if (this.state && this.state.exhaustHappened && (this.playerRelics || []).includes('anthony_anger')) {
+            alert('再玩小卡组找人弄你😡');
+          }
+        },
         async goAfterFight() {
           if (!this.state) return;
           const charParam = new URLSearchParams(window.location.search).get('char') || '1';

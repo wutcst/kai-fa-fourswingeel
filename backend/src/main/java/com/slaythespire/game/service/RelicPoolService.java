@@ -112,9 +112,73 @@ public class RelicPoolService {
         for (RelicTemplate tpl : allRelics) {
             if (tpl.getCharId() != null && !tpl.getCharId().equals(charId)) continue;
             String rarity = tpl.getRarity();
-            if ("STARTER".equals(rarity) || "SPECIAL".equals(rarity)) continue;
+            if ("STARTER".equals(rarity) || "SPECIAL".equals(rarity) || "BOSS".equals(rarity)) continue;
             if (owned.contains(tpl.getId())) continue;
             if (tier.equalsIgnoreCase(rarity)) {
+                pool.add(tpl);
+            }
+        }
+        return pool;
+    }
+
+    /**
+     * Boss 遗物池 - 从所有 BOSS 稀有度遗物中等概率抽取
+     * 抽干则返回头环（ring）
+     */
+    public RelicTemplate drawBossRelic(String charId, List<String> ownedRelicIds) {
+        List<RelicTemplate> bossPool = buildBossPool(charId, ownedRelicIds);
+        if (bossPool.isEmpty()) return dataRepo.getRelicById("ring");
+        return bossPool.get(random.nextInt(bossPool.size()));
+    }
+
+    /**
+     * 批量抽取 Boss 遗物（用于三选一展示）
+     * 不会重复抽取同一遗物，抽干后用头环补齐数量
+     */
+    public List<RelicTemplate> drawBossRelics(String charId, List<String> ownedRelicIds, int count) {
+        List<RelicTemplate> bossPool = buildBossPool(charId, ownedRelicIds);
+        List<RelicTemplate> result = new ArrayList<>();
+        Set<String> usedIds = new HashSet<>();
+        if (ownedRelicIds != null) usedIds.addAll(ownedRelicIds);
+
+        while (result.size() < count) {
+            // 从剩余 Boss 池中找未使用的
+            RelicTemplate chosen = null;
+            List<RelicTemplate> remaining = new ArrayList<>();
+            for (RelicTemplate tpl : bossPool) {
+                if (!usedIds.contains(tpl.getId())) remaining.add(tpl);
+            }
+            if (!remaining.isEmpty()) {
+                chosen = remaining.get(random.nextInt(remaining.size()));
+                usedIds.add(chosen.getId());
+            } else {
+                // Boss 池已抽干，用头环补齐
+                chosen = dataRepo.getRelicById("ring");
+            }
+            if (chosen != null) result.add(chosen);
+        }
+        return result;
+    }
+
+    /**
+     * 构建可用 Boss 遗物池（等概率抽取用）
+     */
+    private List<RelicTemplate> buildBossPool(String charId, List<String> ownedRelicIds) {
+        List<RelicTemplate> allRelics = dataRepo.getAllRelics();
+        if (allRelics.isEmpty()) return Collections.emptyList();
+
+        Set<String> owned = new HashSet<>();
+        if (ownedRelicIds != null) {
+            for (String id : ownedRelicIds) {
+                if (id != null && !id.isEmpty()) owned.add(id);
+            }
+        }
+
+        List<RelicTemplate> pool = new ArrayList<>();
+        for (RelicTemplate tpl : allRelics) {
+            if ("BOSS".equals(tpl.getRarity())) {
+                if (owned.contains(tpl.getId())) continue;
+                if (tpl.getCharId() != null && !tpl.getCharId().equals(charId)) continue;
                 pool.add(tpl);
             }
         }
