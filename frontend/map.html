@@ -33,9 +33,27 @@
     line { stroke: #555; stroke-width: 3; stroke-linecap: round; transition: stroke 0.3s; }
     .info-bar { position: fixed; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px; font-size: 14px; z-index: 10; }
     .btn-return { position: fixed; top: 50px; right: 20px; background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; z-index: 10; }
+    /* 阶段指示器 - 位于状态栏下方，左上角，z-index 高于状态栏 */
+    .act-indicator {
+      position: fixed;
+      top: 42px; /* 状态栏高度约40px + 2px border */
+      left: 12px;
+      z-index: 10000;
+      background: rgba(0,0,0,0.6);
+      color: #f1c40f;
+      padding: 4px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: bold;
+      border: 1px solid #f1c40f;
+      pointer-events: none; /* 点击穿透，不会干扰地图交互 */
+    }
   </style>
 </head>
 <body>
+  <!-- 阶段指示器 - 默认文字为第 1 阶段，脚本会动态更新 -->
+  <div class="act-indicator" id="act-indicator">第 1 阶段</div>
+
   <div id="map-container">
     <svg id="lines"></svg>
   </div>
@@ -53,6 +71,12 @@
       if (isNaN(act)) {
         const saveDataForAct = await loadSaveData(charParam);
         act = saveDataForAct.act || 1;
+      }
+
+      // 更新阶段指示器
+      const actIndicator = document.getElementById('act-indicator');
+      if (actIndicator) {
+        actIndicator.textContent = `第 ${act} 阶段`;
       }
 
       const saveData = await loadSaveData(charParam);
