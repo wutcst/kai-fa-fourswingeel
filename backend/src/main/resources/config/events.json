@@ -60,5 +60,310 @@
         "effects": []
       }
     ]
+  },
+  {
+    "id": "mysterious_spring",
+    "title": "神秘泉水",
+    "description": "清澈的泉水在月光下泛着微光，据说能治愈一切伤痕，但你也可以选择装一瓶带走。",
+    "background": "linear-gradient(135deg, #2a5c7a, #0e2e3e)",
+    "icon": "💧",
+    "options": [
+      {
+        "text": "饮用泉水（+20❤️）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": 20 }
+        ]
+      },
+      {
+        "text": "装瓶带走（获得随机卡牌）",
+        "effects": [
+          { "type": "ADD_RANDOM_CARD" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "gamblers_den",
+    "title": "赌徒的赌局",
+    "description": "一个戴着面具的赌徒向你招手：'来吧，试试你的运气！赢了拿钱走人，输了……嘿嘿。'",
+    "background": "linear-gradient(135deg, #5a3a1a, #3e1e0e)",
+    "icon": "🎲",
+    "options": [
+      {
+        "text": "下注赌博（50%概率+80💰/50%概率-40💰）",
+        "effects": [
+          { "type": "GOLD", "value": 80 }
+        ]
+      },
+      {
+        "text": "小赌怡情（-5💰，+5❤️）",
+        "effects": [
+          { "type": "GOLD", "value": -5 },
+          { "type": "HP_CHANGE", "value": 5 }
+        ]
+      },
+      {
+        "text": "拒绝掺和",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "treasure_chest",
+    "title": "金光宝箱",
+    "description": "角落里放着一个镶金的宝箱，似乎无人看守，但箱子上刻着古老的警告符文。",
+    "background": "linear-gradient(135deg, #5a4a1a, #2e2e0e)",
+    "icon": "📦",
+    "options": [
+      {
+        "text": "打开宝箱（获得稀有遗物）",
+        "effects": [
+          { "type": "ADD_RELIC", "tier": "rare" }
+        ]
+      },
+      {
+        "text": "撬锁搜刮（+40💰）",
+        "effects": [
+          { "type": "GOLD", "value": 40 }
+        ]
+      },
+      {
+        "text": "安全起见，离开",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "soul_trader",
+    "title": "灵魂商人",
+    "description": "一个身穿黑袍的商人愿意用金币换取你的一部分生命力。他的天平上一边放着金币，一边燃着幽蓝的火焰。",
+    "background": "linear-gradient(135deg, #3a1a5a, #1e0e2e)",
+    "icon": "⚖️",
+    "options": [
+      {
+        "text": "交易生命（-15❤️，+60💰）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -15 },
+          { "type": "GOLD", "value": 60 }
+        ]
+      },
+      {
+        "text": "拒绝交易",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "fallen_knight",
+    "title": "堕落骑士",
+    "description": "一位奄奄一息的骑士靠在墙边，他手中紧握着一件闪闪发光的遗物。'给我一些金币买药，我就把它给你……'",
+    "background": "linear-gradient(135deg, #4a4a4a, #2a2a2a)",
+    "icon": "🛡️",
+    "options": [
+      {
+        "text": "支付金币换取遗物（-40💰，获得稀有遗物）",
+        "effects": [
+          { "type": "GOLD", "value": -40 },
+          { "type": "ADD_RELIC", "tier": "rare" }
+        ]
+      },
+      {
+        "text": "帮他一把（-10💰，+10❤️）",
+        "effects": [
+          { "type": "GOLD", "value": -10 },
+          { "type": "HP_CHANGE", "value": 10 }
+        ]
+      },
+      {
+        "text": "冷漠离开",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "shadow_gathering",
+    "title": "暗影集会",
+    "description": "暗处传来窃窃私语，一群戴着兜帽的人围成一圈，似乎在举行某种仪式。他们注意到了你，示意你加入。",
+    "background": "linear-gradient(135deg, #1a1a2e, #0e0e1e)",
+    "icon": "🕯️",
+    "options": [
+      {
+        "text": "加入仪式（-10❤️，获得传奇遗物）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -10 },
+          { "type": "ADD_RELIC", "tier": "legendary" }
+        ]
+      },
+      {
+        "text": "偷听秘法（获得随机卡牌）",
+        "effects": [
+          { "type": "ADD_RANDOM_CARD" }
+        ]
+      },
+      {
+        "text": "悄悄离开",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "tree_of_life",
+    "title": "生命古树",
+    "description": "一棵巨大的古树矗立在你面前，树冠散发着温暖的金光，地上落满了发光的果实。",
+    "background": "linear-gradient(135deg, #2a5a2a, #0e2e0e)",
+    "icon": "🌳",
+    "options": [
+      {
+        "text": "摘取生命果实（+25❤️）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": 25 }
+        ]
+      },
+      {
+        "text": "拾取掉落的果实（+15❤️，+15💰）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": 15 },
+          { "type": "GOLD", "value": 15 }
+        ]
+      },
+      {
+        "text": "摘一片树叶留念（获得随机卡牌）",
+        "effects": [
+          { "type": "ADD_RANDOM_CARD" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "devils_contract",
+    "title": "魔鬼契约",
+    "description": "一只燃烧着火焰的手从地缝中伸出，手中摊着一份羊皮纸契约。上面写道：'以凡人之躯，换取无上之力。'",
+    "background": "linear-gradient(135deg, #5a1a1a, #2e0e0e)",
+    "icon": "📜",
+    "options": [
+      {
+        "text": "签下契约（-20❤️，获得传奇遗物）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -20 },
+          { "type": "ADD_RELIC", "tier": "legendary" }
+        ]
+      },
+      {
+        "text": "撕毁契约",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "forgotten_tower",
+    "title": "遗忘之塔",
+    "description": "一座破败的高塔孤零零地立在山丘上，塔顶隐约有光芒闪烁，但攀爬上去需要消耗体力。",
+    "background": "linear-gradient(135deg, #3a3a5a, #1e1e2e)",
+    "icon": "🗼",
+    "options": [
+      {
+        "text": "攀爬到塔顶（-5❤️，获得随机卡牌+普通遗物）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -5 },
+          { "type": "ADD_RANDOM_CARD" },
+          { "type": "ADD_RELIC", "tier": "common" }
+        ]
+      },
+      {
+        "text": "搜索塔底（+30💰）",
+        "effects": [
+          { "type": "GOLD", "value": 30 }
+        ]
+      },
+      {
+        "text": "绕过此塔",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "alchemist_lab",
+    "title": "炼金实验室",
+    "description": "你闯进了一间废弃的炼金实验室，桌上摆满了五颜六色的药剂，有的冒着气泡，有的发出荧光。",
+    "background": "linear-gradient(135deg, #2a5a4a, #0e2e2e)",
+    "icon": "⚗️",
+    "options": [
+      {
+        "text": "喝下绿色药剂（+15❤️）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": 15 }
+        ]
+      },
+      {
+        "text": "喝下金色药剂（+40💰）",
+        "effects": [
+          { "type": "GOLD", "value": 40 }
+        ]
+      },
+      {
+        "text": "喝下紫色药剂（-8❤️，获得随机卡牌）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -8 },
+          { "type": "ADD_RANDOM_CARD" }
+        ]
+      },
+      {
+        "text": "不碰这些药水",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "wandering_priest",
+    "title": "流浪牧师",
+    "description": "一个慈祥的老牧师在路上拦住了你，他手中捧着一本厚重的圣典。'孩子，你看起来很疲惫，需要神的恩赐吗？'",
+    "background": "linear-gradient(135deg, #5a5a3a, #2e2e1e)",
+    "icon": "⛪",
+    "options": [
+      {
+        "text": "接受祝福（+15❤️）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": 15 }
+        ]
+      },
+      {
+        "text": "捐赠金币（-30💰，获得稀有遗物）",
+        "effects": [
+          { "type": "GOLD", "value": -30 },
+          { "type": "ADD_RELIC", "tier": "rare" }
+        ]
+      },
+      {
+        "text": "婉拒好意",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "goblin_camp",
+    "title": "哥布林营地",
+    "description": "远处传来喧闹声，几个哥布林正围坐在篝火旁烤肉。他们似乎没注意到你，物资就散落在营地周围。",
+    "background": "linear-gradient(135deg, #4a3a1a, #2e1a0e)",
+    "icon": "👺",
+    "options": [
+      {
+        "text": "偷袭营地（-12❤️，+50💰+普通遗物）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -12 },
+          { "type": "GOLD", "value": 50 },
+          { "type": "ADD_RELIC", "tier": "common" }
+        ]
+      },
+      {
+        "text": "偷溜进去搜刮（+35💰）",
+        "effects": [
+          { "type": "GOLD", "value": 35 }
+        ]
+      },
+      {
+        "text": "绕路避开",
+        "effects": []
+      }
+    ]
   }
 ]
