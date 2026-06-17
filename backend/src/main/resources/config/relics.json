@@ -39,7 +39,7 @@
   { "id": "soul_furnace", "name": "灵魂之炉", "description": "每场战斗首次受伤时，恢复 8 点生命。", "effectType": "FIRST_HIT_HEAL", "value": 8, "rarity": "BOSS", "charId": null },
   { "id": "phoenix_feather", "name": "凤凰之羽", "description": "每场战斗首次濒死时，恢复至 30% 生命。", "effectType": "DEATH_SAVE", "value": 30, "rarity": "BOSS", "charId": null },
   { "id": "shadow_cloak", "name": "暗影斗篷", "description": "战斗开始时获得 2 层无实体。", "effectType": "INTANGIBLE_START", "value": 2, "rarity": "BOSS", "charId": null },
-  { "id": "battle_horn", "name": "战场号角", "description": "每场战斗的第一回合获得 2 点能量。", "effectType": "ENERGY_FIRST_TURN", "value": 2, "rarity": "BOSS", "charId": null },
+  { "id": "battle_horn", "name": "战场号角", "description": "每场战斗的第一回合获得 2 点能量。", "effectType": "ENERGY_FIRST_TURN", "value": 2, "rarity": "RARE", "charId": null },
   { "id": "prophet_eye", "name": "先知之眼", "description": "每回合第一次抽牌多抽 3 张。", "effectType": "FIRST_DRAW_BONUS", "value": 3, "rarity": "BOSS", "charId": null },
-  { "id": "giant_power", "name": "巨人之力", "description": "最大生命值 +25。", "effectType": "MAX_HP", "value": 25, "rarity": "BOSS", "charId": null }
+  { "id": "giant_power", "name": "巨人之力", "description": "最大生命值 +25。", "effectType": "MAX_HP", "value": 25, "rarity": "RARE", "charId": null }
 ]
