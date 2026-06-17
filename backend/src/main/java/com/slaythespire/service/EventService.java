@@ -116,13 +116,18 @@ public class EventService {
                     }
                     if (relic != null) {
                         saveData.getRelics().add(relic.getId());
-                        // 处理 MAX_HP 类遗物
-                        if ("MAX_HP".equals(relic.getEffectType()) && relic.getValue() > 0) {
+                        String rid = relic.getId();
+                        // 华夫饼：最大生命+10 并回满血
+                        if ("waffle".equals(rid)) {
+                            saveData.setMaxHp(saveData.getMaxHp() + relic.getValue());
+                            saveData.setPlayerHp(saveData.getMaxHp());
+                        }
+                        // 处理 MAX_HP 类遗物（除华夫饼外的通用逻辑）
+                        else if ("MAX_HP".equals(relic.getEffectType()) && relic.getValue() > 0) {
                             saveData.setMaxHp(saveData.getMaxHp() + relic.getValue());
                             saveData.setPlayerHp(Math.min(saveData.getPlayerHp() + relic.getValue(), saveData.getMaxHp()));
                         }
                         // 处理拾起金币遗物
-                        String rid = relic.getId();
                         if ("small_gold_bag".equals(rid)) saveData.setGold(saveData.getGold() + 50);
                         else if ("treasure_bag".equals(rid)) saveData.setGold(saveData.getGold() + 150);
                         else if ("ancient_coin".equals(rid)) saveData.setGold(saveData.getGold() + 500);
