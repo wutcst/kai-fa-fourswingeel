@@ -279,7 +279,6 @@ public class BattleService {
                     int actualDmg = e.takeDamage(card.getDamage() * xValue, player);
                     logList.addAll(e.getLastCombatLogs());
                     logList.add(String.format("💥 AOE对 %s 造成 %d 点伤害，HP: %d", e.getEnemyName(), actualDmg, e.getHp()));
-                }
                     if (actualDmg > 0) triggerManaFlower();
                     if (!e.isAlive()) triggerGoblinHorn();
             } else {
