@@ -49,19 +49,35 @@ const CARD_UI = {
         parts.push(`力量发挥 ${card.strengthMultiplier} 倍效果`);
     }
 
+    // 🆕 回合结束伤害（灼烧等状态牌）
+    if (card.endOfTurnDamage > 0) {
+        parts.push(`回合结束时受到 ${card.endOfTurnDamage} 点伤害`);
+    }
+
+    // 🆕 抽到时效果（虚空的失去能量等）
+    if (card.energyLossOnDraw > 0) {
+        parts.push(`抽到时失去 ${card.energyLossOnDraw} 点能量`);
+    }
+
     if (card.drawFirst) {
         if (card.drawCount > 0) parts.push(`抽 ${card.drawCount} 张牌`);
         if (card.exhaustHandCount > 0) {
             const mode = card.exhaustHandMode === 'SELECT' ? '选择' : '随机';
             parts.push(`${mode}消耗 ${card.exhaustHandCount} 张手牌`);
         }
-        if (card.discardCount > 0) parts.push(`丢弃 ${card.discardCount} 张手牌`);
+        if (card.discardCount > 0) {
+            const mode = card.discardMode === 'SELECT' ? '选择' : '随机';
+            parts.push(`${mode}丢弃 ${card.discardCount} 张手牌`);
+        }
     } else {
         if (card.exhaustHandCount > 0) {
             const mode = card.exhaustHandMode === 'SELECT' ? '选择' : '随机';
             parts.push(`${mode}消耗 ${card.exhaustHandCount} 张手牌`);
         }
-        if (card.discardCount > 0) parts.push(`丢弃 ${card.discardCount} 张手牌`);
+        if (card.discardCount > 0) {
+            const mode = card.discardMode === 'SELECT' ? '选择' : '随机';
+            parts.push(`${mode}丢弃 ${card.discardCount} 张手牌`);
+        }
         if (card.drawCount > 0) parts.push(`抽 ${card.drawCount} 张牌`);
     }
 

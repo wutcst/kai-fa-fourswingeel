@@ -128,7 +128,12 @@ public class RewardController {
         map.put("exhaustHandCount", tpl.getExhaustHandCount()); map.put("exhaustHandMode", tpl.getExhaustHandMode());
         map.put("unplayable", tpl.isUnplayable()); map.put("innate", tpl.isInnate()); map.put("discardCount", tpl.getDiscardCount()); map.put("discardMode", tpl.getDiscardMode());
         map.put("xCost", tpl.isXCost()); map.put("aoe", tpl.isAoe());
-        map.put("drawFirst", tpl.isDrawFirst()); // 🆕 补全新字段
+        map.put("drawFirst", tpl.isDrawFirst());
+        map.put("copyToDiscard", tpl.isCopyToDiscard());
+        map.put("strengthMultiplier", tpl.getStrengthMultiplier());
+        map.put("randomTarget", tpl.isRandomTarget());
+        map.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
+        map.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
         return map;
     }
 

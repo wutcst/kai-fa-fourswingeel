@@ -450,7 +450,10 @@ public class GameConfigController {
                 cardMap.put("drawFirst", tpl.isDrawFirst()); 
                 cardMap.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
                 cardMap.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
-                
+                cardMap.put("copyToDiscard", tpl.isCopyToDiscard());
+                cardMap.put("strengthMultiplier", tpl.getStrengthMultiplier());
+                cardMap.put("randomTarget", tpl.isRandomTarget());
+
                 int price = 50 + (tpl.getCost() * 25);
                 if (tpl.getDamage() > 10 || tpl.getBlock() > 10) price += 20;
                 cardMap.put("price", price);
@@ -545,7 +548,10 @@ public class GameConfigController {
                     cardMap.put("drawFirst", tpl.isDrawFirst()); 
                     cardMap.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
                     cardMap.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
-                    
+                    cardMap.put("copyToDiscard", tpl.isCopyToDiscard());
+                    cardMap.put("strengthMultiplier", tpl.getStrengthMultiplier());
+                    cardMap.put("randomTarget", tpl.isRandomTarget());
+
                     deck.add(cardMap);
                 }
             }
@@ -604,6 +610,9 @@ public class GameConfigController {
         map.put("drawFirst", tpl.isDrawFirst());
         map.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
         map.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
+        map.put("copyToDiscard", tpl.isCopyToDiscard());
+        map.put("strengthMultiplier", tpl.getStrengthMultiplier());
+        map.put("randomTarget", tpl.isRandomTarget());
         return map;
     }
 }
