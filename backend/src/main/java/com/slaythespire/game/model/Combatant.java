@@ -122,13 +122,15 @@ public abstract class Combatant {
             }
         }
 
-        // 🪶 凤凰之羽：每场战斗首次濒死时恢复至百分比生命（仅限玩家）
+        // 🪶 凤凰之羽：整局游戏仅生效一次，濒死时恢复至百分比生命（仅限玩家）
         if (hp <= 0 && this instanceof Player) {
             Player p = (Player) this;
-            if (!p.isDeathSaveUsedThisBattle() && RelicEffectHandler.hasEffect(this, "DEATH_SAVE")) {
+            if (!RelicEffectHandler.isDeathSaveUsedInRun() && !p.isDeathSaveUsedThisBattle()
+                    && RelicEffectHandler.hasEffect(this, "DEATH_SAVE")) {
                 int pct = Math.max(1, Math.min(100, RelicEffectHandler.getEffectValue(this, "DEATH_SAVE")));
                 hp = Math.max(1, maxHp * pct / 100);
                 p.markDeathSaveUsed();
+                RelicEffectHandler.markDeathSaveUsedInRun();
                 lastCombatLogs.add("🪶 凤凰之羽触发，恢复至 " + hp + " 点生命（" + pct + "%）");
             }
         }

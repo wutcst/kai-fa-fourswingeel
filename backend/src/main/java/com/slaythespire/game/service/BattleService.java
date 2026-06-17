@@ -29,6 +29,10 @@ public class BattleService {
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp, String nodeType) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
         this.player.resetBattleFlags();
+        // 🆕 凤凰之羽全局重置：如果新开一局（遗物列表不含 phoenix_feather），重置重生标记
+        if (playerRelics == null || !playerRelics.contains("phoenix_feather")) {
+            RelicEffectHandler.resetDeathSaveInRun();
+        }
         if (playerRelics != null) {
             for (String relicId : playerRelics) {
                 RelicTemplate tpl = dataRepo.getRelicById(relicId);

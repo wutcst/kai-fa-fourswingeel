@@ -8,6 +8,13 @@ import com.slaythespire.game.model.factory.StatusFactory;
  */
 public class RelicEffectHandler {
 
+    /** 🪶 凤凰之羽：整局游戏仅触发一次的全局标记 */
+    private static boolean deathSaveUsedInRun = false;
+
+    public static boolean isDeathSaveUsedInRun() { return deathSaveUsedInRun; }
+    public static void markDeathSaveUsedInRun() { deathSaveUsedInRun = true; }
+    public static void resetDeathSaveInRun() { deathSaveUsedInRun = false; }
+
     /** 玩家回合开始时触发 */
     public static void onPlayerTurnStart(Player player) {
         for (Relic r : player.getRelics()) {
