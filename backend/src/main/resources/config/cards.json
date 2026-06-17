@@ -33,8 +33,6 @@
     {"id":"flying_boomerang+","name":"飞剑回旋镖+","cost":1,"damage":3,"block":0,"type":"ATTACK","multiHitCount":4,"randomTarget":true,"upgraded":true,"charId":"1","rarity":"COMMON"},
     {"id":"thunder_strike","name":"闪电霹雳","cost":1,"damage":4,"block":0,"type":"ATTACK","aoe":true,"effects":[{"type":"VULNERABLE","count":1,"target":"ENEMY"}],"upgraded":false,"charId":"1","rarity":"COMMON"},
     {"id":"thunder_strike+","name":"闪电霹雳+","cost":1,"damage":7,"block":0,"type":"ATTACK","aoe":true,"effects":[{"type":"VULNERABLE","count":1,"target":"ENEMY"}],"upgraded":true,"charId":"1","rarity":"COMMON"},
-    {"id":"wild_strike","name":"狂野打击","cost":1,"damage":12,"block":0,"type":"ATTACK","addWoundToDrawPile":1,"upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"wild_strike+","name":"狂野打击+","cost":1,"damage":17,"block":0,"type":"ATTACK","addWoundToDrawPile":1,"upgraded":true,"charId":"1","rarity":"COMMON"},
     {"id":"cleave","name":"顺劈斩","cost":1,"damage":8,"block":0,"type":"ATTACK","aoe":true,"upgraded":false,"charId":"1","rarity":"COMMON"},
     {"id":"cleave+","name":"顺劈斩+","cost":1,"damage":11,"block":0,"type":"ATTACK","aoe":true,"upgraded":true,"charId":"1","rarity":"COMMON"},
     {"id":"iron_arm","name":"金刚臂","cost":2,"damage":12,"block":0,"type":"ATTACK","effects":[{"type":"WEAK","count":2,"target":"ENEMY"}],"upgraded":false,"charId":"1","rarity":"COMMON"},
@@ -61,7 +59,68 @@
 
     {"id":"oneshot","name":"秒杀","cost":0,"damage":999,"block":0,"type":"ATTACK","upgraded":false,"innate":true,"aoe":true,"charId":"0","rarity":"START","exhaust":true},
     {"id":"regen_potion","name":"自我再生","cost":1,"damage":0,"block":0,"type":"SKILL","effects":[{"type":"REGENERATION","count":4,"target":"SELF"}],"upgraded":false,"charId":"0","rarity":"RARE"},
-    {"id":"regen_potion+","name":"自我再生+","cost":1,"damage":0,"block":0,"type":"SKILL","effects":[{"type":"REGENERATION","count":6,"target":"SELF"}],"upgraded":true,"charId":"0","rarity":"RARE"}
+    {"id":"regen_potion+","name":"自我再生+","cost":1,"damage":0,"block":0,"type":"SKILL","effects":[{"type":"REGENERATION","count":6,"target":"SELF"}],"upgraded":true,"charId":"0","rarity":"RARE"},
+    
 
+
+        {
+      "id": "slime",
+      "name": "粘液",
+      "cost": 1,
+      "damage": 0,
+      "block": 0,
+      "type": "STATUS",
+      "exhaust": true,
+      "charId": "0",
+      "rarity": "SPECIAL"
+    },
+    {
+      "id": "dazed",
+      "name": "晕眩",
+      "cost": 0,
+      "damage": 0,
+      "block": 0,
+      "type": "STATUS",
+      "ethereal": true,
+      "unplayable": true,
+      "charId": "0",
+      "rarity": "SPECIAL"
+    },
+    {
+      "id": "wound",
+      "name": "伤口",
+      "cost": 0,
+      "damage": 0,
+      "block": 0,
+      "type": "STATUS",
+      "unplayable": true,
+      "charId": "0",
+      "rarity": "SPECIAL"
+    },
+    {
+      "id": "burn",
+      "name": "灼烧",
+      "cost": 0,
+      "damage": 0,
+      "block": 0,
+      "type": "STATUS",
+      "unplayable": true,
+      "endOfTurnDamage": 2,
+      "charId": "0",
+      "rarity": "SPECIAL"
+    },
+    {
+      "id": "void",
+      "name": "虚空",
+      "cost": 0,
+      "damage": 0,
+      "block": 0,
+      "type": "STATUS",
+      "ethereal": true,
+      "unplayable": true,
+      "energyLossOnDraw": 1,
+      "charId": "0",
+      "rarity": "SPECIAL"
+    }
 
 ]

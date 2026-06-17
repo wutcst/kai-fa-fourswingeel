@@ -451,6 +451,8 @@ public class GameConfigController {
                 cardMap.put("discardMode", tpl.getDiscardMode());
                 cardMap.put("aoe", tpl.isAoe());
                 cardMap.put("drawFirst", tpl.isDrawFirst()); 
+                cardMap.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
+                cardMap.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
                 
                 int price = 50 + (tpl.getCost() * 25);
                 if (tpl.getDamage() > 10 || tpl.getBlock() > 10) price += 20;
@@ -544,6 +546,8 @@ public class GameConfigController {
                     cardMap.put("discardMode", tpl.getDiscardMode());
                     cardMap.put("aoe", tpl.isAoe());
                     cardMap.put("drawFirst", tpl.isDrawFirst()); 
+                    cardMap.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
+                    cardMap.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
                     
                     deck.add(cardMap);
                 }
@@ -601,6 +605,8 @@ public class GameConfigController {
         map.put("xCost", tpl.isXCost());
         map.put("aoe", tpl.isAoe());
         map.put("drawFirst", tpl.isDrawFirst());
+        map.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
+        map.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
         return map;
     }
 }

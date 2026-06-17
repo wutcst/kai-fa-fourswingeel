@@ -1,203 +1,170 @@
 package com.slaythespire.repository;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import com.slaythespire.game.model.Card.CardType;
-
 import com.slaythespire.game.model.CardEffect;
 
 import java.util.Collections;
-
 import java.util.List;
 
 public class CardTemplate {
 
     private final String id;
-
     private final String name;
-
     private final int cost;
-
     private final int damage;
-
     private final int block;
-
     private final CardType type;
-
     private final List<CardEffect> effects;
-
     private final boolean exhaust;
-
     private final boolean retain;
-
     private final boolean ethereal;
-
     private final int drawCount;
-
     private final boolean upgraded;
-
     private final String charId;
-
     private final String rarity;
-
     private final int selfDamage;
-
     private final int energyGain;
-
     private final int multiHitCount;
-
     private final int exhaustHandCount;
-
     private final String exhaustHandMode;
-
     private final boolean unplayable;
-
     private final boolean innate;
-
     private final int discardCount;
-
     private final String discardMode;
-
     private final boolean xCost;
-
     private final boolean aoe;
-
     private final boolean drawFirst;
-
     private final boolean copyToDiscard;
-
     private final int strengthMultiplier;
-
     private final boolean randomTarget;
+    
+    // === 新增字段：支持特殊状态牌机制 ===
+    private final int endOfTurnDamage;
+    private final int energyLossOnDraw;
 
     @JsonCreator
-
     public CardTemplate(
-
-            @JsonProperty("id") String id, @JsonProperty("name") String name,
-
-            @JsonProperty("cost") int cost, @JsonProperty("damage") int damage,
-
-            @JsonProperty("block") int block, @JsonProperty("type") CardType type,
-
+            @JsonProperty("id") String id, 
+            @JsonProperty("name") String name,
+            @JsonProperty("cost") int cost, 
+            @JsonProperty("damage") int damage,
+            @JsonProperty("block") int block, 
+            @JsonProperty("type") CardType type,
             @JsonProperty("effects") List<CardEffect> effects,
-
-            @JsonProperty("exhaust") Boolean exhaust, @JsonProperty("retain") Boolean retain,
-
-            @JsonProperty("ethereal") Boolean ethereal, @JsonProperty("drawCount") Integer drawCount,
-
-            @JsonProperty("upgraded") Boolean upgraded, @JsonProperty("charId") String charId,
-
+            @JsonProperty("exhaust") Boolean exhaust, 
+            @JsonProperty("retain") Boolean retain,
+            @JsonProperty("ethereal") Boolean ethereal, 
+            @JsonProperty("drawCount") Integer drawCount,
+            @JsonProperty("upgraded") Boolean upgraded, 
+            @JsonProperty("charId") String charId,
             @JsonProperty("rarity") String rarity,
-
-            @JsonProperty("selfDamage") Integer selfDamage, @JsonProperty("energyGain") Integer energyGain,
-
+            @JsonProperty("selfDamage") Integer selfDamage, 
+            @JsonProperty("energyGain") Integer energyGain,
             @JsonProperty("multiHitCount") Integer multiHitCount,
-
             @JsonProperty("exhaustHandCount") Integer exhaustHandCount,
-
             @JsonProperty("exhaustHandMode") String exhaustHandMode,
-
             @JsonProperty("unplayable") Boolean unplayable,
-
             @JsonProperty("innate") Boolean innate,
-
             @JsonProperty("discardCount") Integer discardCount,
-
             @JsonProperty("discardMode") String discardMode,
-
             @JsonProperty("xCost") Boolean xCost,
-
             @JsonProperty("aoe") Boolean aoe,
-
             @JsonProperty("drawFirst") Boolean drawFirst,
-
             @JsonProperty("copyToDiscard") Boolean copyToDiscard,
-
             @JsonProperty("strengthMultiplier") Integer strengthMultiplier,
+            @JsonProperty("randomTarget") Boolean randomTarget,
+            // === 新增构造函数参数 ===
+            @JsonProperty("endOfTurnDamage") Integer endOfTurnDamage,
+            @JsonProperty("energyLossOnDraw") Integer energyLossOnDraw) {
 
-            @JsonProperty("randomTarget") Boolean randomTarget) {
-
-        this.id = id; this.name = name; this.cost = cost; this.damage = damage; this.block = block;
-
+        this.id = id; 
+        this.name = name; 
+        this.cost = cost; 
+        this.damage = damage; 
+        this.block = block;
         this.type = type;
-
         this.effects = effects != null ? effects : Collections.emptyList();
-
-        this.exhaust = exhaust != null ? exhaust : false; this.retain = retain != null ? retain : false;
-
-        this.ethereal = ethereal != null ? ethereal : false; this.drawCount = drawCount != null ? drawCount : 0;
-
-        this.upgraded = upgraded != null ? upgraded : false; this.charId = charId != null ? charId : "1";
-
+        this.exhaust = exhaust != null ? exhaust : false; 
+        this.retain = retain != null ? retain : false;
+        this.ethereal = ethereal != null ? ethereal : false; 
+        this.drawCount = drawCount != null ? drawCount : 0;
+        this.upgraded = upgraded != null ? upgraded : false; 
+        this.charId = charId != null ? charId : "1";
         this.rarity = rarity != null ? rarity : "COMMON";
-
-        this.selfDamage = selfDamage != null ? selfDamage : 0; this.energyGain = energyGain != null ? energyGain : 0;
-
+        this.selfDamage = selfDamage != null ? selfDamage : 0; 
+        this.energyGain = energyGain != null ? energyGain : 0;
         this.multiHitCount = multiHitCount != null && multiHitCount > 0 ? multiHitCount : 1;
-
         this.exhaustHandCount = exhaustHandCount != null ? exhaustHandCount : 0;
-
         this.exhaustHandMode = exhaustHandMode != null ? exhaustHandMode.toUpperCase() : "RANDOM";
-
         this.unplayable = unplayable != null ? unplayable : false;
-
         this.innate = innate != null ? innate : false;
-
         this.discardCount = discardCount != null ? discardCount : 0;
-
         this.discardMode = discardMode != null ? discardMode.toUpperCase() : "RANDOM";
-
         this.xCost = xCost != null ? xCost : false;
-
         this.aoe = aoe != null ? aoe : false;
-
         this.drawFirst = drawFirst != null ? drawFirst : false;
-
         this.copyToDiscard = copyToDiscard != null ? copyToDiscard : false;
-
         this.strengthMultiplier = strengthMultiplier != null ? strengthMultiplier : 1;
-
         this.randomTarget = randomTarget != null ? randomTarget : false;
-
+        
+        // === 新增字段初始化 ===
+        this.endOfTurnDamage = endOfTurnDamage != null ? endOfTurnDamage : 0;
+        this.energyLossOnDraw = energyLossOnDraw != null ? energyLossOnDraw : 0;
     }
 
-    public String getId() { return id; } public String getName() { return name; } public int getCost() { return cost; }
+    // ==================== Getter 方法 ====================
 
-    public int getDamage() { return damage; } public int getBlock() { return block; } public CardType getType() { return type; }
-
+    public String getId() { return id; }
+    public String getName() { return name; }
+    public int getCost() { return cost; }
+    public int getDamage() { return damage; }
+    public int getBlock() { return block; }
+    public CardType getType() { return type; }
     public List<CardEffect> getEffects() { return effects; }
-
-    public boolean isExhaust() { return exhaust; } public boolean isRetain() { return retain; } public boolean isEthereal() { return ethereal; } public int getDrawCount() { return drawCount; }
-
-    public boolean isUpgraded() { return upgraded; } public String getCharId() { return charId; } public String getRarity() { return rarity; }
-
-    public int getSelfDamage() { return selfDamage; } public int getEnergyGain() { return energyGain; }
-
-    public int getMultiHitCount() { return multiHitCount; } public int getExhaustHandCount() { return exhaustHandCount; }
-
+    
+    public boolean isExhaust() { return exhaust; }
+    public boolean isRetain() { return retain; }
+    public boolean isEthereal() { return ethereal; }
+    public int getDrawCount() { return drawCount; }
+    public boolean isUpgraded() { return upgraded; }
+    public String getCharId() { return charId; }
+    public String getRarity() { return rarity; }
+    
+    public int getSelfDamage() { return selfDamage; }
+    public int getEnergyGain() { return energyGain; }
+    public int getMultiHitCount() { return multiHitCount; }
+    public int getExhaustHandCount() { return exhaustHandCount; }
     public String getExhaustHandMode() { return exhaustHandMode; }
-
-    public boolean isUnplayable() { return unplayable; } public boolean isInnate() { return innate; }
-
-    public int getDiscardCount() { return discardCount; } public String getDiscardMode() { return discardMode; }
-
-    public boolean isXCost() { return xCost; } public boolean isAoe() { return aoe; }
-
+    
+    public boolean isUnplayable() { return unplayable; }
+    public boolean isInnate() { return innate; }
+    public int getDiscardCount() { return discardCount; }
+    public String getDiscardMode() { return discardMode; }
+    
+    public boolean isXCost() { return xCost; }
+    public boolean isAoe() { return aoe; }
     public boolean isDrawFirst() { return drawFirst; }
-
     public boolean isCopyToDiscard() { return copyToDiscard; }
-
     public int getStrengthMultiplier() { return strengthMultiplier; }
-
     public boolean isRandomTarget() { return randomTarget; }
 
-    public String getApplyStatusType() { return effects.isEmpty() ? null : effects.get(0).getType(); }
+    // === 新增 Getter 方法 ===
+    public int getEndOfTurnDamage() { return endOfTurnDamage; }
+    public int getEnergyLossOnDraw() { return energyLossOnDraw; }
 
-    public int getApplyStatusCount() { return effects.isEmpty() ? 0 : effects.get(0).getCount(); }
+    // ==================== 辅助方法 ====================
 
-    public String getApplyStatusTarget() { return effects.isEmpty() ? null : effects.get(0).getTarget(); }
+    public String getApplyStatusType() { 
+        return effects.isEmpty() ? null : effects.get(0).getType(); 
+    }
 
+    public int getApplyStatusCount() { 
+        return effects.isEmpty() ? 0 : effects.get(0).getCount(); 
+    }
+
+    public String getApplyStatusTarget() { 
+        return effects.isEmpty() ? null : effects.get(0).getTarget(); 
+    }
 }

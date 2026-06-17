@@ -193,10 +193,8 @@ public class BattleService {
             } else {
                 int hitCount = Math.max(1, card.getMultiHitCount());
                 Random random = new Random();
-                // 临时存活列表（用于随机目标）
                 List<Enemy> currentAlive = new ArrayList<>(aliveEnemies);
                 for (int i = 0; i < hitCount; i++) {
-                    // 如果当前列表为空，尝试重新获取存活敌人
                     if (currentAlive.isEmpty()) {
                         currentAlive = new ArrayList<>(getAliveEnemies());
                         if (currentAlive.isEmpty()) break;
@@ -219,7 +217,6 @@ public class BattleService {
                     } else {
                         logList.add(String.format("对 %s 造成 %d 点伤害，HP: %d", currentTarget.getEnemyName(), actualDmg, currentTarget.getHp()));
                     }
-                    // 如果该目标死亡，从临时列表中移除，后续随机不会选到它
                     if (!currentTarget.isAlive()) {
                         currentAlive.remove(currentTarget);
                     }
@@ -353,6 +350,24 @@ public class BattleService {
             decrementIntangible(e);
         }
 
+        // 🆕 【新增逻辑】处理手牌中的“灼烧”等回合结束伤害效果
+        for (Card card : hand) {
+            int endTurnDmg = card.getEndOfTurnDamage();
+            if (endTurnDmg > 0) {
+                // 灼烧通常是真实伤害，无视格挡，所以第三个参数 ignoreBlock 传 true
+                player.takeDamage(endTurnDmg, null, true); 
+                logList.addAll(player.getLastCombatLogs());
+                logList.add(String.format("🔥 受到【%s】的灼烧，失去 %d 点生命，当前 HP: %d", card.getName(), endTurnDmg, player.getHp()));
+                
+                if (!player.isAlive()) {
+                    gameOver = true;
+                    winner = "灼烧";
+                    logList.add("💀 玩家因灼烧倒下...");
+                    return getCurrentState();
+                }
+            }
+        }
+
         boolean hasRunePyramid = RelicEffectHandler.hasEffect(player, "RUNE_PYRAMID");
         List<Card> retained = new ArrayList<>();
         for (Card card : hand) {
@@ -444,7 +459,17 @@ public class BattleService {
                 drawPile.addAll(discardPile); discardPile.clear(); Collections.shuffle(drawPile);
                 logList.add("🔄 弃牌堆洗入抽牌堆");
             }
-            hand.add(drawPile.remove(0)); drawn++;
+            
+            Card drawnCard = drawPile.remove(0);
+            hand.add(drawnCard); 
+            drawn++;
+            
+            // 🆕 【新增逻辑】处理“虚空”等抽牌时失去能量的效果
+            int energyLoss = drawnCard.getEnergyLossOnDraw();
+            if (energyLoss > 0) {
+                energy = Math.max(0, energy - energyLoss); // 扣除能量，最低为0
+                logList.add(String.format("🌑 抽到了【%s】，失去了 %d 点能量，当前能量: %d", drawnCard.getName(), energyLoss, energy));
+            }
         }
         if (drawn > 0) logList.add(String.format("抽了 %d 张牌（手牌 %d/%d）", drawn, hand.size(), HAND_LIMIT));
     }
@@ -534,14 +559,20 @@ public class BattleService {
                 card.setDrawFirst((Boolean) cardData.get("drawFirst"));
             }
 
-            // 🆕 读取 copyToDiscard 字段
             if (cardData.containsKey("copyToDiscard")) {
                 card.setCopyToDiscard((Boolean) cardData.get("copyToDiscard"));
             }
 
-            // 🆕 读取 randomTarget 字段
             if (cardData.containsKey("randomTarget")) {
                 card.setRandomTarget((Boolean) cardData.get("randomTarget"));
+            }
+
+            // 🆕 【新增】读取特殊状态牌字段
+            if (cardData.containsKey("endOfTurnDamage") && cardData.get("endOfTurnDamage") != null) {
+                card.setEndOfTurnDamage(((Number) cardData.get("endOfTurnDamage")).intValue());
+            }
+            if (cardData.containsKey("energyLossOnDraw") && cardData.get("energyLossOnDraw") != null) {
+                card.setEnergyLossOnDraw(((Number) cardData.get("energyLossOnDraw")).intValue());
             }
 
             deck.add(card);
@@ -632,10 +663,13 @@ public class BattleService {
             cardInfo.put("aoe", c.isAoe());
             cardInfo.put("drawFirst", c.isDrawFirst());
 
-            // 🆕 新增字段传递给前端
             cardInfo.put("copyToDiscard", c.isCopyToDiscard());
             cardInfo.put("strengthMultiplier", c.getStrengthMultiplier());
             cardInfo.put("randomTarget", c.isRandomTarget());
+
+            // 🆕 传递特殊状态牌数值给前端
+            cardInfo.put("endOfTurnDamage", c.getEndOfTurnDamage());
+            cardInfo.put("energyLossOnDraw", c.getEnergyLossOnDraw());
 
             handCards.add(cardInfo);
         }
@@ -678,10 +712,13 @@ public class BattleService {
             info.put("drawFirst", c.isDrawFirst());
             info.put("upgraded", c.isUpgraded());
 
-            // 🆕 新增字段
             info.put("copyToDiscard", c.isCopyToDiscard());
             info.put("strengthMultiplier", c.getStrengthMultiplier());
             info.put("randomTarget", c.isRandomTarget());
+
+            // 🆕 传递特殊状态牌数值给前端
+            info.put("endOfTurnDamage", c.getEndOfTurnDamage());
+            info.put("energyLossOnDraw", c.getEnergyLossOnDraw());
 
             list.add(info);
         }
