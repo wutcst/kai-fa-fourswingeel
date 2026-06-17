@@ -46,18 +46,40 @@ public class BattleService {
 
         List<EnemyGroupTemplate> groups = dataRepo.getAllEnemyGroups();
         if (groups.isEmpty()) throw new IllegalStateException("敌方阵容配置为空");
-        // 根据节点类型筛选阵容
-        // 统一节点类型映射：前端传 "monster/elite/boss"，JSON 中用 "NORMAL/ELITE/BOSS"
-        String nodeTypeUpper = (nodeType != null) ? nodeType.toUpperCase() : null;
-        if ("MONSTER".equals(nodeTypeUpper)) nodeTypeUpper = "NORMAL";
+        // 从传入参数中提取act和类型（前端格式："monster_act1"、"elite_act2"、"boss_act1"等）
+        int currentAct = 1;
+        String pureNodeType = null;
+        if (nodeType != null) {
+            String upper = nodeType.toUpperCase();
+            if (upper.contains("_ACT")) {
+                try {
+                    String[] parts = upper.split("_ACT");
+                    pureNodeType = parts[0];
+                    if (parts.length > 1) currentAct = Integer.parseInt(parts[1]);
+                } catch (Exception e) { currentAct = 1; }
+            } else {
+                pureNodeType = upper;
+            }
+        }
+        if ("MONSTER".equals(pureNodeType)) pureNodeType = "NORMAL";
         List<EnemyGroupTemplate> filteredGroups = new ArrayList<>();
         for (EnemyGroupTemplate g : groups) {
-            if (nodeTypeUpper != null && !g.getType().equalsIgnoreCase(nodeTypeUpper)) continue;
+            if (pureNodeType != null && !g.getType().equalsIgnoreCase(pureNodeType)) continue;
+            if (g.getMinAct() > currentAct || g.getMaxAct() < currentAct) continue;
             filteredGroups.add(g);
         }
-        if (filteredGroups.isEmpty()) filteredGroups = groups;
+        if (filteredGroups.isEmpty()) {
+            // 保底：只按类型不过滤层数
+            for (EnemyGroupTemplate g : groups) {
+                if (pureNodeType != null && !g.getType().equalsIgnoreCase(pureNodeType)) continue;
+                filteredGroups.add(g);
+            }
+        }
+        if (filteredGroups.isEmpty()) {
+            filteredGroups = groups;
+        }
         EnemyGroupTemplate chosenGroup = filteredGroups.get(new Random().nextInt(filteredGroups.size()));
-        
+
         this.enemies = new ArrayList<>();
         for (String eid : chosenGroup.getEnemies()) {
             EnemyTemplate tpl = dataRepo.getEnemyById(eid);
@@ -69,8 +91,6 @@ public class BattleService {
         }
 
         this.drawPile = buildDeckFromPlayerData(playerDeck);
-        
-        // 🛠️ 提前初始化所有列表，防止 NullPointerException
         this.hand = new ArrayList<>();
         this.discardPile = new ArrayList<>();
         this.exhaustPile = new ArrayList<>();
@@ -84,14 +104,13 @@ public class BattleService {
         this.hasDealtDamageThisTurn = false;
         this.exhaustedThisAction = false;
 
-        // 🆕 【核心机制：固有牌处理】
         List<Card> innateCards = new ArrayList<>();
         Iterator<Card> iterator = drawPile.iterator();
         while (iterator.hasNext()) {
             Card c = iterator.next();
             if (c.isInnate()) {
                 innateCards.add(c);
-                iterator.remove(); 
+                iterator.remove();
             }
         }
         hand.addAll(innateCards);
@@ -100,7 +119,7 @@ public class BattleService {
         }
 
         Collections.shuffle(drawPile);
-        
+
         player.onTurnStart();
         logList.addAll(player.getLastTurnStartLogs());
         energy = 3;
@@ -182,7 +201,7 @@ public class BattleService {
         validateCardIndex(index);
 
         Card card = hand.get(index);
-        
+
         if (card.isUnplayable()) throw new IllegalStateException("此牌无法被主动打出！");
         if (card.isXCost() && energy <= 0) throw new IllegalStateException("X耗能卡牌需要至少1点能量才能打出！");
         if (!card.isXCost() && card.getCost() > energy) throw new IllegalStateException("能量不足");
@@ -260,23 +279,45 @@ public class BattleService {
             player.gainBlock(actualBlock);
             logList.add(String.format("🛡️ 获得 %d 点格挡，当前格挡: %d", actualBlock, player.getBlock()));
         }
-        
+
         if (card.getSelfDamage() > 0) {
             player.takeDamage(card.getSelfDamage(), null, true);
             logList.addAll(player.getLastCombatLogs());
             logList.add(String.format("💔 失去 %d 点生命，当前 HP: %d", card.getSelfDamage(), player.getHp()));
             if (!player.isAlive()) { gameOver = true; winner = "自身"; logList.add("💀 玩家因自身伤害倒下..."); return getCurrentState(); }
         }
-        
+
         if (card.getEnergyGain() > 0) {
             energy += card.getEnergyGain();
             logList.add(String.format("⚡ 获得 %d 点能量，当前能量: %d", card.getEnergyGain(), energy));
         }
 
+        // ================= 伤害计算（包含力量倍率和随机目标） =================
         if (card.getDamage() > 0) {
+            int strengthMultiplier = card.getStrengthMultiplier();
+            int strengthCount = 0;
+            StatusEffect savedStrength = null;
+            if (strengthMultiplier > 1) {
+                for (StatusEffect s : player.getStatuses()) {
+                    if ("STRENGTH".equals(s.getId())) {
+                        strengthCount = s.getCount();
+                        savedStrength = s;
+                        player.getStatuses().remove(s);
+                        break;
+                    }
+                }
+                logList.add("💪 力量发挥 " + strengthMultiplier + " 倍效果，临时锁定力量值: " + strengthCount);
+            }
+
+            int baseDamage = card.getDamage() * xValue;
+            if (strengthMultiplier > 1) {
+                baseDamage += strengthCount * strengthMultiplier;
+                logList.add("💪 额外增加 " + (strengthCount * strengthMultiplier) + " 伤害");
+            }
+
             if (card.isAoe()) {
                 for (Enemy e : aliveEnemies) {
-                    int actualDmg = e.takeDamage(card.getDamage() * xValue, player);
+                    int actualDmg = e.takeDamage(baseDamage, player);
                     logList.addAll(e.getLastCombatLogs());
                     logList.add(String.format("💥 AOE对 %s 造成 %d 点伤害，HP: %d", e.getEnemyName(), actualDmg, e.getHp()));
                     if (actualDmg > 0) triggerManaFlower();
@@ -284,31 +325,57 @@ public class BattleService {
                 }
             } else {
                 int hitCount = Math.max(1, card.getMultiHitCount());
+                Random random = new Random();
+                List<Enemy> currentAlive = new ArrayList<>(aliveEnemies);
                 for (int i = 0; i < hitCount; i++) {
-                    if (!target.isAlive()) {
-                        List<Enemy> currentAlive = getAliveEnemies();
+                    if (currentAlive.isEmpty()) {
+                        currentAlive = new ArrayList<>(getAliveEnemies());
                         if (currentAlive.isEmpty()) break;
-                        target = currentAlive.get(0);
                     }
-                    int actualDmg = target.takeDamage(card.getDamage() * xValue, player);
-                    logList.addAll(target.getLastCombatLogs());
-                    if (hitCount > 1) {
-                        logList.add(String.format("对 %s 造成 %d 点伤害 (%d/%d段)，HP: %d", target.getEnemyName(), actualDmg, i + 1, hitCount, target.getHp()));
+                    Enemy currentTarget;
+                    if (card.isRandomTarget()) {
+                        currentTarget = currentAlive.get(random.nextInt(currentAlive.size()));
                     } else {
-                        logList.add(String.format("对 %s 造成 %d 点伤害，HP: %d", target.getEnemyName(), actualDmg, target.getHp()));
+                        if (!target.isAlive()) {
+                            currentAlive = new ArrayList<>(getAliveEnemies());
+                            if (currentAlive.isEmpty()) break;
+                            target = currentAlive.get(0);
+                        }
+                        currentTarget = target;
+                    }
+                    int actualDmg = currentTarget.takeDamage(baseDamage, player);
+                    logList.addAll(currentTarget.getLastCombatLogs());
+                    if (hitCount > 1) {
+                        logList.add(String.format("对 %s 造成 %d 点伤害 (%d/%d段)，HP: %d", currentTarget.getEnemyName(), actualDmg, i + 1, hitCount, currentTarget.getHp()));
+                    } else {
+                        logList.add(String.format("对 %s 造成 %d 点伤害，HP: %d", currentTarget.getEnemyName(), actualDmg, currentTarget.getHp()));
+                    }
+                    if (!currentTarget.isAlive()) {
+                        currentAlive.remove(currentTarget);
                     }
                     if (actualDmg > 0) triggerManaFlower();
                     if (!target.isAlive()) triggerGoblinHorn();
                 }
             }
+
+            if (savedStrength != null) {
+                player.addStatus(savedStrength);
+            }
         }
 
-        if (card.getApplyStatusType() != null && !card.getApplyStatusType().isEmpty()) {
-            StatusEffect status = StatusFactory.create(card.getApplyStatusType(), card.getApplyStatusCount() * xValue, dataRepo);
-            if (status != null) {
-                String targetStr = card.getApplyStatusTarget();
-                if (targetStr == null || targetStr.isEmpty()) targetStr = (card.getType() == Card.CardType.ATTACK) ? "ENEMY" : "SELF";
-                
+        // ================= 多效果系统 =================
+        List<CardEffect> effects = card.getEffects();
+        if (effects != null && !effects.isEmpty()) {
+            for (CardEffect effect : effects) {
+                if (effect.getType() == null || effect.getType().isEmpty()) continue;
+                StatusEffect status = StatusFactory.create(effect.getType(), effect.getCount() * xValue, dataRepo);
+                if (status == null) continue;
+
+                String targetStr = effect.getTarget();
+                if (targetStr == null || targetStr.isEmpty()) {
+                    targetStr = (card.getType() == Card.CardType.ATTACK) ? "ENEMY" : "SELF";
+                }
+
                 if ("ENEMY".equals(targetStr)) {
                     if (card.isAoe()) {
                         for (Enemy e : aliveEnemies) {
@@ -317,29 +384,26 @@ public class BattleService {
                         }
                         logList.add(String.format("给所有敌人施加了 %d 层 %s", card.getApplyStatusCount() * xValue, status.getName()));
                     } else {
-                        target.addStatus(status);
-                        logList.add(String.format("给 %s 施加了 %d 层 %s", target.getEnemyName(), card.getApplyStatusCount() * xValue, status.getName()));
+                        target.addStatus(StatusFactory.create(effect.getType(), effect.getCount() * xValue, dataRepo));
+                        logList.add(String.format("给 %s 施加了 %d 层 %s", target.getEnemyName(), effect.getCount() * xValue, status.getName()));
                     }
                 } else {
-                    player.addStatus(status);
-                    logList.add(String.format("给自己施加了 %d 层 %s", card.getApplyStatusCount() * xValue, status.getName()));
+                    player.addStatus(StatusFactory.create(effect.getType(), effect.getCount() * xValue, dataRepo));
+                    logList.add(String.format("给自己施加了 %d 层 %s", effect.getCount() * xValue, status.getName()));
                 }
             }
         }
 
         removeDeadEnemies();
 
-        // ================= ⚙️ 核心结算顺序：根据 drawFirst 决定抽牌时机 =================
         int playedCardIndex = index;
 
-        // 1. 如果配置为先抽牌（如：杂技），则先执行抽牌
         if (card.isDrawFirst()) {
             if (card.getDrawCount() > 0) {
                 drawCards(card.getDrawCount());
             }
         }
 
-        // 2. 处理消耗手牌 (手中无其他牌时 count=0，安全跳过，不会报错)
         if (card.getExhaustHandCount() > 0) {
             int count = Math.min(card.getExhaustHandCount(), hand.size() - 1);
             for (int i = 0; i < count; i++) {
@@ -347,7 +411,6 @@ public class BattleService {
                 Card exhaustedCard = hand.remove(targetIdx);
                 exhaustPile.add(exhaustedCard);
                 logList.add("🔥 消耗了手中的 " + exhaustedCard.getName());
-                // 🆕 消耗手牌时触发金纸抽牌
                 triggerDrawOnExhaust();
                 if (targetIdx < playedCardIndex) {
                     playedCardIndex--;
@@ -355,7 +418,6 @@ public class BattleService {
             }
         }
 
-        // 3. 处理丢弃手牌 (手中无其他牌时 count=0，安全跳过，不会报错)
         if (card.getDiscardCount() > 0) {
             int count = Math.min(card.getDiscardCount(), hand.size() - 1);
             for (int i = 0; i < count; i++) {
@@ -367,7 +429,6 @@ public class BattleService {
             }
         }
 
-        // 4. 如果配置为后抽牌（如：知识渴求），则后执行抽牌
         if (!card.isDrawFirst()) {
             if (card.getDrawCount() > 0) {
                 drawCards(card.getDrawCount());
@@ -383,6 +444,11 @@ public class BattleService {
             logList.add(finalCard.getName() + "被消耗");
             triggerDrawOnExhaust();
         } else {
+            if (finalCard.isCopyToDiscard()) {
+                Card copy = new Card(finalCard);
+                discardPile.add(copy);
+                logList.add("🔥 " + finalCard.getName() + "的复制品加入了弃牌堆");
+            }
             discardPile.add(finalCard);
         }
 
@@ -394,7 +460,7 @@ public class BattleService {
         int targetIdx;
         if (loopIndex == 0 && providedIndex != null && providedIndex >= 0 && providedIndex < currentHandSize) {
             if (providedIndex == playedCardIndex) {
-                targetIdx = (playedCardIndex == 0) ? 1 : 0; 
+                targetIdx = (playedCardIndex == 0) ? 1 : 0;
                 logList.add(String.format("⚠️ 无法%s正在打出的牌，随机%s了其他牌", actionName, actionName));
             } else {
                 targetIdx = providedIndex;
@@ -415,15 +481,31 @@ public class BattleService {
         exhaustedThisAction = false;
         logList.add("━━━ 结束回合 ━━━");
         validateBattleActive();
-        
-        // ================= 1. 玩家回合结束 =================
+
         player.onTurnEnd();
         logList.addAll(player.getLastTurnEndLogs());
-        logList.addAll(player.getLastCombatLogs()); 
+        logList.addAll(player.getLastCombatLogs());
 
-        // 🆕 【关键修复】玩家回合结束，衰减敌人身上的无实体（因为玩家回合结束了）
         for (Enemy e : enemies) {
             decrementIntangible(e);
+        }
+
+        // 🆕 【新增逻辑】处理手牌中的“灼烧”等回合结束伤害效果
+        for (Card card : hand) {
+            int endTurnDmg = card.getEndOfTurnDamage();
+            if (endTurnDmg > 0) {
+                // 灼烧通常是真实伤害，无视格挡，所以第三个参数 ignoreBlock 传 true
+                player.takeDamage(endTurnDmg, null, true); 
+                logList.addAll(player.getLastCombatLogs());
+                logList.add(String.format("🔥 受到【%s】的灼烧，失去 %d 点生命，当前 HP: %d", card.getName(), endTurnDmg, player.getHp()));
+                
+                if (!player.isAlive()) {
+                    gameOver = true;
+                    winner = "灼烧";
+                    logList.add("💀 玩家因灼烧倒下...");
+                    return getCurrentState();
+                }
+            }
         }
 
         boolean hasRunePyramid = RelicEffectHandler.hasEffect(player, "RUNE_PYRAMID");
@@ -432,25 +514,24 @@ public class BattleService {
             if (card.isEthereal()) {
                 exhaustPile.add(card);
                 logList.add(card.getName() + "因【虚无】被消耗");
-            triggerDrawOnExhaust();
+                triggerDrawOnExhaust();
             } else if (hasRunePyramid || card.isRetain()) {
                 retained.add(card);
             } else {
                 discardPile.add(card);
             }
         }
-        hand.clear(); 
+        hand.clear();
         hand.addAll(retained);
         removeDeadEnemies();
 
-        // ================= 2. 敌人回合行动 =================
         for (Enemy enemy : enemies) {
             enemy.onTurnStart();
             logList.addAll(enemy.getLastTurnStartLogs());
-            
+
             int actualDmg = enemy.executeCurrentIntent(player);
-            logList.addAll(player.getLastCombatLogs()); // 获取玩家受击时的无实体日志
-            
+            logList.addAll(player.getLastCombatLogs());
+
             if (actualDmg > 0) logList.add(String.format("⚔️ %s %s，造成 %d 点伤害。玩家 HP: %d | 格挡: %d", enemy.getEnemyName(), enemy.getIntentDesc(), actualDmg, player.getHp(), player.getBlock()));
             else logList.add(String.format("🛡️ %s %s", enemy.getEnemyName(), enemy.getIntentDesc()));
 
@@ -462,11 +543,11 @@ public class BattleService {
                     else player.addStatus(status);
                 }
             }
-            
+
             enemy.onTurnEnd();
             logList.addAll(enemy.getLastTurnEndLogs());
             logList.addAll(enemy.getLastCombatLogs());
-            
+
             if (!enemy.isAlive()) logList.add(String.format("💀 %s 被击败！", enemy.getEnemyName()));
         }
         removeDeadEnemies();
@@ -501,7 +582,6 @@ public class BattleService {
         return getCurrentState();
     }
 
-    // 🆕 辅助方法：精确控制无实体的衰减（持续一回合逻辑）
     private void decrementIntangible(Combatant c) {
         if (c == null || !c.isAlive()) return;
         for (StatusEffect s : new ArrayList<>(c.getStatuses())) {
@@ -514,7 +594,7 @@ public class BattleService {
                 } else {
                     logList.add(String.format("💨 %s 的【无实体】持续一回合结束，剩余层数: %d", name, s.getCount()));
                 }
-                break; 
+                break;
             }
         }
     }
@@ -535,7 +615,17 @@ public class BattleService {
                 drawPile.addAll(discardPile); discardPile.clear(); Collections.shuffle(drawPile);
                 logList.add("🔄 弃牌堆洗入抽牌堆");
             }
-            hand.add(drawPile.remove(0)); drawn++;
+            
+            Card drawnCard = drawPile.remove(0);
+            hand.add(drawnCard); 
+            drawn++;
+            
+            // 🆕 【新增逻辑】处理“虚空”等抽牌时失去能量的效果
+            int energyLoss = drawnCard.getEnergyLossOnDraw();
+            if (energyLoss > 0) {
+                energy = Math.max(0, energy - energyLoss); // 扣除能量，最低为0
+                logList.add(String.format("🌑 抽到了【%s】，失去了 %d 点能量，当前能量: %d", drawnCard.getName(), energyLoss, energy));
+            }
         }
         if (drawn > 0) logList.add(String.format("抽了 %d 张牌（手牌 %d/%d）", drawn, hand.size(), HAND_LIMIT));
     }
@@ -575,28 +665,41 @@ public class BattleService {
                 card = new Card(name, cost, damage, block, type);
                 card.setRarity("COMMON");
             }
+
+            if (cardData.containsKey("effects") && cardData.get("effects") != null) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> effectsData = (List<Map<String, Object>>) cardData.get("effects");
+                List<CardEffect> effects = new ArrayList<>();
+                for (Map<String, Object> eMap : effectsData) {
+                    String eType = (String) eMap.get("type");
+                    int eCount = eMap.containsKey("count") ? ((Number) eMap.get("count")).intValue() : 1;
+                    String eTarget = (String) eMap.get("target");
+                    effects.add(new CardEffect(eType, eCount, eTarget));
+                }
+                card.setEffects(effects);
+            }
             if (cardData.containsKey("applyStatusType")) card.setApplyStatusType((String) cardData.get("applyStatusType"));
             if (cardData.containsKey("applyStatusCount")) card.setApplyStatusCount(((Number) cardData.get("applyStatusCount")).intValue());
             if (cardData.containsKey("applyStatusTarget")) card.setApplyStatusTarget((String) cardData.get("applyStatusTarget"));
             if (cardData.containsKey("drawCount")) card.setDrawCount(((Number) cardData.get("drawCount")).intValue());
             if (cardData.containsKey("charId")) card.setCharId((String) cardData.get("charId"));
             if (cardData.containsKey("rarity")) card.setRarity((String) cardData.get("rarity"));
-            
+
             if (cardData.containsKey("exhaust")) card.setExhaust((Boolean) cardData.get("exhaust"));
             if (cardData.containsKey("retain")) card.setRetain((Boolean) cardData.get("retain"));
             if (cardData.containsKey("ethereal")) card.setEthereal((Boolean) cardData.get("ethereal"));
-            
+
             if (cardData.containsKey("selfDamage") && cardData.get("selfDamage") != null) card.setSelfDamage(((Number) cardData.get("selfDamage")).intValue());
             if (cardData.containsKey("energyGain") && cardData.get("energyGain") != null) card.setEnergyGain(((Number) cardData.get("energyGain")).intValue());
             if (cardData.containsKey("multiHitCount") && cardData.get("multiHitCount") != null) card.setMultiHitCount(((Number) cardData.get("multiHitCount")).intValue());
-            
+
             if (cardData.containsKey("exhaustHandCount") && cardData.get("exhaustHandCount") != null) {
                 card.setExhaustHandCount(((Number) cardData.get("exhaustHandCount")).intValue());
             }
             if (cardData.containsKey("exhaustHandMode") && cardData.get("exhaustHandMode") != null) {
                 card.setExhaustHandMode((String) cardData.get("exhaustHandMode"));
             }
-            
+
             if (cardData.containsKey("unplayable")) card.setUnplayable((Boolean) cardData.get("unplayable"));
             if (cardData.containsKey("innate")) card.setInnate((Boolean) cardData.get("innate"));
             if (cardData.containsKey("discardCount") && cardData.get("discardCount") != null) {
@@ -607,12 +710,27 @@ public class BattleService {
             }
             if (cardData.containsKey("xCost")) card.setXCost((Boolean) cardData.get("xCost"));
             if (cardData.containsKey("aoe")) card.setAoe((Boolean) cardData.get("aoe"));
-            
-            // 🆕 读取 drawFirst 字段
+
             if (cardData.containsKey("drawFirst")) {
                 card.setDrawFirst((Boolean) cardData.get("drawFirst"));
             }
-            
+
+            if (cardData.containsKey("copyToDiscard")) {
+                card.setCopyToDiscard((Boolean) cardData.get("copyToDiscard"));
+            }
+
+            if (cardData.containsKey("randomTarget")) {
+                card.setRandomTarget((Boolean) cardData.get("randomTarget"));
+            }
+
+            // 🆕 【新增】读取特殊状态牌字段
+            if (cardData.containsKey("endOfTurnDamage") && cardData.get("endOfTurnDamage") != null) {
+                card.setEndOfTurnDamage(((Number) cardData.get("endOfTurnDamage")).intValue());
+            }
+            if (cardData.containsKey("energyLossOnDraw") && cardData.get("energyLossOnDraw") != null) {
+                card.setEnergyLossOnDraw(((Number) cardData.get("energyLossOnDraw")).intValue());
+            }
+
             deck.add(card);
         }
         return deck;
@@ -638,7 +756,7 @@ public class BattleService {
             Map<String, Object> eMap = new LinkedHashMap<>();
             eMap.put("index", i); eMap.put("name", e.getEnemyName()); eMap.put("hp", e.getHp()); eMap.put("maxHp", e.getMaxHp()); eMap.put("enemyType", e.getEnemyType());
             eMap.put("block", e.getBlock()); eMap.put("nextDamage", e.getNextDamage()); eMap.put("nextBlock", e.getNextBlock()); eMap.put("intentDesc", e.getIntentDesc());
-            
+
             IntentTemplate intent = e.getCurrentIntentTemplate();
             if (intent != null && intent.getApplyStatusType() != null) {
                 eMap.put("intentStatusType", intent.getApplyStatusType()); eMap.put("intentStatusCount", intent.getApplyStatusCount());
@@ -647,7 +765,7 @@ public class BattleService {
             } else {
                 eMap.put("intentStatusType", null); eMap.put("intentStatusCount", 0); eMap.put("intentStatusName", null);
             }
-            
+
             List<Map<String, Object>> statuses = new ArrayList<>();
             for (StatusEffect s : e.getStatuses()) {
                 Map<String, Object> info = new LinkedHashMap<>();
@@ -686,21 +804,30 @@ public class BattleService {
             cardInfo.put("index", i); cardInfo.put("name", c.getName()); cardInfo.put("cost", c.getCost());
             cardInfo.put("damage", c.getDamage()); cardInfo.put("block", c.getBlock()); cardInfo.put("type", c.getType().name());
             cardInfo.put("applyStatusType", c.getApplyStatusType()); cardInfo.put("applyStatusCount", c.getApplyStatusCount()); cardInfo.put("applyStatusTarget", c.getApplyStatusTarget());
+            cardInfo.put("effects", effectsToStateList(c.getEffects()));
             cardInfo.put("exhaust", c.isExhaust()); cardInfo.put("retain", c.isRetain()); cardInfo.put("ethereal", c.isEthereal());
             cardInfo.put("drawCount", c.getDrawCount()); cardInfo.put("charId", c.getCharId()); cardInfo.put("rarity", c.getRarity());
             cardInfo.put("selfDamage", c.getSelfDamage()); cardInfo.put("energyGain", c.getEnergyGain());
-            cardInfo.put("multiHitCount", c.getMultiHitCount()); 
-            cardInfo.put("exhaustHandCount", c.getExhaustHandCount()); 
-            cardInfo.put("exhaustHandMode", c.getExhaustHandMode()); 
-            
+            cardInfo.put("multiHitCount", c.getMultiHitCount());
+            cardInfo.put("exhaustHandCount", c.getExhaustHandCount());
+            cardInfo.put("exhaustHandMode", c.getExhaustHandMode());
+
             cardInfo.put("unplayable", c.isUnplayable());
             cardInfo.put("innate", c.isInnate());
             cardInfo.put("discardCount", c.getDiscardCount());
             cardInfo.put("discardMode", c.getDiscardMode());
             cardInfo.put("xCost", c.isXCost());
             cardInfo.put("aoe", c.isAoe());
-            cardInfo.put("drawFirst", c.isDrawFirst()); // 🆕 传递给前端
-            
+            cardInfo.put("drawFirst", c.isDrawFirst());
+
+            cardInfo.put("copyToDiscard", c.isCopyToDiscard());
+            cardInfo.put("strengthMultiplier", c.getStrengthMultiplier());
+            cardInfo.put("randomTarget", c.isRandomTarget());
+
+            // 🆕 传递特殊状态牌数值给前端
+            cardInfo.put("endOfTurnDamage", c.getEndOfTurnDamage());
+            cardInfo.put("energyLossOnDraw", c.getEnergyLossOnDraw());
+
             handCards.add(cardInfo);
         }
         state.put("hand", handCards);
@@ -751,8 +878,7 @@ public class BattleService {
             Map<String, Object> info = new LinkedHashMap<>();
             info.put("name", c.getName()); info.put("cost", c.getCost());
             info.put("damage", c.getDamage()); info.put("block", c.getBlock()); info.put("type", c.getType().name());
-            info.put("applyStatusType", c.getApplyStatusType()); info.put("applyStatusCount", c.getApplyStatusCount());
-            info.put("applyStatusTarget", c.getApplyStatusTarget());
+            info.put("effects", effectsToStateList(c.getEffects()));
             info.put("exhaust", c.isExhaust()); info.put("retain", c.isRetain()); info.put("ethereal", c.isEthereal());
             info.put("drawCount", c.getDrawCount()); info.put("charId", c.getCharId()); info.put("rarity", c.getRarity());
             info.put("selfDamage", c.getSelfDamage()); info.put("energyGain", c.getEnergyGain());
@@ -766,7 +892,29 @@ public class BattleService {
             info.put("xCost", c.isXCost());
             info.put("drawFirst", c.isDrawFirst());
             info.put("upgraded", c.isUpgraded());
+
+            info.put("copyToDiscard", c.isCopyToDiscard());
+            info.put("strengthMultiplier", c.getStrengthMultiplier());
+            info.put("randomTarget", c.isRandomTarget());
+
+            // 🆕 传递特殊状态牌数值给前端
+            info.put("endOfTurnDamage", c.getEndOfTurnDamage());
+            info.put("energyLossOnDraw", c.getEnergyLossOnDraw());
+
             list.add(info);
+        }
+        return list;
+    }
+
+    private List<Map<String, Object>> effectsToStateList(List<CardEffect> effects) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        if (effects == null) return list;
+        for (CardEffect e : effects) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("type", e.getType());
+            m.put("count", e.getCount());
+            m.put("target", e.getTarget());
+            list.add(m);
         }
         return list;
     }

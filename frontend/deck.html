@@ -84,7 +84,7 @@
       const tbody = container.querySelector('tbody');
       if (tbody) {
         tbody.querySelectorAll('tr').forEach((row, i) => {
-          CARD_UI.bindTooltip(row, deck[i]?.applyStatusType);
+          var _eff = CARD_UI.getCardEffects(deck[i]); CARD_UI.bindTooltip(row, _eff.length > 0 ? _eff[0].type : null);
         });
       }
     })();

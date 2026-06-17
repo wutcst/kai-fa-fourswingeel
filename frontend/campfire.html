@@ -48,6 +48,7 @@
       const char = params.get('char') || '1';
       const currentNode = params.get('currentNode') || 'start';
       const nextNode = params.get('nextNode') || currentNode;
+      const act = params.get('act') || '1';
 
       const charIcons = { '1': '🦾', '2': '❓' };
       document.getElementById('char-icon').textContent = charIcons[char] || '🦾';
@@ -81,12 +82,12 @@
 
       forgeBtn.addEventListener('click', () => {
         if (campfireAction) return;
-        window.location.href = `forge.html?char=${char}&currentNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}`;
+        window.location.href = `forge.html?char=${char}&currentNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}&act=${act}`;
       });
 
       document.getElementById('skip-btn').addEventListener('click', () => {
         sessionStorage.removeItem('campfireAction');
-        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
+        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
       });
     })();
   </script>

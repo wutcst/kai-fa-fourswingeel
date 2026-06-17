@@ -3,7 +3,6 @@ package com.slaythespire.controller;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,10 +17,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.slaythespire.game.model.CardEffect;
+import com.slaythespire.model.SaveData;
 import com.slaythespire.game.service.RelicPoolService;
 import com.slaythespire.repository.CardTemplate;
 import com.slaythespire.repository.GameDataRepository;
 import com.slaythespire.repository.RelicTemplate;
+import com.slaythespire.service.SaveService;
 
 @RestController
 @RequestMapping("/api")
@@ -33,12 +35,41 @@ public class GameConfigController {
     @Autowired
     private RelicPoolService relicPoolService;
 
+    @Autowired
+    private SaveService saveService;
+
     private final Random random = new Random();
 
-    // ================ 地图生成 ================
+    // ================ 地图生成与读取 ================
 
     @GetMapping("/map")
     public Map<String, Object> getMapData() {
+        SaveData saveData = saveService.loadGame();
+        if (saveData != null 
+                && saveData.getMapNodes() != null && !saveData.getMapNodes().isEmpty()
+                && saveData.getMapEdges() != null && !saveData.getMapEdges().isEmpty()) {
+            
+            Map<String, Object> mapData = new LinkedHashMap<>();
+            mapData.put("nodes", saveData.getMapNodes());
+            mapData.put("edges", saveData.getMapEdges());
+            System.out.println("✅ 从存档加载地图，节点数: " + saveData.getMapNodes().size());
+            return mapData;
+        }
+
+        Map<String, Object> newMap = generateNewMap();
+
+        if (saveData == null) {
+            saveData = new SaveData();
+        }
+        saveData.setMapNodes((List<Map<String, Object>>) newMap.get("nodes"));
+        saveData.setMapEdges((List<Map<String, String>>) newMap.get("edges"));
+        saveService.saveGame(saveData);
+        System.out.println("✅ 生成新地图并保存到全局存档");
+
+        return newMap;
+    }
+
+    private Map<String, Object> generateNewMap() {
         Map<String, Object> mapData = new LinkedHashMap<>();
         List<Map<String, Object>> nodes = new ArrayList<>();
         List<Map<String, String>> edges = new ArrayList<>();
@@ -144,10 +175,12 @@ public class GameConfigController {
         int shopCount = (int) Math.round(totalSpecialNodes * 0.05);
         int questionCount = (int) Math.round(totalSpecialNodes * 0.22);
         int eliteCount = (int) Math.round(totalSpecialNodes * 0.08);
-        int monsterCount = totalSpecialNodes - shopCount - questionCount - eliteCount;
+        int campfireCount = (int) Math.round(totalSpecialNodes * 0.04);
+        if (campfireCount < 1) campfireCount = 1;
+        int monsterCount = totalSpecialNodes - shopCount - questionCount - eliteCount - campfireCount;
 
         int remainingShop = shopCount;
-        int remainingCampfire = 0;  
+        int remainingCampfire = campfireCount;
         int remainingQuestion = questionCount;
         int remainingElite = eliteCount;
         int remainingMonster = monsterCount;
@@ -197,7 +230,7 @@ public class GameConfigController {
 
                 String type = rollBucketType(floorIdx,
                         remainingShop, remainingCampfire, remainingQuestion, remainingElite, remainingMonster,
-                        forbidShop, true, forbidEliteCont, forbidElite);
+                        forbidShop, false, forbidEliteCont, forbidElite);
                 switch (type) {
                     case "shop":     remainingShop--; break;
                     case "campfire": remainingCampfire--; break;
@@ -368,7 +401,7 @@ public class GameConfigController {
         edges.add(edge);
     }
 
-    // ================ 商店、角色、卡牌接口 ================
+    // ================ 商店、角色、卡牌接口 (保持不变) ================
 
     @GetMapping("/shop")
     public Map<String, Object> getShopData(@RequestParam(defaultValue = "1") String charParam,
@@ -398,14 +431,11 @@ public class GameConfigController {
                 cardMap.put("damage", tpl.getDamage());
                 cardMap.put("block", tpl.getBlock());
                 cardMap.put("type", tpl.getType().name());
-                cardMap.put("applyStatusType", tpl.getApplyStatusType());
-                cardMap.put("applyStatusCount", tpl.getApplyStatusCount());
-                cardMap.put("applyStatusTarget", tpl.getApplyStatusTarget());
+                cardMap.put("effects", CardEffect.listToMapList(tpl.getEffects()));
                 cardMap.put("charId", tpl.getCharId());
                 cardMap.put("drawCount", tpl.getDrawCount());
                 cardMap.put("rarity", tpl.getRarity());
                 
-                // 🆕 补全商店卡牌缺失的所有新机制字段
                 cardMap.put("upgraded", tpl.isUpgraded());
                 cardMap.put("selfDamage", tpl.getSelfDamage());
                 cardMap.put("energyGain", tpl.getEnergyGain());
@@ -420,7 +450,9 @@ public class GameConfigController {
                 cardMap.put("discardCount", tpl.getDiscardCount());
                 cardMap.put("discardMode", tpl.getDiscardMode());
                 cardMap.put("aoe", tpl.isAoe());
-                cardMap.put("drawFirst", tpl.isDrawFirst()); // 🆕 最新补充
+                cardMap.put("drawFirst", tpl.isDrawFirst()); 
+                cardMap.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
+                cardMap.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
                 
                 int price = 50 + (tpl.getCost() * 25);
                 if (tpl.getDamage() > 10 || tpl.getBlock() > 10) price += 20;
@@ -457,8 +489,8 @@ public class GameConfigController {
         List<String> starterIds=Arrays.asList();
         if ("1".equals(charId)) {
             info.put("name", "铁甲战士");
-            info.put("maxHp", 80);               // ✅ 战士初始血量 80
-            info.put("gold", 99);                // ✅ 金币统一 99
+            info.put("maxHp", 80);               
+            info.put("gold", 99);                
             starterIds = Arrays.asList(
                 "strike", "strike", "strike", "strike", "strike",
                 "defend", "defend", "defend", "defend",
@@ -494,14 +526,11 @@ public class GameConfigController {
                     cardMap.put("damage", tpl.getDamage());
                     cardMap.put("block", tpl.getBlock());
                     cardMap.put("type", tpl.getType().name());
-                    cardMap.put("applyStatusType", tpl.getApplyStatusType());
-                    cardMap.put("applyStatusCount", tpl.getApplyStatusCount());
-                    cardMap.put("applyStatusTarget", tpl.getApplyStatusTarget());
+                    cardMap.put("effects", CardEffect.listToMapList(tpl.getEffects()));
                     cardMap.put("charId", tpl.getCharId());
                     cardMap.put("drawCount", tpl.getDrawCount());
                     cardMap.put("rarity", tpl.getRarity());
                     
-                    // 🆕 补全初始卡组缺失的所有新机制字段
                     cardMap.put("upgraded", tpl.isUpgraded());
                     cardMap.put("selfDamage", tpl.getSelfDamage());
                     cardMap.put("energyGain", tpl.getEnergyGain());
@@ -516,7 +545,9 @@ public class GameConfigController {
                     cardMap.put("discardCount", tpl.getDiscardCount());
                     cardMap.put("discardMode", tpl.getDiscardMode());
                     cardMap.put("aoe", tpl.isAoe());
-                    cardMap.put("drawFirst", tpl.isDrawFirst()); // 🆕 最新补充
+                    cardMap.put("drawFirst", tpl.isDrawFirst()); 
+                    cardMap.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
+                    cardMap.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
                     
                     deck.add(cardMap);
                 }
@@ -554,9 +585,7 @@ public class GameConfigController {
         map.put("damage", tpl.getDamage());
         map.put("block", tpl.getBlock());
         map.put("type", tpl.getType().name());
-        map.put("applyStatusType", tpl.getApplyStatusType());
-        map.put("applyStatusCount", tpl.getApplyStatusCount());
-        map.put("applyStatusTarget", tpl.getApplyStatusTarget());
+        map.put("effects", CardEffect.listToMapList(tpl.getEffects()));
         map.put("charId", tpl.getCharId());
         map.put("drawCount", tpl.getDrawCount());
         map.put("rarity", tpl.getRarity());
@@ -576,6 +605,8 @@ public class GameConfigController {
         map.put("xCost", tpl.isXCost());
         map.put("aoe", tpl.isAoe());
         map.put("drawFirst", tpl.isDrawFirst());
+        map.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
+        map.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
         return map;
     }
 }

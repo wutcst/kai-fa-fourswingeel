@@ -26,6 +26,7 @@
       const char = params.get('char') || '1';
       const currentNode = params.get('currentNode') || 'start';
       const nextNode = params.get('nextNode') || currentNode;
+      const act = params.get('act') || '1';
 
       let eventData = null; // 保存后端返回的事件数据
 
@@ -70,7 +71,7 @@
                 console.log('事件结果:', result);
                 alert('事件发生：' + result);
                 // 跳转到地图
-                window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
+                window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
               } else {
                 alert('执行选项失败');
                 btn.disabled = false;

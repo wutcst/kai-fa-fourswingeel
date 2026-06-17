@@ -28,6 +28,7 @@
       const params = new URLSearchParams(window.location.search);
       const char = params.get('char') || '1';
       const nextNode = params.get('nextNode') || 'start';
+      const act = params.get('act') || '1';
 
       let saveData = await loadSaveData(char);
       const upgradeable = saveData.deck.filter(card => !card.upgraded);
@@ -42,7 +43,7 @@
           div.style.background = CARD_UI.getCardCharStyle(card);
           const typeLabel = CARD_UI.getCardTypeLabel(card);
           div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p><div class="card-type-label">${typeLabel}</div><p style="font-size:12px;color:#ecf0f1;">${CARD_UI.getCardEffectText(card)}</p>`;
-          CARD_UI.bindTooltip(div, card.applyStatusType);
+          var _eff = CARD_UI.getCardEffects(card); CARD_UI.bindTooltip(div, _eff.length > 0 ? _eff[0].type : null);
           div.addEventListener('click', async () => {
             saveData = await loadSaveData(char); 
             const idx = saveData.deck.findIndex(c => c.name === card.name && !c.upgraded);
@@ -75,9 +76,11 @@
       }
 
       document.getElementById('back-btn').addEventListener('click', () => {
-        window.location.href = `campfire.html?char=${char}&nextNode=${encodeURIComponent(nextNode)}`;
+        window.location.href = `campfire.html?char=${char}&nextNode=${encodeURIComponent(nextNode)}&act=${act}`;
       });
     })();
   </script>
+  <!-- 加入背景音乐支持 -->
+  <script src="status_bar.js"></script>
 </body>
 </html>

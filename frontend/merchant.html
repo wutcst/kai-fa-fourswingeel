@@ -20,9 +20,10 @@
     const char = params.get('char') || '1';
     const currentNode = params.get('currentNode') || '';
     const nextNode = params.get('nextNode') || currentNode;
+    const act = params.get('act') || '1';
 
     document.getElementById('merchant').addEventListener('click', () => {
-      window.location.href = `shop.html?char=${char}&currentNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}`;
+      window.location.href = `shop.html?char=${char}&currentNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}&act=${act}`;
     });
   </script>
 

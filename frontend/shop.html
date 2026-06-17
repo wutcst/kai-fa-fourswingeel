@@ -45,6 +45,7 @@
       const char = params.get('char') || '1';
       const currentNode = params.get('currentNode') || 'start';
       const nextNode = params.get('nextNode') || currentNode;
+      const act = params.get('act') || '1';
 
       let saveData = await loadSaveData(char);
       let gold = saveData.gold;
@@ -95,7 +96,7 @@
           const effText = CARD_UI.getCardEffectText(card);
           const typeLabel = CARD_UI.getCardTypeLabel(card);
           div.innerHTML = `<div><strong>${card.name}</strong></div><div class="card-type-label">${typeLabel}</div><div style="font-size:12px;color:#ecf0f1;margin:4px 0;">${effText}</div><div> ⚡${card.cost}</div><div class="price">${card.price} 💰</div>`;
-          CARD_UI.bindTooltip(div, card.applyStatusType);
+          var firstEff = CARD_UI.getCardEffects(card); CARD_UI.bindTooltip(div, firstEff.length > 0 ? firstEff[0].type : null);
           
           div.addEventListener('click', async () => {
             if (div.classList.contains('sold')) return;
@@ -104,9 +105,7 @@
               saveData.deck.push({
                 id: card.id, name: card.name, cost: card.cost,
                 damage: card.damage, block: card.block, type: card.type,
-                applyStatusType: card.applyStatusType,
-                applyStatusCount: card.applyStatusCount,
-                applyStatusTarget: card.applyStatusTarget,
+                effects: card.effects || [],
                 drawCount: card.drawCount || 0, selfDamage: card.selfDamage || 0,
                 energyGain: card.energyGain || 0, multiHitCount: card.multiHitCount || 1,
                 exhaust: card.exhaust || false, retain: card.retain || false,
@@ -117,7 +116,10 @@
                 exhaustHandMode: card.exhaustHandMode || 'RANDOM',
                 discardCount: card.discardCount || 0,
                 charId: card.charId || '1', rarity: card.rarity || 'COMMON',
-                upgraded: card.upgraded || false
+                upgraded: card.upgraded || false,
+                // 🆕 力量倍率
+                strengthMultiplier: card.strengthMultiplier || 1,
+                copyToDiscard: card.copyToDiscard || false
               });
               await saveSaveData(saveData);
               alert(`购买成功：${card.name}`);
@@ -204,7 +206,7 @@
       document.getElementById('skip-btn').addEventListener('click', () => {
         // 清除本次商人标记（不影响下次）
         sessionStorage.removeItem('shopDeleted');
-        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
+        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
       });
     })();
   </script>

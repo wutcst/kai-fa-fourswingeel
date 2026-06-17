@@ -15,10 +15,21 @@ const CARD_UI = {
   
   getStatusName(type) { return this.STATUS_INFO[type]?.name || type; },
 
+  getCardEffects(card) {
+    if (!card) return [];
+    if (Array.isArray(card.effects) && card.effects.length > 0) {
+      return card.effects;
+    }
+    if (card.applyStatusType) {
+      return [{ type: card.applyStatusType, count: card.applyStatusCount || 0, target: card.applyStatusTarget || 'ENEMY' }];
+    }
+    return [];
+  },
+
   getCardEffectText(card) {
     if (!card) return '无效果';
     const parts = [];
-    
+
     if (card.xCost) parts.push(`X耗能 (消耗所有能量，效果触发X次)`);
     if (card.damage > 0) {
         const dmgText = card.multiHitCount > 1 ? `造成 ${card.damage} 点伤害 ${card.multiHitCount} 次` : `造成 ${card.damage} 点伤害`;
@@ -27,8 +38,17 @@ const CARD_UI = {
     if (card.block > 0) parts.push(`获得 ${card.block} 点格挡`);
     if (card.selfDamage > 0) parts.push(`失去 ${card.selfDamage} 点生命`);
     if (card.energyGain > 0) parts.push(`获得 ${card.energyGain} 点能量`);
-    
-    // 🆕 【核心调整】根据 drawFirst 决定抽牌、消耗、丢弃的文本顺序
+
+    // 🆕 随机目标描述
+    if (card.randomTarget) {
+      parts.push('随机攻击敌人');
+    }
+
+    // 🆕 力量倍率描述
+    if (card.strengthMultiplier && card.strengthMultiplier > 1) {
+        parts.push(`力量发挥 ${card.strengthMultiplier} 倍效果`);
+    }
+
     if (card.drawFirst) {
         if (card.drawCount > 0) parts.push(`抽 ${card.drawCount} 张牌`);
         if (card.exhaustHandCount > 0) {
@@ -44,19 +64,25 @@ const CARD_UI = {
         if (card.discardCount > 0) parts.push(`丢弃 ${card.discardCount} 张手牌`);
         if (card.drawCount > 0) parts.push(`抽 ${card.drawCount} 张牌`);
     }
-    
-    if (card.applyStatusType) {
-        const sn = this.getStatusName(card.applyStatusType);
-        const isSelf = card.applyStatusTarget === 'SELF';
-        const aoeText = card.aoe && !isSelf ? '所有敌人' : (isSelf ? '自身' : '目标');
-        parts.push(`给${aoeText}${isSelf ? '获得' : '施加'} ${card.applyStatusCount} 层${sn}`);
-    }
-    
+
+    const effects = this.getCardEffects(card);
+    effects.forEach(eff => {
+      if (!eff.type) return;
+      const sn = this.getStatusName(eff.type);
+      const isSelf = eff.target === 'SELF';
+      const aoeText = card.aoe && !isSelf ? '所有敌人' : (isSelf ? '自身' : '目标');
+      parts.push(`给${aoeText}${isSelf ? '获得' : '施加'} ${eff.count} 层${sn}`);
+    });
+
     if (card.unplayable) parts.push('无法被打出');
     if (card.innate) parts.push('固有');
     if (card.exhaust) parts.push('消耗');
     if (card.ethereal) parts.push('虚无');
     if (card.retain) parts.push('保留');
+    // 🆕 愤怒效果：弃牌堆增加一张复制品
+    if (card.copyToDiscard) {
+      parts.push('弃牌堆增加一张复制品');
+    }
 
     return parts.join('，') || '无效果';
   },
@@ -90,7 +116,9 @@ const CARD_UI = {
     if (typeClass) el.classList.add(typeClass);
     const borderColor = this.getRarityBorderColor(card);
     el.style.borderColor = borderColor; el.style.borderWidth = '3px';
-    this.bindTooltip(el, card.applyStatusType);
+    const effects = this.getCardEffects(card);
+    const firstType = effects.length > 0 ? effects[0].type : null;
+    this.bindTooltip(el, firstType);
   },
   bindTooltip(el, applyStatusType) {
     if (!applyStatusType) return;

@@ -172,8 +172,8 @@
           <span style="color: #ecf0f1; font-size: 14px;">{{ getCardEffectText(selectedCard) }}</span>
         </p>
         
-        <!-- 目标选择 (仅多敌人且攻击牌) -->
-        <div v-if="state && state.enemies && state.enemies.length > 1 && selectedCard.type === 'ATTACK'" style="margin-top: 10px;">
+        <!-- 目标选择 (仅多敌人且攻击牌且非随机目标) -->
+        <div v-if="state && state.enemies && state.enemies.length > 1 && selectedCard.type === 'ATTACK' && !selectedCard.randomTarget" style="margin-top: 10px;">
           <label>目标敌人:</label>
           <select v-model="selectedEnemyIndex" style="margin-left:8px; padding:4px; background:#34495e; color:white; border:none; border-radius:4px;">
             <option v-for="enemy in state.enemies" :key="enemy.index" :value="enemy.index">{{ enemy.name }} (❤️{{ enemy.hp }})</option>
@@ -244,8 +244,11 @@
       computed: {
         hand() { return this.state ? this.state.hand : []; },
         tooltipInfo() {
-          if (!this.tooltipCard || !this.tooltipCard.applyStatusType) return null;
-          return CARD_UI.STATUS_INFO[this.tooltipCard.applyStatusType] || null;
+          if (!this.tooltipCard) return null;
+          const effects = CARD_UI.getCardEffects(this.tooltipCard);
+          const firstType = effects.length > 0 ? effects[0].type : null;
+          if (!firstType) return null;
+          return CARD_UI.STATUS_INFO[firstType] || null;
         },
         // 🆕 预估打出该牌并结算抽牌后的手牌数量（用于精准判断是否需要选择消耗/丢弃）
         availableCardsAfterPlay() {
@@ -274,7 +277,6 @@
             
             // 丢弃手牌检查
             if (this.selectedCard.discardCount > 0 && this.availableCardsAfterPlay > 0) {
-                // 如果是先抽牌且当前没牌，只能随机，不禁用确认按钮
                 if (!this.isDrawFirstWithNoCurrentHand) {
                     if (this.selectedDiscardHandIndex === -1) return true;
                 }
@@ -299,10 +301,11 @@
           try {
             const charParam = new URLSearchParams(window.location.search).get('char') || '1';
             const nodeTypeParam = new URLSearchParams(window.location.search).get('nodeType') || '';
+            const actParam = new URLSearchParams(window.location.search).get('act') || '1';
             const saveData = await loadSaveData(charParam);
             this.playerRelics = saveData.relics || [];
             const bodyData = { deck: saveData.deck, relics: saveData.relics, playerHp: saveData.playerHp, playerMaxHp: saveData.maxHp };
-            if (nodeTypeParam) bodyData.nodeType = nodeTypeParam;
+            bodyData.nodeType = (nodeTypeParam || 'monster') + '_act' + actParam;
             const resp = await fetch(`${API_BASE}/new`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyData) });
             if (!resp.ok) throw new Error(`请求失败 ${resp.status}`);
             this.state = await resp.json();
@@ -328,7 +331,7 @@
             let url = `${API_BASE}/play?index=${this.selectedIndex}`;
             const card = this.selectedCard;
             
-            if (card && card.type === 'ATTACK' && this.state && this.state.enemies && this.state.enemies.length > 1) {
+            if (card && card.type === 'ATTACK' && this.state && this.state.enemies && this.state.enemies.length > 1 && !card.randomTarget) {
               url += `&targetIndex=${this.selectedEnemyIndex}`;
             }
             if (card && card.exhaustHandCount > 0 && this.selectedExhaustHandIndex !== -1) {
@@ -348,13 +351,16 @@
         
         showTooltip(index, event) {
           const card = this.hand[index];
-          if (card && card.applyStatusType) {
-            this.tooltipCard = card;
-            const w = window.innerWidth;
-            const x = event.clientX;
-            const y = event.clientY;
-            this.tooltipX = (x + 280 > w) ? x - 270 : x + 15;
-            this.tooltipY = Math.min(y, window.innerHeight - 120);
+          if (card) {
+            const effects = CARD_UI.getCardEffects(card);
+            if (effects.length > 0) {
+              this.tooltipCard = card;
+              const w = window.innerWidth;
+              const x = event.clientX;
+              const y = event.clientY;
+              this.tooltipX = (x + 280 > w) ? x - 270 : x + 15;
+              this.tooltipY = Math.min(y, window.innerHeight - 120);
+            }
           }
         },
         hideTooltip() { this.tooltipCard = null; },
@@ -416,7 +422,8 @@
           if (!saveData.visitedNodes.includes(next)) saveData.visitedNodes.push(next);
           await saveSaveData(saveData);
           if (this.isFromMap && (this.state.winner === '玩家' || (this.state.gameOver && this.state.playerHp > 0))) {
-            window.location.href = `reward.html?source=fight&char=${charParam}&prevNode=${prev}&nextNode=${next}&nodeType=${nodeType}&gotCard=0`;
+            const actParam = new URLSearchParams(window.location.search).get('act') || '1';
+            window.location.href = `reward.html?source=fight&char=${charParam}&prevNode=${prev}&nextNode=${next}&nodeType=${nodeType}&act=${actParam}&gotCard=0`;
           } else { window.location.href = `map.html?char=${charParam}&currentNode=${prev}`; }
         }
       }

@@ -58,7 +58,7 @@ public class EventService {
      * 执行选项效果，直接修改存档并持久化
      * @param eventId 事件 ID
      * @param optionIndex 选项索引
-     * @param charId 角色 ID
+     * @param charId 角色 ID (可选，若为空则从全局存档中读取)
      * @return 执行结果（成功/失败消息）
      */
     public String executeOption(String eventId, int optionIndex, String charId) {
@@ -67,8 +67,14 @@ public class EventService {
         if (event == null) return "事件不存在";
         if (optionIndex < 0 || optionIndex >= event.getOptions().size()) return "选项不存在";
 
-        SaveData saveData = saveService.loadGame(charId);
+        // 🆕 移除 charId 参数，直接加载全局存档
+        SaveData saveData = saveService.loadGame();
         if (saveData == null) return "存档不存在";
+
+        // 🆕 确定当前角色 ID：优先使用传入的 charId，否则使用全局存档中记录的 charId
+        if (charId == null || charId.isEmpty()) {
+            charId = saveData.getCharId();
+        }
 
         EventTemplate.EventOption option = event.getOptions().get(optionIndex);
         boolean valid = true;
@@ -138,9 +144,7 @@ public class EventService {
                         cardMap.put("damage", chosen.getDamage());
                         cardMap.put("block", chosen.getBlock());
                         cardMap.put("type", chosen.getType().name());
-                        cardMap.put("applyStatusType", chosen.getApplyStatusType());
-                        cardMap.put("applyStatusCount", chosen.getApplyStatusCount());
-                        cardMap.put("applyStatusTarget", chosen.getApplyStatusTarget());
+                        cardMap.put("effects", com.slaythespire.game.model.CardEffect.listToMapList(chosen.getEffects()));
                         cardMap.put("exhaust", chosen.isExhaust());
                         cardMap.put("retain", chosen.isRetain());
                         cardMap.put("ethereal", chosen.isEthereal());
@@ -172,7 +176,8 @@ public class EventService {
             }
         }
 
-        saveService.saveGame(charId, saveData);
+        // 🆕 移除 charId 参数，直接保存全局存档
+        saveService.saveGame(saveData);
         return String.join("; ", logs);
     }
 }
