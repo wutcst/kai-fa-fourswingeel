@@ -135,6 +135,9 @@ public class EventService {
                         else if ("small_blood".equals(rid)) saveData.setPlayerHp(Math.min(saveData.getPlayerHp() + 10, saveData.getMaxHp()));
                         else if ("apple".equals(rid)) saveData.setPlayerHp(Math.min(saveData.getPlayerHp() + 5, saveData.getMaxHp()));
                         else if ("pear".equals(rid)) saveData.setPlayerHp(Math.min(saveData.getPlayerHp() + 20, saveData.getMaxHp()));
+                        // 彩蛋遗物弹窗（事件获得时随日志展示）
+                        if ("jiucai_anger".equals(rid)) logs.add("😡 怪物太难都是九才8干的，大家一起骂他");
+                        else if ("anthony_anger".equals(rid)) logs.add("😡 再玩小卡组找人弄你");
                         logs.add("获得遗物: " + relic.getName());
                     } else {
                         logs.add("没有可获得的遗物");
