@@ -250,6 +250,27 @@
         }
     };
 
+    /** 展示获得遗物的弹窗，并在获得彩蛋遗物时追加彩蛋消息 */
+    window.showRelicPickupPopup = function(relicId, relicName, onClose) {
+        window.showModal('获得遗物：' + relicName, {
+            title: '📿 获得遗物',
+            icon: '📿',
+            borderColor: '#9b59b6',
+            onClose: function() {
+                if (relicId === 'jiucai_anger') {
+                    window.showModal('怪物太难都是九才8干的，大家一起骂他', {
+                        title: '😡 九才8之怒',
+                        icon: '😡',
+                        borderColor: '#e74c3c',
+                        onClose: onClose
+                    });
+                } else {
+                    if (onClose) onClose();
+                }
+            }
+        });
+    };
+
     function createStatusBar() {
         // 确保初始遗物已存在
         ensureInitialRelics();

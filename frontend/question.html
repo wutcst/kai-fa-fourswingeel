@@ -102,7 +102,21 @@
                   buttonText: '继续',
                   borderColor: '#e67e22',
                   onClose: function() {
-                    window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
+                    // 检查是否获得了彩蛋遗物，单独弹窗
+                    loadSaveData(char).then(function(sd) {
+                      if (sd.relics && sd.relics.includes('jiucai_anger')) {
+                        window.showModal('怪物太难都是九才8干的，大家一起骂他', {
+                          title: '😡 九才8之怒',
+                          icon: '😡',
+                          borderColor: '#e74c3c',
+                          onClose: function() {
+                            window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
+                          }
+                        });
+                      } else {
+                        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
+                      }
+                    });
                   }
                 });
               } else {
