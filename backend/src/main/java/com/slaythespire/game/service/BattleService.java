@@ -298,11 +298,13 @@ public class BattleService {
             int strengthCount = 0;
             StatusEffect savedStrength = null;
             if (strengthMultiplier > 1) {
-                for (StatusEffect s : player.getStatuses()) {
+                Iterator<StatusEffect> iter = player.getStatuses().iterator();
+                while (iter.hasNext()) {
+                    StatusEffect s = iter.next();
                     if ("STRENGTH".equals(s.getId())) {
                         strengthCount = s.getCount();
                         savedStrength = s;
-                        player.getStatuses().remove(s);
+                        iter.remove();
                         break;
                     }
                 }
@@ -354,7 +356,7 @@ public class BattleService {
                         currentAlive.remove(currentTarget);
                     }
                     if (actualDmg > 0) triggerManaFlower();
-                    if (!target.isAlive()) triggerGoblinHorn();
+                    if (!currentTarget.isAlive()) triggerGoblinHorn();
                 }
             }
 

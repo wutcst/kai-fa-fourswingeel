@@ -18,7 +18,7 @@
     "maxHp": 65,
     "attackDamage": 11,
     "description": "原版酸液史莱姆(大)。HP 65，可分裂。腐蚀喷吐塞2张黏液、重击、舔舔。",
-    "initialStatuses": { "SPLIT": 1 },
+    "initialStatuses": { },
     "intents": [
       { "type": "ATTACK", "value": 11, "desc": "腐蚀喷吐", "burnCards": 2 },
       { "type": "ATTACK", "value": 16, "desc": "重击" },

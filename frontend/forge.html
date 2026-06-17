@@ -46,7 +46,7 @@
           var _eff = CARD_UI.getCardEffects(card); CARD_UI.bindTooltip(div, _eff.length > 0 ? _eff[0].type : null);
           div.addEventListener('click', async () => {
             saveData = await loadSaveData(char); 
-            const idx = saveData.deck.findIndex(c => c.name === card.name && !c.upgraded);
+            const idx = saveData.deck.indexOf(card);
             if (idx !== -1) {
               const baseCard = saveData.deck[idx];
               const baseId = baseCard.id;

@@ -141,7 +141,7 @@
             if (await spendGold(relic.price)) {
               saveData = await loadSaveData(char);
               const relicId = relic.id || relic.name;
-              saveData.relics.push(relicId);
+              if (!saveData.relics.includes(relicId)) saveData.relics.push(relicId);
               if (relic.effectType === 'MAX_HP' && relic.value > 0) {
                 saveData.maxHp = (saveData.maxHp || 70) + relic.value;
                 saveData.playerHp = Math.min((saveData.playerHp || saveData.maxHp) + relic.value, saveData.maxHp);
