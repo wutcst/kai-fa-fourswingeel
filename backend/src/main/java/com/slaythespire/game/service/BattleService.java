@@ -270,6 +270,7 @@ public class BattleService {
                     logList.add(String.format("💥 AOE对 %s 造成 %d 点伤害，HP: %d", e.getEnemyName(), actualDmg, e.getHp()));
                 }
                     if (actualDmg > 0) triggerManaFlower();
+                    if (!e.isAlive()) triggerGoblinHorn();
             } else {
                 int hitCount = Math.max(1, card.getMultiHitCount());
                 for (int i = 0; i < hitCount; i++) {
@@ -286,6 +287,7 @@ public class BattleService {
                         logList.add(String.format("对 %s 造成 %d 点伤害，HP: %d", target.getEnemyName(), actualDmg, target.getHp()));
                     }
                     if (actualDmg > 0) triggerManaFlower();
+                    if (!target.isAlive()) triggerGoblinHorn();
                 }
             }
         }
@@ -703,6 +705,18 @@ public class BattleService {
             energy += val;
             logList.add("🌸 魔力花触发，获得 " + val + " 点能量（当前能量: " + energy + "）");
         }
+    }
+
+    /** 🆕 地精之角：击杀敌人时获得能量+抽牌+力量+敏捷 */
+    private void triggerGoblinHorn() {
+        if (!RelicEffectHandler.hasEffect(player, "GOBLIN_HORN")) return;
+        energy += 1;
+        drawCards(2);
+        StatusEffect str = StatusFactory.create("STRENGTH", 1, dataRepo);
+        if (str != null) player.addStatus(str);
+        StatusEffect dex = StatusFactory.create("DEXTERITY", 1, dataRepo);
+        if (dex != null) player.addStatus(dex);
+        logList.add("🦴 地精之角触发！获得1能量、抽2牌、+1力量、+1敏捷");
     }
 
     private void triggerDrawOnExhaust() {
