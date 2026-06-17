@@ -210,10 +210,10 @@ public class BattleService {
         if (RelicEffectHandler.hasEffect(player, "MOLTEN_FURY")) {
             List<Enemy> alive = getAliveEnemies();
             if (!alive.isEmpty()) {
-                Enemy target = alive.get(new Random().nextInt(alive.size()));
-                int dmg = target.takeDamage(2, player);
-                logList.addAll(target.getLastCombatLogs());
-                logList.add("🔥 熔火之怒对 " + target.getEnemyName() + " 造成 " + dmg + " 点伤害");
+                Enemy randomTarget = alive.get(new Random().nextInt(alive.size()));
+                int dmg = randomTarget.takeDamage(2, player);
+                logList.addAll(randomTarget.getLastCombatLogs());
+                logList.add("🔥 熔火之怒对 " + randomTarget.getEnemyName() + " 造成 " + dmg + " 点伤害");
             }
         }
 
