@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>选择删除卡牌</title>
+  <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
+  <style>
+    body {
+      margin: 0; padding-top: 50px;
+      background: #1a1a2e; color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex; flex-direction: column; align-items: center;
+      min-height: 100vh;
+    }
+    h2 { color: #e74c3c; margin: 20px 0 10px; }
+    .subtitle { color: #f1c40f; font-size: 16px; margin-bottom: 20px; }
+    .card-list {
+      display: flex; gap: 15px; margin: 10px 0 30px;
+      flex-wrap: wrap; justify-content: center; max-width: 900px;
+    }
+    .card-item {
+      width: 150px; padding: 18px 12px;
+      border: 3px solid #34495e; border-radius: 10px;
+      text-align: center; cursor: pointer; color: white;
+      transition: all 0.25s; position: relative;
+    }
+    .card-item:hover { transform: translateY(-3px); }
+    .card-item.selected {
+      border-color: #e74c3c !important;
+      box-shadow: 0 0 18px rgba(231, 76, 60, 0.6);
+      background: rgba(231, 76, 60, 0.25) !important;
+    }
+    .card-item.selected::after {
+      content: '✕'; position: absolute; top: 6px; right: 10px;
+      font-size: 20px; color: #e74c3c; font-weight: bold;
+    }
+    .card-item .card-name { font-weight: bold; font-size: 15px; margin-bottom: 6px; }
+    .card-item .card-cost { font-size: 13px; color: #f1c40f; margin-bottom: 4px; }
+    .card-item .card-effect { font-size: 11px; color: #bdc3c7; line-height: 1.3; }
+    .actions { display: flex; gap: 20px; margin-bottom: 40px; }
+    .btn {
+      padding: 14px 36px; font-size: 17px; border: none;
+      border-radius: 8px; cursor: pointer; font-weight: bold;
+      transition: all 0.3s;
+    }
+    .btn-confirm { background: #e74c3c; color: white; }
+    .btn-confirm:hover:not(:disabled) { background: #c0392b; transform: translateY(-2px); }
+    .btn-confirm:disabled { background: #555; cursor: not-allowed; }
+    .btn-skip { background: #7f8c8d; color: white; }
+    .btn-skip:hover { background: #636e72; transform: translateY(-2px); }
+    .counter { font-size: 20px; color: #f1c40f; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>🗑️ 选择要删除的卡牌</h2>
+  <p class="subtitle" id="subtitle">请选择要删除的卡牌</p>
+  <div class="counter" id="counter"></div>
+  <div class="card-list" id="card-list"></div>
+  <div class="actions">
+    <button class="btn btn-confirm" id="confirm-btn" disabled>确认删除</button>
+    <button class="btn btn-skip" id="skip-btn">跳过（不删除）</button>
+  </div>
+
+  <script>
+    (async function() {
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      const removeCount = parseInt(params.get('count')) || 1;
+
+      // 读取事件上下文
+      let eventContext = null;
+      try {
+        const ctx = sessionStorage.getItem('eventRemoveContext');
+        if (ctx) eventContext = JSON.parse(ctx);
+      } catch (e) {}
+
+      // 如果没有上下文，直接返回地图
+      if (!eventContext) {
+        window.location.href = `map.html?char=${char}`;
+        return;
+      }
+
+      document.getElementById('subtitle').textContent =
+        `事件需要删除 ${removeCount} 张卡牌，点击卡牌选择（已选 0/${removeCount}）`;
+
+      // 加载存档
+      const saveData = await loadSaveData(char);
+      const deck = saveData.deck || [];
+      const selectedIndices = new Set();
+
+      function updateUI() {
+        const count = selectedIndices.size;
+        document.getElementById('subtitle').textContent =
+          `事件需要删除 ${removeCount} 张卡牌，点击卡牌选择（已选 ${count}/${removeCount}）`;
+        document.getElementById('counter').textContent =
+          count === 0 ? '点击卡牌以选中' : `已选中 ${count} 张`;
+        document.getElementById('confirm-btn').disabled = (count === 0);
+
+        document.querySelectorAll('.card-item').forEach(function(el) {
+          const idx = parseInt(el.dataset.index);
+          if (selectedIndices.has(idx)) {
+            el.classList.add('selected');
+          } else {
+            el.classList.remove('selected');
+          }
+        });
+      }
+
+      const listDiv = document.getElementById('card-list');
+
+      if (deck.length === 0) {
+        listDiv.innerHTML = '<p style="color:#95a5a6;">卡组为空，没有可删除的卡牌</p>';
+        document.getElementById('confirm-btn').disabled = true;
+      }
+
+      deck.forEach(function(card, index) {
+        const div = document.createElement('div');
+        div.className = 'card-item';
+        div.dataset.index = index;
+        div.style.background = CARD_UI.getCardCharStyle(card);
+
+        const typeLabel = CARD_UI.getCardTypeLabel(card);
+        const effectText = CARD_UI.getCardEffectText(card);
+
+        div.innerHTML = `
+          <div class="card-name">${card.name}</div>
+          <div class="card-cost">⚡ ${card.cost}  ${typeLabel}</div>
+          <div class="card-effect">${effectText}</div>
+        `;
+
+        div.addEventListener('click', function() {
+          if (selectedIndices.has(index)) {
+            selectedIndices.delete(index);
+          } else {
+            if (selectedIndices.size >= removeCount) {
+              // 已选满，取消最早选中的一个
+              const first = selectedIndices.values().next().value;
+              selectedIndices.delete(first);
+            }
+            selectedIndices.add(index);
+          }
+          updateUI();
+        });
+
+        listDiv.appendChild(div);
+      });
+
+      document.getElementById('confirm-btn').addEventListener('click', async function() {
+        const indices = Array.from(selectedIndices);
+        if (indices.length === 0) return;
+
+        document.getElementById('confirm-btn').disabled = true;
+        document.getElementById('skip-btn').disabled = true;
+
+        try {
+          let url = `/api/event/choose?eventId=${encodeURIComponent(eventContext.eventId)}&optionIndex=${eventContext.optionIndex}&charId=${char}`;
+          indices.forEach(function(i) {
+            url += '&cardIndices=' + i;
+          });
+
+          const resp = await fetch(url, { method: 'POST' });
+          if (resp.ok) {
+            const result = await resp.text();
+            sessionStorage.removeItem('eventRemoveContext');
+            window.showModal(result, {
+              title: '🗑️ 事件发生',
+              icon: '🗑️',
+              borderColor: '#e74c3c',
+              buttonText: '继续',
+              onClose: function() {
+                window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(eventContext.nextNode)}&act=${eventContext.act}`;
+              }
+            });
+          } else {
+            window.showModal('操作失败，请重试', { title: '错误', icon: '⚠️', borderColor: '#e74c3c' });
+            document.getElementById('confirm-btn').disabled = false;
+            document.getElementById('skip-btn').disabled = false;
+          }
+        } catch (e) {
+          console.error('删除卡牌失败', e);
+          window.showModal('网络错误，请重试', { title: '错误', icon: '❌', borderColor: '#e74c3c' });
+          document.getElementById('confirm-btn').disabled = false;
+          document.getElementById('skip-btn').disabled = false;
+        }
+      });
+
+      document.getElementById('skip-btn').addEventListener('click', async function() {
+        try {
+          // 跳过：仍调用后端执行其他效果（如扣血/扣钱），但不删牌
+          const resp = await fetch(`/api/event/choose?eventId=${encodeURIComponent(eventContext.eventId)}&optionIndex=${eventContext.optionIndex}&charId=${char}`, { method: 'POST' });
+          if (resp.ok) {
+            const result = await resp.text();
+            sessionStorage.removeItem('eventRemoveContext');
+            window.showModal(result, {
+              title: '事件发生',
+              icon: '✨',
+              borderColor: '#e67e22',
+              buttonText: '继续',
+              onClose: function() {
+                window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(eventContext.nextNode)}&act=${eventContext.act}`;
+              }
+            });
+          }
+        } catch (e) {
+          console.error('跳过失败', e);
+          sessionStorage.removeItem('eventRemoveContext');
+          window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(eventContext.nextNode)}&act=${eventContext.act}`;
+        }
+      });
+    })();
+  </script>
+  <script src="status_bar.js"></script>
+</body>
+</html>

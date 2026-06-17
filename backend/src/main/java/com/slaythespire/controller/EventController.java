@@ -3,6 +3,7 @@ package com.slaythespire.controller;
 import com.slaythespire.model.EventTemplate;
 import com.slaythespire.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,8 +40,9 @@ public class EventController {
     @PostMapping("/choose")
     public ResponseEntity<String> chooseOption(@RequestParam String eventId,
                                                @RequestParam int optionIndex,
-                                               @RequestParam String charId) {
-        String result = eventService.executeOption(eventId, optionIndex, charId);
+                                               @RequestParam String charId,
+                                               @RequestParam(required = false) List<Integer> cardIndices) {
+        String result = eventService.executeOption(eventId, optionIndex, charId, cardIndices);
         return ResponseEntity.ok(result);
     }
 }

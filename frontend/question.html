@@ -72,6 +72,24 @@
           btn.className = 'option-btn';
           btn.textContent = opt.text;
           btn.addEventListener('click', async () => {
+            // 检查是否需要选择卡牌删除（CHOOSE_REMOVE_CARD 效果）
+            const hasChooseRemove = opt.effects && opt.effects.some(function(e) { return e.type === 'CHOOSE_REMOVE_CARD'; });
+            if (hasChooseRemove) {
+              const removeEffect = opt.effects.find(function(e) { return e.type === 'CHOOSE_REMOVE_CARD'; });
+              const removeCount = removeEffect.count || 1;
+              // 保存事件上下文到 sessionStorage，供 event_remove.html 使用
+              sessionStorage.setItem('eventRemoveContext', JSON.stringify({
+                eventId: event.id,
+                optionIndex: index,
+                removeCount: removeCount,
+                char: char,
+                nextNode: nextNode,
+                act: act
+              }));
+              window.location.href = `event_remove.html?char=${char}&count=${removeCount}`;
+              return;
+            }
+
             btn.disabled = true;
             try {
               const chooseResp = await fetch(`/api/event/choose?eventId=${encodeURIComponent(event.id)}&optionIndex=${index}&charId=${char}`, { method: 'POST' });

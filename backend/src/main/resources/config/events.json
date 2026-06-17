@@ -432,5 +432,47 @@
         "effects": []
       }
     ]
+  },
+  {
+    "id": "junk_collector",
+    "title": "流浪收藏家",
+    "description": "一个背着大布袋的老人拦住了你，袋子里装满了各种稀奇古怪的旧物。'嘿，年轻人！我收破烂，也收你不想要的卡牌。一张破牌换点小钱，怎么样？'",
+    "background": "linear-gradient(135deg, #4a3a2e, #2e1a0e)",
+    "icon": "🧓",
+    "options": [
+      {
+        "text": "卖一张牌给他（-25💰，选择删除1张）",
+        "effects": [
+          { "type": "GOLD", "value": -25 },
+          { "type": "CHOOSE_REMOVE_CARD", "count": 1 }
+        ]
+      },
+      {
+        "text": "不卖，离开",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "confession_room",
+    "title": "忏悔密室",
+    "description": "一间阴暗的石室，墙壁上刻满了忏悔者的字迹。中央的圣坛泛着微弱的白光。一个声音在你脑海中响起：'忏悔你的贪婪，舍弃多余的卡牌，你将获得救赎。'",
+    "background": "linear-gradient(135deg, #2a2a3a, #1a1a2a)",
+    "icon": "⛓️",
+    "options": [
+      {
+        "text": "忏悔并舍弃（-20❤️，选择删除2张）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -20 },
+          { "type": "CHOOSE_REMOVE_CARD", "count": 2 }
+        ]
+      },
+      {
+        "text": "默祷后离开（-5❤️）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -5 }
+        ]
+      }
+    ]
   }
 ]
