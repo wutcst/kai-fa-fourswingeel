@@ -425,7 +425,7 @@ fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}
 
         const query =
 `char=${encodeURIComponent(char)}&prevNode=${encodeURIComponent(prevNode)}&nextNode=${encodeURIComponent(nextNode)}&node
-Type=${encodeURIComponent(nodeType)}&gotGold=${localGotGold ? '1' : '0'}&gotRelic=${localGotRelic ? '1' : '0'}`;
+Type=${encodeURIComponent(nodeType)}&act=${encodeURIComponent(act)}&gotGold=${localGotGold ? '1' : '0'}&gotRelic=${localGotRelic ? '1' : '0'}`;
 
         window.location.href = `card_select.html?${query}`;
 
