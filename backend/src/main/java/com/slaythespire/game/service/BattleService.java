@@ -27,6 +27,7 @@ public class BattleService {
     private String winner;
     private int attackCountThisTurn; // 本场战斗累计攻击牌计数（黄金戒指，跨回合累计）
     private int skillCountCombat;    // 本场战斗累计技能牌计数（黄金项链，跨回合累计）
+    private boolean hasDealtDamageThisTurn; // 魔力花：本回合是否已造成过伤害
 
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp, String nodeType) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
@@ -78,6 +79,7 @@ public class BattleService {
         this.winner = null;
         this.attackCountThisTurn = 0;
         this.skillCountCombat = 0;
+        this.hasDealtDamageThisTurn = false;
 
         // 🆕 【核心机制：固有牌处理】
         List<Card> innateCards = new ArrayList<>();
@@ -264,6 +266,7 @@ public class BattleService {
                     logList.addAll(e.getLastCombatLogs());
                     logList.add(String.format("💥 AOE对 %s 造成 %d 点伤害，HP: %d", e.getEnemyName(), actualDmg, e.getHp()));
                 }
+                    if (actualDmg > 0) triggerManaFlower();
             } else {
                 int hitCount = Math.max(1, card.getMultiHitCount());
                 for (int i = 0; i < hitCount; i++) {
@@ -279,6 +282,7 @@ public class BattleService {
                     } else {
                         logList.add(String.format("对 %s 造成 %d 点伤害，HP: %d", target.getEnemyName(), actualDmg, target.getHp()));
                     }
+                    if (actualDmg > 0) triggerManaFlower();
                 }
             }
         }
@@ -459,6 +463,7 @@ public class BattleService {
         decrementIntangible(player);
 
         // ================= 4. 玩家新回合开始 =================
+        hasDealtDamageThisTurn = false;
         player.onTurnStart();
         logList.addAll(player.getLastTurnStartLogs());
         if (!player.isAlive()) { gameOver = true; winner = "敌人"; logList.add("💀 玩家倒下..."); return getCurrentState(); }
@@ -683,6 +688,19 @@ public class BattleService {
         state.put("exhaustPile", cardsToStateList(exhaustPile));
         state.put("log", new ArrayList<>(logList)); state.put("gameOver", gameOver); state.put("winner", winner);
         return state;
+    }
+
+    /** 🆕 魔力花：每回合首次造成伤害时获得力量 */
+    private void triggerManaFlower() {
+        if (!hasDealtDamageThisTurn && RelicEffectHandler.hasEffect(player, "FIRST_HIT_STRENGTH")) {
+            hasDealtDamageThisTurn = true;
+            int val = RelicEffectHandler.getEffectValue(player, "FIRST_HIT_STRENGTH");
+            StatusEffect str = StatusFactory.create("STRENGTH", val, dataRepo);
+            if (str != null) {
+                player.addStatus(str);
+                logList.add("🌸 魔力花触发，获得 " + val + " 点力量");
+            }
+        }
     }
 
     private void triggerDrawOnExhaust() {
