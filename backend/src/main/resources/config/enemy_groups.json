@@ -64,6 +64,14 @@
     "enemies": ["jaw_worm"]
   },
   {
+    "id": "big_jaw_worm",
+    "name": "大颚虫",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["big_jaw_worm"]
+  },
+  {
     "id": "jaw_worm_cultist_1",
     "name": "巨口+邪教徒",
     "type": "NORMAL",

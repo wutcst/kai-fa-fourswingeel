@@ -250,6 +250,19 @@
     ]
   },
   {
+    "id": "big_jaw_worm",
+    "name": "大颚虫",
+    "type": "NORMAL",
+    "maxHp": 44,
+    "attackDamage": 12,
+    "description": "首回合必定啃咬(12)。之后随机：啃咬/鞭打(8+6盾)/咆哮(力量4+8盾)，不能连续两次咆哮。",
+    "intents": [
+      { "type": "ATTACK", "value": 12, "desc": "啃咬" },
+      { "type": "ATTACK", "value": 8, "desc": "鞭打", "applyStatusType": "DEXTERITY", "applyStatusCount": 6, "applyStatusTarget": "ENEMY" },
+      { "type": "BUFF", "value": 8, "desc": "咆哮", "applyStatusType": "STRENGTH", "applyStatusCount": 4, "applyStatusTarget": "ENEMY" }
+    ]
+  },
+  {
     "id": "red_louse",
     "name": "虱虫",
     "type": "NORMAL",
