@@ -319,6 +319,16 @@ public class BattleService {
             }
 
             int baseDamage = actualCardDamage * xValue;
+            // 全身撞击：基础伤害=格挡，也享受力量加成
+            if (card.isBlockToDamage()) {
+                for (StatusEffect s : player.getStatuses()) {
+                    if ("STRENGTH".equals(s.getId()) && s.getCount() > 0) {
+                        baseDamage += s.getCount();
+                        logList.add("💪 全身撞击获得力量加成 +" + s.getCount() + " 伤害");
+                        break;
+                    }
+                }
+            }
             if (strengthMultiplier > 1) {
                 baseDamage += strengthCount * strengthMultiplier;
                 logList.add("💪 额外增加 " + (strengthCount * strengthMultiplier) + " 伤害");
