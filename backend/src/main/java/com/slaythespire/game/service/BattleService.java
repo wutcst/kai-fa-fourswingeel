@@ -22,6 +22,7 @@ public class BattleService {
     private List<Enemy> enemies;
     private List<Card> drawPile, hand, discardPile, exhaustPile;
     private int energy;
+    private int blockPerAttackThisTurn = 0;
     private List<String> logList;
     private boolean gameOver;
     private String winner;
@@ -251,6 +252,12 @@ public class BattleService {
                 }
             }
         }
+        // 🆕 狂怒：每打出一张攻击牌获得格挡
+        if (card.getType() == Card.CardType.ATTACK && blockPerAttackThisTurn > 0) {
+            player.gainBlock(blockPerAttackThisTurn);
+            logList.add("💢 狂怒！获得 " + blockPerAttackThisTurn + " 点格挡（当前: " + player.getBlock() + "）");
+        }
+
         // 🆕 黄金戒指：每打出3张攻击牌获得1层敏捷（跨回合累计）
         if (card.getType() == Card.CardType.ATTACK) {
             attackCountThisTurn++;
@@ -278,6 +285,12 @@ public class BattleService {
             int actualBlock = card.getBlock() * xValue;
             player.gainBlock(actualBlock);
             logList.add(String.format("🛡️ 获得 %d 点格挡，当前格挡: %d", actualBlock, player.getBlock()));
+        }
+
+        // 🆕 狂怒效果：本回合每打出一张攻击牌获得格挡
+        if (card.getBlockPerAttack() > 0) {
+            blockPerAttackThisTurn = card.getBlockPerAttack();
+            logList.add("💢 进入狂怒状态！本回合每打出攻击牌获得 " + blockPerAttackThisTurn + " 点格挡");
         }
 
         if (card.getSelfDamage() > 0) {
@@ -624,6 +637,7 @@ public class BattleService {
         if (!player.isAlive()) { gameOver = true; winner = "敌人"; logList.add("💀 玩家倒下..."); return getCurrentState(); }
 
         energy = 3;
+        blockPerAttackThisTurn = 0;
         if (RelicEffectHandler.hasEffect(player, "ENERGY_PER_TURN")) {
             energy += RelicEffectHandler.getEffectValue(player, "ENERGY_PER_TURN");
         }
@@ -797,6 +811,9 @@ public class BattleService {
             if (cardData.containsKey("blockToDamage") && cardData.get("blockToDamage") != null) {
                 card.setBlockToDamage((Boolean) cardData.get("blockToDamage"));
             }
+            if (cardData.containsKey("blockPerAttack") && cardData.get("blockPerAttack") != null) {
+                card.setBlockPerAttack(((Number) cardData.get("blockPerAttack")).intValue());
+            }
 
             deck.add(card);
         }
@@ -897,6 +914,7 @@ public class BattleService {
             cardInfo.put("exhaustNonAttackBlock", c.getExhaustNonAttackBlock());
             cardInfo.put("addWoundCount", c.getAddWoundCount());
             cardInfo.put("blockToDamage", c.isBlockToDamage());
+            cardInfo.put("blockPerAttack", c.getBlockPerAttack());
 
             handCards.add(cardInfo);
         }
@@ -973,6 +991,7 @@ public class BattleService {
             info.put("exhaustNonAttackBlock", c.getExhaustNonAttackBlock());
             info.put("addWoundCount", c.getAddWoundCount());
             info.put("blockToDamage", c.isBlockToDamage());
+            info.put("blockPerAttack", c.getBlockPerAttack());
 
             list.add(info);
         }

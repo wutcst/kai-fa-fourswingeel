@@ -47,6 +47,7 @@ public class CardTemplate {
     private final int exhaustNonAttackBlock;
     private final int addWoundCount;
     private final boolean blockToDamage;
+    private final int blockPerAttack;
 
     @JsonCreator
     public CardTemplate(
@@ -84,7 +85,8 @@ public class CardTemplate {
             @JsonProperty("energyLossOnDraw") Integer energyLossOnDraw,
             @JsonProperty("exhaustNonAttackBlock") Integer exhaustNonAttackBlock,
             @JsonProperty("addWoundCount") Integer addWoundCount,
-            @JsonProperty("blockToDamage") Boolean blockToDamage) {
+            @JsonProperty("blockToDamage") Boolean blockToDamage,
+            @JsonProperty("blockPerAttack") Integer blockPerAttack) {
 
         this.id = id; 
         this.name = name; 
@@ -122,6 +124,7 @@ public class CardTemplate {
         this.exhaustNonAttackBlock = exhaustNonAttackBlock != null ? exhaustNonAttackBlock : 0;
         this.addWoundCount = addWoundCount != null ? addWoundCount : 0;
         this.blockToDamage = blockToDamage != null ? blockToDamage : false;
+        this.blockPerAttack = blockPerAttack != null ? blockPerAttack : 0;
     }
 
     // ==================== Getter 方法 ====================
@@ -166,6 +169,7 @@ public class CardTemplate {
     public int getExhaustNonAttackBlock() { return exhaustNonAttackBlock; }
     public int getAddWoundCount() { return addWoundCount; }
     public boolean isBlockToDamage() { return blockToDamage; }
+    public int getBlockPerAttack() { return blockPerAttack; }
 
     // ==================== 辅助方法 ====================
 

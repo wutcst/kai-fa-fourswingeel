@@ -32,7 +32,8 @@
       const act = params.get('act') || '1';
 
       let saveData = await loadSaveData(char);
-      const upgradeable = saveData.deck.filter(card => !card.upgraded);
+      // 可锻造：未升级的牌 + 有 forgeDamageBonus 的牌（可无限锻造）
+      const upgradeable = saveData.deck.filter(card => !card.upgraded || (card.forgeDamageBonus && card.forgeDamageBonus > 0));
       const listDiv = document.getElementById('card-list');
 
       if (upgradeable.length === 0) {
@@ -43,12 +44,30 @@
           div.className = `card ${CARD_UI.getCardTypeClass(card)}`;
           div.style.background = CARD_UI.getCardCharStyle(card);
           const typeLabel = CARD_UI.getCardTypeLabel(card);
-          div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p><div class="card-type-label">${typeLabel}</div><p style="font-size:12px;color:#ecf0f1;">${CARD_UI.getCardEffectText(card)}</p>`;
+          const forgeCount = card.forgeCount || 0;
+          const forgeLabel = card.forgeDamageBonus ? ' <span style="color:#ff6b6b;">(+' + (forgeCount) + ')</span>' : '';
+          div.innerHTML = '<h3>' + card.name + forgeLabel + '</h3><p>⚡' + card.cost + '</p><div class="card-type-label">' + typeLabel + '</div><p style="font-size:12px;color:#ecf0f1;">' + CARD_UI.getCardEffectText(card) + '</p>';
           var _eff = CARD_UI.getCardEffects(card); CARD_UI.bindTooltip(div, _eff.length > 0 ? _eff[0].type : null);
           div.addEventListener('click', async () => {
             const idx = saveData.deck.indexOf(card);
             if (idx !== -1) {
               const baseCard = saveData.deck[idx];
+
+              // 🆕 无限锻造卡牌：每次锻造增加固定伤害
+              if (baseCard.forgeDamageBonus && baseCard.forgeDamageBonus > 0) {
+                baseCard.damage = (baseCard.damage || 0) + baseCard.forgeDamageBonus;
+                baseCard.forgeCount = (baseCard.forgeCount || 0) + 1;
+                baseCard.name = baseCard.name.replace(/\+\d+$/, '') + '+' + baseCard.forgeCount;
+                if (!baseCard.upgraded) baseCard.upgraded = true;
+                await saveSaveData(saveData);
+                window.showModal('灼热攻击 已锻造 ' + baseCard.forgeCount + ' 次！伤害 +' + baseCard.forgeDamageBonus, {
+                  title: '🔨 锻造完成', icon: '🔥', borderColor: '#ff6b6b'
+                });
+                sessionStorage.setItem('campfireAction', 'forge');
+                window.location.href = 'campfire.html?char=' + char + '&currentNode=' + encodeURIComponent(currentNode) + '&nextNode=' + encodeURIComponent(nextNode) + '&act=' + act;
+                return;
+              }
+
               const baseId = baseCard.id;
               if (baseId) {
                 const upgradedId = baseId + '+';
@@ -60,7 +79,7 @@
                     await saveSaveData(saveData);
                     window.showModal('升级成功！', { title: '🔨 锻造完成', icon: '🔨', borderColor: '#f1c40f' });
                     sessionStorage.setItem('campfireAction', 'forge');
-                    window.location.href = `campfire.html?char=${char}&currentNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}&act=${act}`;
+                    window.location.href = 'campfire.html?char=' + char + '&currentNode=' + encodeURIComponent(currentNode) + '&nextNode=' + encodeURIComponent(nextNode) + '&act=' + act;
                     return;
                   }
                 } catch (e) {

@@ -55,6 +55,7 @@ public class Card {
     private int exhaustNonAttackBlock;
     private int addWoundCount;
     private boolean blockToDamage;
+    private int blockPerAttack;
 
     // 🆕 修改：枚举增加 STATUS 类型
     public enum CardType { 
@@ -105,6 +106,7 @@ public class Card {
         this.exhaustNonAttackBlock = template.getExhaustNonAttackBlock();
         this.addWoundCount = template.getAddWoundCount();
         this.blockToDamage = template.isBlockToDamage();
+        this.blockPerAttack = template.getBlockPerAttack();
     }
 
     public Card(String name, int cost, int damage, int block, CardType type) {
@@ -145,6 +147,7 @@ public class Card {
         this.exhaustNonAttackBlock = 0;
         this.addWoundCount = 0;
         this.blockToDamage = false;
+        this.blockPerAttack = 0;
     }
 
     // copy constructor for Anger copy
@@ -191,6 +194,7 @@ public class Card {
         this.exhaustNonAttackBlock = original.exhaustNonAttackBlock;
         this.addWoundCount = original.addWoundCount;
         this.blockToDamage = original.blockToDamage;
+        this.blockPerAttack = original.blockPerAttack;
     }
 
     // ==================== Getter 方法 ====================
@@ -235,6 +239,7 @@ public class Card {
     public int getExhaustNonAttackBlock() { return exhaustNonAttackBlock; }
     public int getAddWoundCount() { return addWoundCount; }
     public boolean isBlockToDamage() { return blockToDamage; }
+    public int getBlockPerAttack() { return blockPerAttack; }
 
     // ==================== Setter 方法 ====================
 
@@ -275,6 +280,7 @@ public class Card {
     public void setExhaustNonAttackBlock(int exhaustNonAttackBlock) { this.exhaustNonAttackBlock = exhaustNonAttackBlock; }
     public void setAddWoundCount(int addWoundCount) { this.addWoundCount = addWoundCount; }
     public void setBlockToDamage(boolean blockToDamage) { this.blockToDamage = blockToDamage; }
+    public void setBlockPerAttack(int blockPerAttack) { this.blockPerAttack = blockPerAttack; }
 
     // ==================== 辅助方法 (状态效果相关) ====================
 

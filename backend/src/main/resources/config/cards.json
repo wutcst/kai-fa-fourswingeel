@@ -132,6 +132,27 @@
     {"id":"power_through+","name":"硬撑+","cost":1,"damage":0,"block":25,"type":"SKILL","addWoundCount":2,"upgraded":true,"charId":"1","rarity":"UNCOMMON"},
 
     {"id":"body_slam","name":"全身撞击","cost":1,"damage":0,"block":0,"type":"ATTACK","blockToDamage":true,"upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"body_slam+","name":"全身撞击+","cost":0,"damage":0,"block":0,"type":"ATTACK","blockToDamage":true,"upgraded":true,"charId":"1","rarity":"COMMON"}
+    {"id":"body_slam+","name":"全身撞击+","cost":0,"damage":0,"block":0,"type":"ATTACK","blockToDamage":true,"upgraded":true,"charId":"1","rarity":"COMMON"},
+
+    {"id":"rage","name":"狂怒","cost":0,"damage":0,"block":0,"type":"SKILL","blockPerAttack":3,"upgraded":false,"charId":"1","rarity":"UNCOMMON"},
+    {"id":"rage+","name":"狂怒+","cost":0,"damage":0,"block":0,"type":"SKILL","blockPerAttack":5,"upgraded":true,"charId":"1","rarity":"UNCOMMON"},
+
+    {"id":"searing_blow","name":"灼热攻击","cost":2,"damage":14,"block":0,"type":"ATTACK","upgraded":false,"charId":"1","rarity":"UNCOMMON","forgeDamageBonus":5},
+    {"id":"searing_blow+","name":"灼热攻击+1","cost":2,"damage":19,"block":0,"type":"ATTACK","upgraded":true,"charId":"1","rarity":"UNCOMMON","forgeDamageBonus":5},
+
+    {"id":"whirlwind","name":"旋风斩","cost":1,"damage":8,"block":0,"type":"ATTACK","xCost":true,"aoe":true,"upgraded":false,"charId":"1","rarity":"RARE"},
+    {"id":"whirlwind+","name":"旋风斩+","cost":1,"damage":10,"block":0,"type":"ATTACK","xCost":true,"aoe":true,"upgraded":true,"charId":"1","rarity":"RARE"},
+
+    {"id":"offering","name":"献祭","cost":0,"damage":0,"block":0,"type":"SKILL","selfDamage":6,"energyGain":2,"drawCount":3,"exhaust":true,"upgraded":false,"charId":"1","rarity":"RARE"},
+    {"id":"offering+","name":"献祭+","cost":0,"damage":0,"block":0,"type":"SKILL","selfDamage":4,"energyGain":2,"drawCount":5,"exhaust":true,"upgraded":true,"charId":"1","rarity":"RARE"},
+
+    {"id":"impervious","name":"金刚不坏","cost":2,"damage":0,"block":30,"type":"SKILL","exhaust":true,"upgraded":false,"charId":"1","rarity":"RARE"},
+    {"id":"impervious+","name":"金刚不坏+","cost":2,"damage":0,"block":40,"type":"SKILL","exhaust":true,"upgraded":true,"charId":"1","rarity":"RARE"},
+
+    {"id":"bludgeon","name":"盛怒","cost":3,"damage":32,"block":0,"type":"ATTACK","upgraded":false,"charId":"1","rarity":"RARE"},
+    {"id":"bludgeon+","name":"盛怒+","cost":3,"damage":42,"block":0,"type":"ATTACK","upgraded":true,"charId":"1","rarity":"RARE"},
+
+    {"id":"demon_form","name":"恶魔形态","cost":3,"damage":0,"block":0,"type":"POWER","effects":[{"type":"STRENGTH","count":3,"target":"SELF"}],"upgraded":false,"charId":"1","rarity":"RARE"},
+    {"id":"demon_form+","name":"恶魔形态+","cost":3,"damage":0,"block":0,"type":"POWER","effects":[{"type":"STRENGTH","count":4,"target":"SELF"}],"upgraded":true,"charId":"1","rarity":"RARE"}
 
 ]
