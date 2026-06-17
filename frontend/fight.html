@@ -680,8 +680,8 @@
           saveData.currentNode = next;
           if (!saveData.visitedNodes.includes(next)) saveData.visitedNodes.push(next);
           await saveSaveData(saveData);
+          const actParam = new URLSearchParams(window.location.search).get('act') || '1';
           if (this.isFromMap && (this.state.winner === '玩家' || (this.state.gameOver && this.state.playerHp > 0))) {
-            const actParam = new URLSearchParams(window.location.search).get('act') || '1';
             window.location.href = `reward.html?source=fight&char=${charParam}&prevNode=${prev}&nextNode=${next}&nodeType=${nodeType}&act=${actParam}&gotCard=0`;
           } else { window.location.href = `map.html?char=${charParam}&currentNode=${prev}&act=${actParam}`; }
         }

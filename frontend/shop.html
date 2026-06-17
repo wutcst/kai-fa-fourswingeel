@@ -185,16 +185,13 @@
                 if (alreadyDeletedThisShop || deleting) return;
                 deleting = true;
                 if (await spendGold(currentDeleteCost)) {
-                  saveData = await loadSaveData(char);
-                  if (index < saveData.deck.length) {
-                      saveData.deck.splice(index, 1);
-                      deleteCount++;
-                      localStorage.setItem('shopDeleteCount', deleteCount);
-                      sessionStorage.setItem('shopDeleted', 'true');
-                      await saveSaveData(saveData);
-                      alert(`删除了 ${card.name}`);
-                      location.reload();
-                  }
+                  saveData.deck.splice(index, 1);
+                  deleteCount++;
+                  localStorage.setItem('shopDeleteCount', deleteCount);
+                  sessionStorage.setItem('shopDeleted', 'true');
+                  await saveSaveData(saveData);
+                  window.showModal(`删除了 ${card.name}`, { title: '🗑️ 删除卡牌', icon: '🗑️', borderColor: '#e74c3c' });
+                  location.reload();
                 }
               });
               deleteDiv.appendChild(span);
