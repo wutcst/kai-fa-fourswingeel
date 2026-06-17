@@ -41,7 +41,15 @@ public class Player extends Combatant {
     @Override
     public void onTurnStart() {
         actualDamageTakenThisTurn = 0;
-        clearBlock();
+        // 🆕 阿斯加德之庇护：保留上回合格挡
+        boolean hasAsgard = false;
+        for (Relic r : relics) {
+            if (r instanceof GameRelic && "ASGARD_PROTECTION".equals(((GameRelic) r).getEffectType())) {
+                hasAsgard = true;
+                break;
+            }
+        }
+        if (!hasAsgard) clearBlock();
         turnStartLogs.clear();
 
         for (StatusEffect s : new ArrayList<>(statuses)) {
