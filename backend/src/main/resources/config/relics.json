@@ -15,7 +15,6 @@
   { "id": "neow_upgrade", "name": "锻造圣锤", "description": "初始恩惠：升级卡组中的一张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },
   { "id": "snake_eye_ring", "name": "蛇眼戒指", "description": "每场战斗的第一回合，多抽2张牌。", "effectType": "FIRST_DRAW_BONUS", "value": 2, "rarity": "STARTER", "charId": "2" },
 
-  { "id": "heal_badge", "name": "回复徽章", "description": "每回合开始时，恢复 2 点生命。", "effectType": "HEAL_START_TURN", "value": 2, "rarity": "COMMON", "charId": null },
   { "id": "iron_amulet", "name": "铁壁护符", "description": "每回合开始时，获得 2 点格挡。", "effectType": "BLOCK_START_TURN", "value": 2, "rarity": "COMMON", "charId": null },
   { "id": "power_shard", "name": "力量碎片", "description": "最大生命值 +5。", "effectType": "MAX_HP", "value": 5, "rarity": "COMMON", "charId": null },
   { "id": "light_boots", "name": "轻灵靴", "description": "每回合结束时，获得 4 点格挡。", "effectType": "BLOCK_END_TURN", "value": 4, "rarity": "COMMON", "charId": null },
