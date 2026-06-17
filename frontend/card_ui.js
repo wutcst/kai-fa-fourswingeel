@@ -59,6 +59,16 @@ const CARD_UI = {
         parts.push(`抽到时失去 ${card.energyLossOnDraw} 点能量`);
     }
 
+    // 🆕 特殊机制卡牌
+    if (card.blockToDamage) parts.push('造成当前格挡值的伤害');
+    if (card.exhaustNonAttackBlock > 0) parts.push(`消耗手中所有非攻击牌，每张获 ${card.exhaustNonAttackBlock} 点格挡`);
+    if (card.addWoundCount > 0) parts.push(`增加 ${card.addWoundCount} 张伤口到手牌`);
+    if (card.blockPerAttack > 0) parts.push(`本回合每打出1张攻击牌获得 ${card.blockPerAttack} 点格挡`);
+    if (card.forgeDamageBonus > 0) {
+        const cnt = card.forgeCount || 0;
+        parts.push(`可多次锻造（已锻 ${cnt} 次，每次 +${card.forgeDamageBonus} 伤害）`);
+    }
+
     if (card.drawFirst) {
         if (card.drawCount > 0) parts.push(`抽 ${card.drawCount} 张牌`);
         if (card.exhaustHandCount > 0) {
