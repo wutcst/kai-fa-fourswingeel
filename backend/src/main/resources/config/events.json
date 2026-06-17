@@ -365,5 +365,72 @@
         "effects": []
       }
     ]
+  },
+  {
+    "id": "card_altar",
+    "title": "卡牌祭坛",
+    "description": "一座破旧的石制祭坛，上面刻着一行小字：'献出祭品，换取纯粹。'祭坛中央有一个刚好能放下一张卡牌的凹槽。",
+    "background": "linear-gradient(135deg, #3a3a4a, #1e1e2e)",
+    "icon": "🪨",
+    "options": [
+      {
+        "text": "投入金币，献祭一张卡牌（-15💰，随机删除1张）",
+        "effects": [
+          { "type": "GOLD", "value": -15 },
+          { "type": "REMOVE_CARD", "count": 1 }
+        ]
+      },
+      {
+        "text": "转身离开",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "soul_forge",
+    "title": "灵魂熔炉",
+    "description": "地下的岩浆池旁矗立着一座灵魂熔炉，据传将卡牌投入其中能以生命力为代价重铸卡组。炉火中隐约可见两张卡牌的虚影在燃烧。",
+    "background": "linear-gradient(135deg, #5a2a1a, #2e0e0e)",
+    "icon": "🔥",
+    "options": [
+      {
+        "text": "投入熔炉（-12❤️，随机删除2张）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -12 },
+          { "type": "REMOVE_CARD", "count": 2 }
+        ]
+      },
+      {
+        "text": "太危险了，离开",
+        "effects": []
+      }
+    ]
+  },
+  {
+    "id": "void_rift",
+    "title": "虚空裂隙",
+    "description": "一道撕裂现实的虚空裂隙悬浮在空中，边缘闪烁着紫色的电光。裂隙深处传来低语：'舍弃越多，越接近真理……但也可能被虚无吞噬。'",
+    "background": "linear-gradient(135deg, #2a1a4a, #1a0e2e)",
+    "icon": "🌀",
+    "options": [
+      {
+        "text": "跳入裂隙（-25❤️，随机删除5张）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -25 },
+          { "type": "REMOVE_CARD", "count": 5 }
+        ]
+      },
+      {
+        "text": "触摸裂隙边缘（-5❤️，获得1张随机卡牌）",
+        "effects": [
+          { "type": "HP_CHANGE", "value": -5 },
+          { "type": "ADD_RANDOM_CARD" }
+        ]
+      },
+      {
+        "text": "远离裂隙",
+        "effects": []
+      }
+    ]
   }
 ]
