@@ -690,16 +690,13 @@ public class BattleService {
         return state;
     }
 
-    /** 🆕 魔力花：每回合首次造成伤害时获得力量 */
+    /** 🆕 魔力花：每回合首次造成伤害时获得能量 */
     private void triggerManaFlower() {
-        if (!hasDealtDamageThisTurn && RelicEffectHandler.hasEffect(player, "FIRST_HIT_STRENGTH")) {
+        if (!hasDealtDamageThisTurn && RelicEffectHandler.hasEffect(player, "FIRST_HIT_ENERGY")) {
             hasDealtDamageThisTurn = true;
-            int val = RelicEffectHandler.getEffectValue(player, "FIRST_HIT_STRENGTH");
-            StatusEffect str = StatusFactory.create("STRENGTH", val, dataRepo);
-            if (str != null) {
-                player.addStatus(str);
-                logList.add("🌸 魔力花触发，获得 " + val + " 点力量");
-            }
+            int val = RelicEffectHandler.getEffectValue(player, "FIRST_HIT_ENERGY");
+            energy += val;
+            logList.add("🌸 魔力花触发，获得 " + val + " 点能量（当前能量: " + energy + "）");
         }
     }
 
