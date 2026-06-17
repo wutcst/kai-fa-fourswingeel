@@ -27,6 +27,7 @@
     (async function() {
       const params = new URLSearchParams(window.location.search);
       const char = params.get('char') || '1';
+      const currentNode = params.get('currentNode') || 'start';
       const nextNode = params.get('nextNode') || 'start';
       const act = params.get('act') || '1';
 
@@ -45,7 +46,6 @@
           div.innerHTML = `<h3>${card.name}</h3><p>⚡${card.cost}</p><div class="card-type-label">${typeLabel}</div><p style="font-size:12px;color:#ecf0f1;">${CARD_UI.getCardEffectText(card)}</p>`;
           var _eff = CARD_UI.getCardEffects(card); CARD_UI.bindTooltip(div, _eff.length > 0 ? _eff[0].type : null);
           div.addEventListener('click', async () => {
-            saveData = await loadSaveData(char); 
             const idx = saveData.deck.indexOf(card);
             if (idx !== -1) {
               const baseCard = saveData.deck[idx];
@@ -58,17 +58,16 @@
                     const upgradedCardData = await resp.json();
                     saveData.deck[idx] = upgradedCardData;
                     await saveSaveData(saveData);
-                    alert('升级成功！');
+                    window.showModal('升级成功！', { title: '🔨 锻造完成', icon: '🔨', borderColor: '#f1c40f' });
                     sessionStorage.setItem('campfireAction', 'forge');
-                    window.location.href = `campfire.html?char=${char}&nextNode=${encodeURIComponent(nextNode)}`;
+                    window.location.href = `campfire.html?char=${char}&currentNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}&act=${act}`;
                     return;
                   }
                 } catch (e) {
                   console.warn('无法获取升级模板', e);
                 }
               }
-              // 如果后端获取失败，不进行手动升级，直接提示
-              alert('无法升级该卡牌（缺少升级模板）');
+              window.showModal('无法升级该卡牌（缺少升级模板）', { title: '❌ 锻造失败', icon: '⚠️', borderColor: '#e74c3c' });
             }
           });
           listDiv.appendChild(div);
