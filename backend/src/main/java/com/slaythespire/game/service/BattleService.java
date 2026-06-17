@@ -101,6 +101,12 @@ public class BattleService {
             energy += val;
             logList.add("✳️ 能量方块使初始能量 +" + val);
         }
+        // 🆕 音叉：每场战斗第一回合获得格挡
+        if (RelicEffectHandler.hasEffect(player, "BLOCK_FIRST_TURN")) {
+            int val = RelicEffectHandler.getEffectValue(player, "BLOCK_FIRST_TURN");
+            player.gainBlock(val);
+            logList.add("🔔 音叉触发，获得 " + val + " 点格挡");
+        }
 
         int drawCount = Math.max(0, 5 - innateCards.size());
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) drawCount++;
