@@ -453,6 +453,7 @@ public class GameConfigController {
                 cardMap.put("copyToDiscard", tpl.isCopyToDiscard());
                 cardMap.put("strengthMultiplier", tpl.getStrengthMultiplier());
                 cardMap.put("randomTarget", tpl.isRandomTarget());
+                cardMap.put("xCost", tpl.isXCost());
 
                 int price = 50 + (tpl.getCost() * 25);
                 if (tpl.getDamage() > 10 || tpl.getBlock() > 10) price += 20;
@@ -551,6 +552,7 @@ public class GameConfigController {
                     cardMap.put("copyToDiscard", tpl.isCopyToDiscard());
                     cardMap.put("strengthMultiplier", tpl.getStrengthMultiplier());
                     cardMap.put("randomTarget", tpl.isRandomTarget());
+                cardMap.put("xCost", tpl.isXCost());
 
                     deck.add(cardMap);
                 }
