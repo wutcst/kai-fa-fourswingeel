@@ -416,6 +416,14 @@ public class BattleService {
         }
         removeDeadEnemies();
 
+        // 🆕 【反甲反死修复】如果所有敌人在敌人回合被反伤/荆棘等击杀，立即结束战斗
+        if (getAliveEnemies().isEmpty()) {
+            gameOver = true;
+            winner = "玩家";
+            logList.add("🎉 所有敌人被击败！");
+            return getCurrentState();
+        }
+
         // ================= 3. 敌人回合结束 =================
         // 🆕 【关键修复】所有敌人行动完毕后，衰减玩家身上的无实体（持续了一整回合，现在消失）
         decrementIntangible(player);
