@@ -117,6 +117,15 @@ public class BattleService {
             }
             logList.add("👁️ 佩尔之眼触发，所有敌人获得 " + weakCount + " 层虚弱");
         }
+        // 🆕 佩尔之泪：第一回合开始给所有敌人施加易伤
+        if (RelicEffectHandler.hasEffect(player, "VULNERABLE_FIRST_TURN")) {
+            int vulnCount = RelicEffectHandler.getEffectValue(player, "VULNERABLE_FIRST_TURN");
+            for (Enemy e : getAliveEnemies()) {
+                StatusEffect vuln = StatusFactory.create("VULNERABLE", vulnCount, dataRepo);
+                if (vuln != null) e.addStatus(vuln);
+            }
+            logList.add("💧 佩尔之泪触发，所有敌人获得 " + vulnCount + " 层易伤");
+        }
 
         int drawCount = Math.max(0, 5 - innateCards.size());
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) drawCount++;
