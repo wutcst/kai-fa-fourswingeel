@@ -354,7 +354,7 @@ public class BattleService {
                         currentAlive.remove(currentTarget);
                     }
                     if (actualDmg > 0) triggerManaFlower();
-                    if (!target.isAlive()) triggerGoblinHorn();
+                    if (!currentTarget.isAlive()) triggerGoblinHorn();
                 }
             }
 
