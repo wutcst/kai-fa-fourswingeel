@@ -37,14 +37,38 @@ public class BattleService {
 
         List<EnemyGroupTemplate> groups = dataRepo.getAllEnemyGroups();
         if (groups.isEmpty()) throw new IllegalStateException("敌方阵容配置为空");
-        String nodeTypeUpper = (nodeType != null) ? nodeType.toUpperCase() : null;
-        if ("MONSTER".equals(nodeTypeUpper)) nodeTypeUpper = "NORMAL";
+        // 从传入参数中提取act和类型（前端格式："monster_act1"、"elite_act2"、"boss_act1"等）
+        int currentAct = 1;
+        String pureNodeType = null;
+        if (nodeType != null) {
+            String upper = nodeType.toUpperCase();
+            if (upper.contains("_ACT")) {
+                try {
+                    String[] parts = upper.split("_ACT");
+                    pureNodeType = parts[0];
+                    if (parts.length > 1) currentAct = Integer.parseInt(parts[1]);
+                } catch (Exception e) { currentAct = 1; }
+            } else {
+                pureNodeType = upper;
+            }
+        }
+        if ("MONSTER".equals(pureNodeType)) pureNodeType = "NORMAL";
         List<EnemyGroupTemplate> filteredGroups = new ArrayList<>();
         for (EnemyGroupTemplate g : groups) {
-            if (nodeTypeUpper != null && !g.getType().equalsIgnoreCase(nodeTypeUpper)) continue;
+            if (pureNodeType != null && !g.getType().equalsIgnoreCase(pureNodeType)) continue;
+            if (g.getMinAct() > currentAct || g.getMaxAct() < currentAct) continue;
             filteredGroups.add(g);
         }
-        if (filteredGroups.isEmpty()) filteredGroups = groups;
+        if (filteredGroups.isEmpty()) {
+            // 保底：只按类型不过滤层数
+            for (EnemyGroupTemplate g : groups) {
+                if (pureNodeType != null && !g.getType().equalsIgnoreCase(pureNodeType)) continue;
+                filteredGroups.add(g);
+            }
+        }
+        if (filteredGroups.isEmpty()) {
+            filteredGroups = groups;
+        }
         EnemyGroupTemplate chosenGroup = filteredGroups.get(new Random().nextInt(filteredGroups.size()));
 
         this.enemies = new ArrayList<>();

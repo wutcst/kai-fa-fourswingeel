@@ -45,6 +45,7 @@
       const char = params.get('char') || '1';
       const currentNode = params.get('currentNode') || 'start';
       const nextNode = params.get('nextNode') || currentNode;
+      const act = params.get('act') || '1';
 
       let saveData = await loadSaveData(char);
       let gold = saveData.gold;
@@ -196,7 +197,7 @@
       document.getElementById('skip-btn').addEventListener('click', () => {
         // 清除本次商人标记（不影响下次）
         sessionStorage.removeItem('shopDeleted');
-        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
+        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
       });
     })();
   </script>

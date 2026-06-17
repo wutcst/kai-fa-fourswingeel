@@ -14,6 +14,8 @@ public class IntentTemplate {
     private final boolean hpScaling;
     private final int burnCards;
     private final int stunCards;
+    private final boolean skipBurnCards;
+    private final boolean upgradeBurns;
 
     @JsonCreator
     public IntentTemplate(
@@ -26,7 +28,9 @@ public class IntentTemplate {
             @JsonProperty("multiHit") Integer multiHit,
             @JsonProperty("hpScaling") Boolean hpScaling,
             @JsonProperty("burnCards") Integer burnCards,
-            @JsonProperty("stunCards") Integer stunCards) {
+            @JsonProperty("stunCards") Integer stunCards,
+            @JsonProperty("skipBurnCards") Boolean skipBurnCards,
+            @JsonProperty("upgradeBurns") Boolean upgradeBurns) {
         this.type = type;
         this.value = value;
         this.desc = desc;
@@ -37,6 +41,8 @@ public class IntentTemplate {
         this.hpScaling = hpScaling != null ? hpScaling : false;
         this.burnCards = burnCards != null ? burnCards : 0;
         this.stunCards = stunCards != null ? stunCards : 0;
+        this.skipBurnCards = skipBurnCards != null ? skipBurnCards : false;
+        this.upgradeBurns = upgradeBurns != null ? upgradeBurns : false;
     }
 
     public IntentType getType() { return type; }
@@ -49,6 +55,8 @@ public class IntentTemplate {
     public boolean isHpScaling() { return hpScaling; }
     public int getBurnCards() { return burnCards; }
     public int getStunCards() { return stunCards; }
+    public boolean isSkipBurnCards() { return skipBurnCards; }
+    public boolean isUpgradeBurns() { return upgradeBurns; }
 
     @Override
     public String toString() {

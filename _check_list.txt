@@ -1,0 +1,37 @@
+用Word或记事本打开查看 enemy_groups.json，确保以下是完整列表：
+
+=== 第1层 (minAct=1) ===
+NORMAL:
+- 单个邪教徒 (cultist)
+- 单个酸液史莱姆 (acid_slime_large)
+- 单个尖刺史莱姆 (spike_slime_medium)
+- 邪教徒+酸液史莱姆 (cultist, acid_slime_large)
+- 巨口 (jaw_worm)
+- 巨口+邪教徒 (jaw_worm, cultist)
+ELITE:
+- 三哨卫 (sentry×3)
+BOSS:
+- 六火亡魂 (hexaghost)
+
+=== 第2层 (minAct=2) ===
+NORMAL:
+- 巨口+邪教徒二层 (cultist, jaw_worm)
+- 三邪教徒 (cultist×3)
+- 圆球守护者 (spheric_guardian)
+- 百夫长+神秘术士 (centurion, mystic)
+- 带壳寄生怪 (shelled_parasite)
+- 带壳寄生怪+真菌兽 (shelled_parasite)
+ELITE:
+- 奴隶头子+红蓝奴隶 (taskmaster, red_slaver, blue_slaver)
+BOSS:
+- 第一勇士 (champ)
+
+=== 第3层 (minAct=3) ===
+NORMAL:
+- 拜蛇术士+匕首×2 (reptomancer, dagger, dagger) ← 这是ELITE不是NORMAL！
+- 圆球行者 (orb_walker)
+- 塔内增生组织 (spire_growth)
+ELITE:
+- （空！应该至少有一个精英）
+BOSS:
+- 八体＆甜圈 (donu, deca)

@@ -66,14 +66,12 @@ public class Enemy extends Combatant {
             return 0;
         }
         if (type == IntentType.BUFF) {
-            // 处理自身力量Buff (高热)
             if (currentIntent.getApplyStatusType() != null) {
                 StatusEffect status = StatusFactory.create(currentIntent.getApplyStatusType(), currentIntent.getApplyStatusCount(), dataRepo);
                 if (status != null) {
                     this.addStatus(status);
                 }
             }
-            // 处理获得格挡 (高热)
             if (currentIntent.getValue() > 0) {
                 this.gainBlock(currentIntent.getValue());
             }
@@ -89,14 +87,20 @@ public class Enemy extends Combatant {
             for (int i = 0; i < hitCount; i++) {
                 totalDmg += target.takeDamage(dmg, this);
             }
+            // 地狱火特殊：第一次不塞灼伤，skipBurnCards标记处理
+            if (!currentIntent.isSkipBurnCards() && currentIntent.getBurnCards() > 0) {
+                if (target instanceof Player) {
+                    for (int i = 0; i < currentIntent.getBurnCards(); i++) {
+                        ((Player)target).addStatusCard("burn");
+                    }
+                }
+            }
             return totalDmg;
         }
         if (type == IntentType.DEBUFF) {
-            // 处理弃牌堆塞牌（晕眩/灼伤等）- 前端会处理
             int stunCards = currentIntent.getStunCards();
             int burnCards = currentIntent.getBurnCards();
             if (burnCards > 0) {
-                // 将burnCards张灼伤加入弃牌堆
                 if (target instanceof Player) {
                     for (int i = 0; i < burnCards; i++) {
                         ((Player)target).addStatusCard("burn");
