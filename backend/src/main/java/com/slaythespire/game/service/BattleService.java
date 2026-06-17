@@ -25,6 +25,7 @@ public class BattleService {
     private List<String> logList;
     private boolean gameOver;
     private String winner;
+    private int attackCountThisTurn; // 本回合已打出的攻击牌数量（黄金戒指）
 
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp, String nodeType) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
@@ -71,9 +72,10 @@ public class BattleService {
         this.discardPile = new ArrayList<>();
         this.exhaustPile = new ArrayList<>();
         this.logList = new ArrayList<>();
-        this.energy = 0; 
-        this.gameOver = false; 
+        this.energy = 0;
+        this.gameOver = false;
         this.winner = null;
+        this.attackCountThisTurn = 0;
 
         // 🆕 【核心机制：固有牌处理】
         List<Card> innateCards = new ArrayList<>();
@@ -209,6 +211,17 @@ public class BattleService {
                             logList.add("🔥 " + e.getEnemyName() + "因【激怒】获得 " + angryPower + " 点力量！");
                         }
                     }
+                }
+            }
+        }
+        // 🆕 黄金戒指：统计本回合攻击牌打出数量
+        if (card.getType() == Card.CardType.ATTACK) {
+            attackCountThisTurn++;
+            if (attackCountThisTurn > 3 && RelicEffectHandler.hasEffect(player, "ATTACK_DEXTERITY")) {
+                StatusEffect dex = StatusFactory.create("DEXTERITY", RelicEffectHandler.getEffectValue(player, "ATTACK_DEXTERITY"), dataRepo);
+                if (dex != null) {
+                    player.addStatus(dex);
+                    logList.add("💍 黄金戒指触发，获得 " + dex.getCount() + " 层敏捷（已打出 " + attackCountThisTurn + " 张攻击牌）");
                 }
             }
         }
@@ -433,6 +446,7 @@ public class BattleService {
         decrementIntangible(player);
 
         // ================= 4. 玩家新回合开始 =================
+        attackCountThisTurn = 0;
         player.onTurnStart();
         logList.addAll(player.getLastTurnStartLogs());
         if (!player.isAlive()) { gameOver = true; winner = "敌人"; logList.add("💀 玩家倒下..."); return getCurrentState(); }
