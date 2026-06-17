@@ -222,6 +222,11 @@ public class EventService {
                         cardMap.put("xCost", chosen.isXCost());
                         cardMap.put("aoe", chosen.isAoe());
                         cardMap.put("drawFirst", chosen.isDrawFirst());
+                        cardMap.put("copyToDiscard", chosen.isCopyToDiscard());
+                        cardMap.put("strengthMultiplier", chosen.getStrengthMultiplier());
+                        cardMap.put("randomTarget", chosen.isRandomTarget());
+                        cardMap.put("endOfTurnDamage", chosen.getEndOfTurnDamage());
+                        cardMap.put("energyLossOnDraw", chosen.getEnergyLossOnDraw());
                         cardMap.put("charId", chosen.getCharId());
                         cardMap.put("drawCount", chosen.getDrawCount());
                         cardMap.put("upgraded", chosen.isUpgraded());
