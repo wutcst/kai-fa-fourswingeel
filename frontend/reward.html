@@ -168,6 +168,18 @@
         if (localGotGold) return;
         const saveData = await loadSaveData(char);
         saveData.gold += amount;
+        // gxyy：累计金币回血（每100金回10血）
+        if ((saveData.relics || []).includes('gxyy')) {
+          const before = saveData.goldTotalEarned || 0;
+          const after = before + amount;
+          const healTimes = Math.floor(after / 100) - Math.floor(before / 100);
+          if (healTimes > 0) {
+            const healAmt = healTimes * 10;
+            saveData.playerHp = Math.min((saveData.playerHp || 0) + healAmt, saveData.maxHp || 70);
+            alert(`💊 累计金币突破 ${Math.floor(after / 100) * 100}，恢复 ${healAmt} 点生命！`);
+          }
+          saveData.goldTotalEarned = after;
+        }
         await saveSaveData(saveData);
         localGotGold = true;
         alert(`获得 ${amount} 金币！`);
