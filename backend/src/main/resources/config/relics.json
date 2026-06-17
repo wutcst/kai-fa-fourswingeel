@@ -22,6 +22,7 @@
   { "id": "tuning_fork", "name": "音叉", "description": "每场战斗的第一回合开始时，获得 10 点格挡。", "effectType": "BLOCK_FIRST_TURN", "value": 10, "rarity": "COMMON", "charId": null },
   { "id": "perr_eye", "name": "佩尔之眼", "description": "每场战斗的第一回合开始时，所有敌人获得 1 层虚弱。", "effectType": "WEAKEN_FIRST_TURN", "value": 1, "rarity": "COMMON", "charId": null },
   { "id": "perr_tear", "name": "佩尔之泪", "description": "每场战斗的第一回合开始时，所有敌人获得 1 层易伤。", "effectType": "VULNERABLE_FIRST_TURN", "value": 1, "rarity": "COMMON", "charId": null },
+  { "id": "festival_cracker", "name": "节日拉炮", "description": "每场战斗的第一回合开始时，对所有敌人造成 10 点伤害。", "effectType": "AOE_FIRST_TURN", "value": 10, "rarity": "COMMON", "charId": null },
 
   { "id": "energy_cube", "name": "能量方块", "description": "每回合获得 1 点额外能量。", "effectType": "ENERGY_PER_TURN", "value": 1, "rarity": "BOSS", "charId": null },
   { "id": "rune_cube", "name": "符文立方体", "description": "每回合多抽 1 张牌。", "effectType": "DRAW_PER_TURN", "value": 1, "rarity": "BOSS", "charId": null },

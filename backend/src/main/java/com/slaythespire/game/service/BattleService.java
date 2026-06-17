@@ -126,6 +126,15 @@ public class BattleService {
             }
             logList.add("💧 佩尔之泪触发，所有敌人获得 " + vulnCount + " 层易伤");
         }
+        // 🆕 节日拉炮：第一回合开始对所有敌人造成伤害
+        if (RelicEffectHandler.hasEffect(player, "AOE_FIRST_TURN")) {
+            int dmg = RelicEffectHandler.getEffectValue(player, "AOE_FIRST_TURN");
+            for (Enemy e : getAliveEnemies()) {
+                int actual = e.takeDamage(dmg, player);
+                logList.addAll(e.getLastCombatLogs());
+                logList.add("🧨 节日拉炮对 " + e.getEnemyName() + " 造成 " + actual + " 点伤害");
+            }
+        }
 
         int drawCount = Math.max(0, 5 - innateCards.size());
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) drawCount++;
