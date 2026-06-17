@@ -68,6 +68,7 @@ public class Enemy extends Combatant {
             }
             if (target instanceof Player) {
                 Player p = (Player) target;
+                // 🆕 通用塞牌逻辑：burn/stun
                 if (!currentIntent.isSkipBurnCards() && currentIntent.getBurnCards() > 0) {
                     for (int i = 0; i < currentIntent.getBurnCards(); i++) {
                         if (drawer != null) drawer.accept("burn");
@@ -76,6 +77,12 @@ public class Enemy extends Combatant {
                 if (currentIntent.getStunCards() > 0) {
                     for (int i = 0; i < currentIntent.getStunCards(); i++) {
                         if (drawer != null) drawer.accept("dazed");
+                    }
+                }
+                // 🆕 通用塞牌逻辑：自定义状态牌（黏液等）
+                if (currentIntent.getStatusCards() != null && currentIntent.getStatusCardCount() > 0) {
+                    for (int i = 0; i < currentIntent.getStatusCardCount(); i++) {
+                        if (drawer != null) drawer.accept(currentIntent.getStatusCards());
                     }
                 }
             }
@@ -124,6 +131,11 @@ public class Enemy extends Combatant {
                         if (drawer != null) drawer.accept("dazed");
                     }
                 }
+                if (currentIntent.getStatusCards() != null && currentIntent.getStatusCardCount() > 0) {
+                    for (int i = 0; i < currentIntent.getStatusCardCount(); i++) {
+                        if (drawer != null) drawer.accept(currentIntent.getStatusCards());
+                    }
+                }
             }
             return totalDmg;
         }
@@ -140,6 +152,11 @@ public class Enemy extends Combatant {
                 if (stunCards > 0) {
                     for (int i = 0; i < stunCards; i++) {
                         if (drawer != null) drawer.accept("dazed");
+                    }
+                }
+                if (currentIntent.getStatusCards() != null && currentIntent.getStatusCardCount() > 0) {
+                    for (int i = 0; i < currentIntent.getStatusCardCount(); i++) {
+                        if (drawer != null) drawer.accept(currentIntent.getStatusCards());
                     }
                 }
             }

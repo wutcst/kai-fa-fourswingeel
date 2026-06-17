@@ -19,7 +19,7 @@
     "attackDamage": 11,
     "description": "首回合随机：腐蚀喷吐(11+黏液×2)/重击(16)/舔舔(虚弱2)。之后不能连续同招。",
     "intents": [
-      { "type": "ATTACK", "value": 11, "desc": "腐蚀喷吐", "stunCards": 2 },
+      { "type": "ATTACK", "value": 11, "desc": "腐蚀喷吐", "statusCards": "slime", "statusCardCount": 2 },
       { "type": "ATTACK", "value": 16, "desc": "重击" },
       { "type": "ATTACK", "value": 0, "desc": "舔舔", "applyStatusType": "WEAK", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" }
     ]
@@ -32,7 +32,7 @@
     "attackDamage": 8,
     "description": "首回合随机：腐蚀喷吐(8+黏液)/舔舔(脆弱1)。不能连续同招。",
     "intents": [
-      { "type": "ATTACK", "value": 8, "desc": "腐蚀喷吐", "stunCards": 1 },
+      { "type": "ATTACK", "value": 8, "desc": "腐蚀喷吐", "statusCards": "slime", "statusCardCount": 1 },
       { "type": "DEBUFF", "value": 0, "desc": "舔舔", "applyStatusType": "FRAIL", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" }
     ]
   },

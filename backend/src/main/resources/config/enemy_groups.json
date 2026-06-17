@@ -40,6 +40,14 @@
     "enemies": ["sentry_a", "sentry_b", "sentry_a"]
   },
   {
+    "id": "elite_sentry_single",
+    "name": "单个哨卫",
+    "type": "ELITE",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["sentry_a"]
+  },
+  {
     "id": "boss_hexaghost",
     "name": "六火亡魂",
     "type": "BOSS",
@@ -126,6 +134,14 @@
     "minAct": 2,
     "maxAct": 2,
     "enemies": ["centurion", "mystic"]
+  },
+  {
+    "id": "mystic_centurion",
+    "name": "神秘术士+百夫长（二层）",
+    "type": "NORMAL",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["mystic", "centurion"]
   },
   {
     "id": "shelled_parasite",
