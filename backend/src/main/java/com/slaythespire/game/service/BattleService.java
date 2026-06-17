@@ -75,6 +75,7 @@ public class BattleService {
         this.discardPile = new ArrayList<>();
         this.exhaustPile = new ArrayList<>();
         this.logList = new ArrayList<>();
+        this.logList.add("━━━ 战斗开始 ━━━");
         this.energy = 0;
         this.gameOver = false;
         this.winner = null;
@@ -187,8 +188,7 @@ public class BattleService {
         if (!card.isXCost() && card.getCost() > energy) throw new IllegalStateException("能量不足");
 
         exhaustedThisAction = false;
-        logList.clear();
-        logList.add("🃏 使用: " + card.getName());
+        logList.add("━━━ 🃏 使用: " + card.getName() + " ━━━");
 
         List<Enemy> aliveEnemies = getAliveEnemies();
         if (aliveEnemies.isEmpty()) {
@@ -413,6 +413,7 @@ public class BattleService {
 
     public synchronized Map<String, Object> endTurn() {
         exhaustedThisAction = false;
+        logList.add("━━━ 结束回合 ━━━");
         validateBattleActive();
         
         // ================= 1. 玩家回合结束 =================
