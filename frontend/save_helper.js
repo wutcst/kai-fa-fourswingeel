@@ -74,7 +74,7 @@ async function loadSaveData(charId) {
 
     localStorage.setItem('playerHP', data.playerHp);
 
-    localStorage.setItem('maxHp', data.maxHp);
+    localStorage.setItem('maxHP', data.maxHp);
 
     localStorage.setItem('gold', data.gold);
 
@@ -132,7 +132,7 @@ async function saveSaveData(data) {
 
     localStorage.setItem('playerHP', data.playerHp);
 
-    localStorage.setItem('maxHp', data.maxHp);
+    localStorage.setItem('maxHP', data.maxHp);
 
     localStorage.setItem('gold', data.gold);
 
