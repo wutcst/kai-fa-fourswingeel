@@ -280,14 +280,18 @@ public class Card {
     }
 
     public void setApplyStatusCount(int count) {
-        if (!effects.isEmpty()) { 
-            effects.set(0, new CardEffect(effects.get(0).getType(), count, effects.get(0).getTarget())); 
+        if (!effects.isEmpty()) {
+            effects.set(0, new CardEffect(effects.get(0).getType(), count, effects.get(0).getTarget()));
+        } else if (count > 0) {
+            effects.add(new CardEffect("VULNERABLE", count, "ENEMY"));
         }
     }
 
     public void setApplyStatusTarget(String target) {
-        if (!effects.isEmpty()) { 
-            effects.set(0, new CardEffect(effects.get(0).getType(), effects.get(0).getCount(), target)); 
+        if (!effects.isEmpty()) {
+            effects.set(0, new CardEffect(effects.get(0).getType(), effects.get(0).getCount(), target));
+        } else if (target != null && !target.isEmpty()) {
+            effects.add(new CardEffect("VULNERABLE", 1, target));
         }
     }
 }
