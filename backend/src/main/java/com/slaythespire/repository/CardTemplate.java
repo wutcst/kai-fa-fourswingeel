@@ -68,8 +68,9 @@ public class CardTemplate {
 
     private final boolean copyToDiscard;
 
-    // 🆕 力量倍率（重刃专用）
     private final int strengthMultiplier;
+
+    private final boolean randomTarget;
 
     @JsonCreator
 
@@ -115,7 +116,9 @@ public class CardTemplate {
 
             @JsonProperty("copyToDiscard") Boolean copyToDiscard,
 
-            @JsonProperty("strengthMultiplier") Integer strengthMultiplier) {
+            @JsonProperty("strengthMultiplier") Integer strengthMultiplier,
+
+            @JsonProperty("randomTarget") Boolean randomTarget) {
 
         this.id = id; this.name = name; this.cost = cost; this.damage = damage; this.block = block;
 
@@ -157,25 +160,23 @@ public class CardTemplate {
 
         this.strengthMultiplier = strengthMultiplier != null ? strengthMultiplier : 1;
 
+        this.randomTarget = randomTarget != null ? randomTarget : false;
+
     }
 
     public String getId() { return id; } public String getName() { return name; } public int getCost() { return cost; }
 
-    public int getDamage() { return damage; } public int getBlock() { return block; } public CardType getType() { return
-type; }
+    public int getDamage() { return damage; } public int getBlock() { return block; } public CardType getType() { return type; }
 
     public List<CardEffect> getEffects() { return effects; }
 
-    public boolean isExhaust() { return exhaust; } public boolean isRetain() { return retain; } public boolean
-isEthereal() { return ethereal; } public int getDrawCount() { return drawCount; }
+    public boolean isExhaust() { return exhaust; } public boolean isRetain() { return retain; } public boolean isEthereal() { return ethereal; } public int getDrawCount() { return drawCount; }
 
-    public boolean isUpgraded() { return upgraded; } public String getCharId() { return charId; } public String
-getRarity() { return rarity; }
+    public boolean isUpgraded() { return upgraded; } public String getCharId() { return charId; } public String getRarity() { return rarity; }
 
     public int getSelfDamage() { return selfDamage; } public int getEnergyGain() { return energyGain; }
 
-    public int getMultiHitCount() { return multiHitCount; } public int getExhaustHandCount() { return exhaustHandCount;
-}
+    public int getMultiHitCount() { return multiHitCount; } public int getExhaustHandCount() { return exhaustHandCount; }
 
     public String getExhaustHandMode() { return exhaustHandMode; }
 
@@ -190,6 +191,8 @@ getRarity() { return rarity; }
     public boolean isCopyToDiscard() { return copyToDiscard; }
 
     public int getStrengthMultiplier() { return strengthMultiplier; }
+
+    public boolean isRandomTarget() { return randomTarget; }
 
     public String getApplyStatusType() { return effects.isEmpty() ? null : effects.get(0).getType(); }
 

@@ -30,8 +30,9 @@ public class Card {
 
     private boolean copyToDiscard;
 
-    // 🆕 力量倍率（重刃专用）
     private int strengthMultiplier = 1;
+
+    private boolean randomTarget = false;
 
     public enum CardType { ATTACK, SKILL, POWER }
 
@@ -65,8 +66,9 @@ public class Card {
 
         this.copyToDiscard = template.isCopyToDiscard();
 
-        // 🆕 读取 strengthMultiplier
         this.strengthMultiplier = template.getStrengthMultiplier();
+
+        this.randomTarget = template.isRandomTarget();
 
     }
 
@@ -87,6 +89,8 @@ public class Card {
         this.copyToDiscard = false;
 
         this.strengthMultiplier = 1;
+
+        this.randomTarget = false;
 
     }
 
@@ -145,28 +149,25 @@ public class Card {
 
         this.copyToDiscard = original.copyToDiscard;
 
-        // 🆕 复制 strengthMultiplier
         this.strengthMultiplier = original.strengthMultiplier;
+
+        this.randomTarget = original.randomTarget;
 
     }
 
-    public String getName() { return name; } public int getCost() { return cost; } public int getDamage() { return
-damage; }
+    public String getName() { return name; } public int getCost() { return cost; } public int getDamage() { return damage; }
 
     public int getBlock() { return block; } public CardType getType() { return type; }
 
     public List<CardEffect> getEffects() { return effects; }
 
-    public boolean isExhaust() { return exhaust; } public boolean isRetain() { return retain; } public boolean
-isEthereal() { return ethereal; } public int getDrawCount() { return drawCount; }
+    public boolean isExhaust() { return exhaust; } public boolean isRetain() { return retain; } public boolean isEthereal() { return ethereal; } public int getDrawCount() { return drawCount; }
 
-    public boolean isUpgraded() { return upgraded; } public String getCharId() { return charId; } public String
-getRarity() { return rarity; }
+    public boolean isUpgraded() { return upgraded; } public String getCharId() { return charId; } public String getRarity() { return rarity; }
 
     public int getSelfDamage() { return selfDamage; } public int getEnergyGain() { return energyGain; }
 
-    public int getMultiHitCount() { return multiHitCount; } public int getExhaustHandCount() { return exhaustHandCount;
-}
+    public int getMultiHitCount() { return multiHitCount; } public int getExhaustHandCount() { return exhaustHandCount; }
 
     public String getExhaustHandMode() { return exhaustHandMode; }
 
@@ -182,7 +183,9 @@ getRarity() { return rarity; }
 
     public int getStrengthMultiplier() { return strengthMultiplier; }
 
-    public void setStrengthMultiplier(int strengthMultiplier) { this.strengthMultiplier = strengthMultiplier; }
+    public boolean isRandomTarget() { return randomTarget; }
+
+    public void setRandomTarget(boolean randomTarget) { this.randomTarget = randomTarget; }
 
     public void setName(String name) { this.name = name; } public void setDamage(int damage) { this.damage = damage; }
 
@@ -190,20 +193,15 @@ getRarity() { return rarity; }
 
     public void setEffects(List<CardEffect> effects) { this.effects = effects != null ? effects : new ArrayList<>(); }
 
-    public void setExhaust(boolean exhaust) { this.exhaust = exhaust; } public void setRetain(boolean retain) {
-this.retain = retain; }
+    public void setExhaust(boolean exhaust) { this.exhaust = exhaust; } public void setRetain(boolean retain) { this.retain = retain; }
 
-    public void setEthereal(boolean ethereal) { this.ethereal = ethereal; } public void setDrawCount(int drawCount) {
-this.drawCount = drawCount; }
+    public void setEthereal(boolean ethereal) { this.ethereal = ethereal; } public void setDrawCount(int drawCount) { this.drawCount = drawCount; }
 
-    public void setUpgraded(boolean upgraded) { this.upgraded = upgraded; } public void setCharId(String charId) {
-this.charId = charId; }
+    public void setUpgraded(boolean upgraded) { this.upgraded = upgraded; } public void setCharId(String charId) { this.charId = charId; }
 
-    public void setRarity(String rarity) { this.rarity = rarity; } public void setSelfDamage(int selfDamage) {
-this.selfDamage = selfDamage; }
+    public void setRarity(String rarity) { this.rarity = rarity; } public void setSelfDamage(int selfDamage) { this.selfDamage = selfDamage; }
 
-    public void setEnergyGain(int energyGain) { this.energyGain = energyGain; } public void setMultiHitCount(int
-multiHitCount) { this.multiHitCount = multiHitCount; }
+    public void setEnergyGain(int energyGain) { this.energyGain = energyGain; } public void setMultiHitCount(int multiHitCount) { this.multiHitCount = multiHitCount; }
 
     public void setExhaustHandCount(int exhaustHandCount) { this.exhaustHandCount = exhaustHandCount; }
 
@@ -225,6 +223,8 @@ multiHitCount) { this.multiHitCount = multiHitCount; }
 
     public void setCopyToDiscard(boolean copyToDiscard) { this.copyToDiscard = copyToDiscard; }
 
+    public void setStrengthMultiplier(int strengthMultiplier) { this.strengthMultiplier = strengthMultiplier; }
+
     public String getApplyStatusType() { return effects.isEmpty() ? null : effects.get(0).getType(); }
 
     public int getApplyStatusCount() { return effects.isEmpty() ? 0 : effects.get(0).getCount(); }
@@ -233,8 +233,7 @@ multiHitCount) { this.multiHitCount = multiHitCount; }
 
     public void setApplyStatusType(String type) {
 
-        if (!effects.isEmpty()) { effects.set(0, new CardEffect(type, effects.get(0).getCount(),
-effects.get(0).getTarget())); }
+        if (!effects.isEmpty()) { effects.set(0, new CardEffect(type, effects.get(0).getCount(), effects.get(0).getTarget())); }
 
         else if (type != null) { effects.add(new CardEffect(type, 1, "ENEMY")); }
 
@@ -242,15 +241,13 @@ effects.get(0).getTarget())); }
 
     public void setApplyStatusCount(int count) {
 
-        if (!effects.isEmpty()) { effects.set(0, new CardEffect(effects.get(0).getType(), count,
-effects.get(0).getTarget())); }
+        if (!effects.isEmpty()) { effects.set(0, new CardEffect(effects.get(0).getType(), count, effects.get(0).getTarget())); }
 
     }
 
     public void setApplyStatusTarget(String target) {
 
-        if (!effects.isEmpty()) { effects.set(0, new CardEffect(effects.get(0).getType(), effects.get(0).getCount(),
-target)); }
+        if (!effects.isEmpty()) { effects.set(0, new CardEffect(effects.get(0).getType(), effects.get(0).getCount(), target)); }
 
     }
 

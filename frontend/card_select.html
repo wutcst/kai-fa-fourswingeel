@@ -64,7 +64,10 @@
             exhaustHandMode: card.exhaustHandMode || 'RANDOM',
             discardCount: card.discardCount || 0,
             charId: card.charId || '1', rarity: card.rarity || 'COMMON',
-            upgraded: card.upgraded || false
+            upgraded: card.upgraded || false,
+            // 🆕 力量倍率（重刃等）
+            strengthMultiplier: card.strengthMultiplier || 1,
+            copyToDiscard: card.copyToDiscard || false
           });
           
           await saveSaveData(saveData);

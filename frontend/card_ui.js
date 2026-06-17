@@ -39,6 +39,11 @@ const CARD_UI = {
     if (card.selfDamage > 0) parts.push(`失去 ${card.selfDamage} 点生命`);
     if (card.energyGain > 0) parts.push(`获得 ${card.energyGain} 点能量`);
 
+    // 🆕 随机目标描述
+    if (card.randomTarget) {
+      parts.push('随机攻击敌人');
+    }
+
     // 🆕 力量倍率描述
     if (card.strengthMultiplier && card.strengthMultiplier > 1) {
         parts.push(`力量发挥 ${card.strengthMultiplier} 倍效果`);

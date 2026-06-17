@@ -161,13 +161,12 @@ public class BattleService {
             logList.add(String.format("⚡ 获得 %d 点能量，当前能量: %d", card.getEnergyGain(), energy));
         }
 
-        // ================= 伤害计算（包含力量倍率） =================
+        // ================= 伤害计算（包含力量倍率和随机目标） =================
         if (card.getDamage() > 0) {
             int strengthMultiplier = card.getStrengthMultiplier();
             int strengthCount = 0;
             StatusEffect savedStrength = null;
             if (strengthMultiplier > 1) {
-                // 记录并临时移除玩家的力量状态（防止 GameStatus 重复加成）
                 for (StatusEffect s : player.getStatuses()) {
                     if ("STRENGTH".equals(s.getId())) {
                         strengthCount = s.getCount();
@@ -181,7 +180,6 @@ public class BattleService {
 
             int baseDamage = card.getDamage() * xValue;
             if (strengthMultiplier > 1) {
-                // 额外增加 (strengthMultiplier * strengthCount) 伤害（此时玩家身上已无力量，GameStatus 不会再加）
                 baseDamage += strengthCount * strengthMultiplier;
                 logList.add("💪 额外增加 " + (strengthCount * strengthMultiplier) + " 伤害");
             }
@@ -194,23 +192,40 @@ public class BattleService {
                 }
             } else {
                 int hitCount = Math.max(1, card.getMultiHitCount());
+                Random random = new Random();
+                // 临时存活列表（用于随机目标）
+                List<Enemy> currentAlive = new ArrayList<>(aliveEnemies);
                 for (int i = 0; i < hitCount; i++) {
-                    if (!target.isAlive()) {
-                        List<Enemy> currentAlive = getAliveEnemies();
+                    // 如果当前列表为空，尝试重新获取存活敌人
+                    if (currentAlive.isEmpty()) {
+                        currentAlive = new ArrayList<>(getAliveEnemies());
                         if (currentAlive.isEmpty()) break;
-                        target = currentAlive.get(0);
                     }
-                    int actualDmg = target.takeDamage(baseDamage, player);
-                    logList.addAll(target.getLastCombatLogs());
-                    if (hitCount > 1) {
-                        logList.add(String.format("对 %s 造成 %d 点伤害 (%d/%d段)，HP: %d", target.getEnemyName(), actualDmg, i + 1, hitCount, target.getHp()));
+                    Enemy currentTarget;
+                    if (card.isRandomTarget()) {
+                        currentTarget = currentAlive.get(random.nextInt(currentAlive.size()));
                     } else {
-                        logList.add(String.format("对 %s 造成 %d 点伤害，HP: %d", target.getEnemyName(), actualDmg, target.getHp()));
+                        if (!target.isAlive()) {
+                            currentAlive = new ArrayList<>(getAliveEnemies());
+                            if (currentAlive.isEmpty()) break;
+                            target = currentAlive.get(0);
+                        }
+                        currentTarget = target;
+                    }
+                    int actualDmg = currentTarget.takeDamage(baseDamage, player);
+                    logList.addAll(currentTarget.getLastCombatLogs());
+                    if (hitCount > 1) {
+                        logList.add(String.format("对 %s 造成 %d 点伤害 (%d/%d段)，HP: %d", currentTarget.getEnemyName(), actualDmg, i + 1, hitCount, currentTarget.getHp()));
+                    } else {
+                        logList.add(String.format("对 %s 造成 %d 点伤害，HP: %d", currentTarget.getEnemyName(), actualDmg, currentTarget.getHp()));
+                    }
+                    // 如果该目标死亡，从临时列表中移除，后续随机不会选到它
+                    if (!currentTarget.isAlive()) {
+                        currentAlive.remove(currentTarget);
                     }
                 }
             }
 
-            // 恢复力量状态（如果有）
             if (savedStrength != null) {
                 player.addStatus(savedStrength);
             }
@@ -294,7 +309,6 @@ public class BattleService {
             logList.add(finalCard.getName() + "被消耗");
             triggerDrawOnExhaust();
         } else {
-            // 🆕 愤怒效果：在弃牌堆添加一张复制品
             if (finalCard.isCopyToDiscard()) {
                 Card copy = new Card(finalCard);
                 discardPile.add(copy);
@@ -525,6 +539,11 @@ public class BattleService {
                 card.setCopyToDiscard((Boolean) cardData.get("copyToDiscard"));
             }
 
+            // 🆕 读取 randomTarget 字段
+            if (cardData.containsKey("randomTarget")) {
+                card.setRandomTarget((Boolean) cardData.get("randomTarget"));
+            }
+
             deck.add(card);
         }
         return deck;
@@ -616,6 +635,7 @@ public class BattleService {
             // 🆕 新增字段传递给前端
             cardInfo.put("copyToDiscard", c.isCopyToDiscard());
             cardInfo.put("strengthMultiplier", c.getStrengthMultiplier());
+            cardInfo.put("randomTarget", c.isRandomTarget());
 
             handCards.add(cardInfo);
         }
@@ -661,6 +681,7 @@ public class BattleService {
             // 🆕 新增字段
             info.put("copyToDiscard", c.isCopyToDiscard());
             info.put("strengthMultiplier", c.getStrengthMultiplier());
+            info.put("randomTarget", c.isRandomTarget());
 
             list.add(info);
         }
