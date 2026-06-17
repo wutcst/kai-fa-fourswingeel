@@ -214,10 +214,10 @@ public class BattleService {
                 }
             }
         }
-        // 🆕 黄金戒指：统计本回合攻击牌打出数量
+        // 🆕 黄金戒指：每打出3张攻击牌获得1层敏捷
         if (card.getType() == Card.CardType.ATTACK) {
             attackCountThisTurn++;
-            if (attackCountThisTurn > 3 && RelicEffectHandler.hasEffect(player, "ATTACK_DEXTERITY")) {
+            if (attackCountThisTurn % 3 == 0 && RelicEffectHandler.hasEffect(player, "ATTACK_DEXTERITY")) {
                 StatusEffect dex = StatusFactory.create("DEXTERITY", RelicEffectHandler.getEffectValue(player, "ATTACK_DEXTERITY"), dataRepo);
                 if (dex != null) {
                     player.addStatus(dex);
