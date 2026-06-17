@@ -1,6 +1,7 @@
 package com.slaythespire.repository;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.slaythespire.game.model.Card.CardType;
 import com.slaythespire.game.model.CardEffect;
@@ -8,6 +9,7 @@ import com.slaythespire.game.model.CardEffect;
 import java.util.Collections;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CardTemplate {
 
     private final String id;
