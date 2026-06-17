@@ -3,7 +3,6 @@ package com.slaythespire.controller;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,10 +17,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.slaythespire.model.SaveData;
 import com.slaythespire.game.service.RelicPoolService;
 import com.slaythespire.repository.CardTemplate;
 import com.slaythespire.repository.GameDataRepository;
 import com.slaythespire.repository.RelicTemplate;
+import com.slaythespire.service.SaveService;
 
 @RestController
 @RequestMapping("/api")
@@ -33,12 +34,46 @@ public class GameConfigController {
     @Autowired
     private RelicPoolService relicPoolService;
 
+    // 🆕 注入 SaveService 用于读写地图存档
+    @Autowired
+    private SaveService saveService;
+
     private final Random random = new Random();
 
-    // ================ 地图生成 ================
+    // ================ 地图生成与读取 ================
 
     @GetMapping("/map")
     public Map<String, Object> getMapData() {
+        // 🆕 1. 优先从全局存档中读取地图数据
+        SaveData saveData = saveService.loadGame();
+        if (saveData != null 
+                && saveData.getMapNodes() != null && !saveData.getMapNodes().isEmpty()
+                && saveData.getMapEdges() != null && !saveData.getMapEdges().isEmpty()) {
+            
+            Map<String, Object> mapData = new LinkedHashMap<>();
+            mapData.put("nodes", saveData.getMapNodes());
+            mapData.put("edges", saveData.getMapEdges());
+            System.out.println("✅ 从存档加载地图，节点数: " + saveData.getMapNodes().size());
+            return mapData;
+        }
+
+        // 🆕 2. 存档中没有地图，生成新地图
+        Map<String, Object> newMap = generateNewMap();
+
+        // 🆕 3. 将生成的地图数据写入全局存档
+        if (saveData == null) {
+            saveData = new SaveData();
+        }
+        saveData.setMapNodes((List<Map<String, Object>>) newMap.get("nodes"));
+        saveData.setMapEdges((List<Map<String, String>>) newMap.get("edges"));
+        saveService.saveGame(saveData);
+        System.out.println("✅ 生成新地图并保存到全局存档");
+
+        return newMap;
+    }
+
+    // 🆕 将原有的地图生成逻辑整体移入此私有方法
+    private Map<String, Object> generateNewMap() {
         Map<String, Object> mapData = new LinkedHashMap<>();
         List<Map<String, Object>> nodes = new ArrayList<>();
         List<Map<String, String>> edges = new ArrayList<>();
@@ -368,7 +403,7 @@ public class GameConfigController {
         edges.add(edge);
     }
 
-    // ================ 商店、角色、卡牌接口 ================
+    // ================ 商店、角色、卡牌接口 (保持不变) ================
 
     @GetMapping("/shop")
     public Map<String, Object> getShopData(@RequestParam(defaultValue = "1") String charParam,
@@ -405,7 +440,6 @@ public class GameConfigController {
                 cardMap.put("drawCount", tpl.getDrawCount());
                 cardMap.put("rarity", tpl.getRarity());
                 
-                // 🆕 补全商店卡牌缺失的所有新机制字段
                 cardMap.put("upgraded", tpl.isUpgraded());
                 cardMap.put("selfDamage", tpl.getSelfDamage());
                 cardMap.put("energyGain", tpl.getEnergyGain());
@@ -420,7 +454,7 @@ public class GameConfigController {
                 cardMap.put("discardCount", tpl.getDiscardCount());
                 cardMap.put("xCost", tpl.isXCost());
                 cardMap.put("aoe", tpl.isAoe());
-                cardMap.put("drawFirst", tpl.isDrawFirst()); // 🆕 最新补充
+                cardMap.put("drawFirst", tpl.isDrawFirst()); 
                 
                 int price = 50 + (tpl.getCost() * 25);
                 if (tpl.getDamage() > 10 || tpl.getBlock() > 10) price += 20;
@@ -457,8 +491,8 @@ public class GameConfigController {
         List<String> starterIds=Arrays.asList();
         if ("1".equals(charId)) {
             info.put("name", "铁甲战士");
-            info.put("maxHp", 80);               // ✅ 战士初始血量 80
-            info.put("gold", 99);                // ✅ 金币统一 99
+            info.put("maxHp", 80);               
+            info.put("gold", 99);                
             starterIds = Arrays.asList(
                 "strike", "strike", "strike", "strike", "strike",
                 "defend", "defend", "defend", "defend",
@@ -501,7 +535,6 @@ public class GameConfigController {
                     cardMap.put("drawCount", tpl.getDrawCount());
                     cardMap.put("rarity", tpl.getRarity());
                     
-                    // 🆕 补全初始卡组缺失的所有新机制字段
                     cardMap.put("upgraded", tpl.isUpgraded());
                     cardMap.put("selfDamage", tpl.getSelfDamage());
                     cardMap.put("energyGain", tpl.getEnergyGain());
@@ -516,7 +549,7 @@ public class GameConfigController {
                     cardMap.put("discardCount", tpl.getDiscardCount());
                     cardMap.put("xCost", tpl.isXCost());
                     cardMap.put("aoe", tpl.isAoe());
-                    cardMap.put("drawFirst", tpl.isDrawFirst()); // 🆕 最新补充
+                    cardMap.put("drawFirst", tpl.isDrawFirst()); 
                     
                     deck.add(cardMap);
                 }
