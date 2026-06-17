@@ -141,24 +141,14 @@
       display: flex; flex-direction: column; gap: 6px; width: 150px; flex-shrink: 0;
     }
     .pile-corner.right-corner { align-items: flex-end; }
-    /* 小能量球 */
+    /* 能量数字 */
     .energy-mini {
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      padding: 4px 0; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 2px 0;
     }
-    .energy-mini .energy-orb {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: linear-gradient(135deg, #2c3e50, #1a1a2e);
-      border: 2px solid #34495e; display: flex; align-items: center; justify-content: center;
-      font-weight: bold; font-size: 14px; transition: all 0.3s;
+    .energy-num {
+      font-size: 20px; font-weight: bold; color: #f1c40f;
+      text-shadow: 0 0 10px rgba(241,196,15,0.4);
     }
-    .energy-mini .energy-orb.filled {
-      background: linear-gradient(135deg, #f1c40f, #f39c12);
-      border-color: #f1c40f; color: #1a1a2e;
-      box-shadow: 0 0 12px rgba(241,196,15,0.5);
-      animation: orb-glow 1.5s infinite alternate;
-    }
-    @keyframes orb-glow { from { box-shadow: 0 0 10px rgba(241,196,15,0.4); } to { box-shadow: 0 0 20px rgba(241,196,15,0.7); } }
 
     /* 侧面牌堆（放大显示） */
     .side-pile {
@@ -358,9 +348,7 @@
         <!-- 左下：能量 + 抽牌堆 -->
         <div class="pile-corner left-corner">
           <div class="energy-mini">
-            <template v-for="n in (state.maxEnergy || 3)" :key="n">
-              <div class="energy-orb" :class="{ filled: n <= state.energy }">{{ n <= state.energy ? '⚡' : '' }}</div>
-            </template>
+            <span class="energy-num">⚡ {{ state.energy }}/{{ state.maxEnergy || 3 }}</span>
           </div>
           <div class="side-pile" @click="showPilePopup('drawPile')" :title="'点击查看全部抽牌堆(' + state.drawPileSize + '张)'">
             <div class="pile-title draw-title">📚 抽牌堆 ({{ state.drawPileSize }})</div>
