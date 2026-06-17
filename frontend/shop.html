@@ -180,8 +180,10 @@
               span.className = 'delete-item';
               span.innerHTML = `${card.name} <span class="delete-cost">-${currentDeleteCost}💰</span>`;
               
+              let deleting = false;
               span.addEventListener('click', async () => {
-                if (alreadyDeletedThisShop) return;
+                if (alreadyDeletedThisShop || deleting) return;
+                deleting = true;
                 if (await spendGold(currentDeleteCost)) {
                   saveData = await loadSaveData(char);
                   if (index < saveData.deck.length) {

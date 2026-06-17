@@ -660,10 +660,15 @@ public class BattleService {
             }
             if (card == null) {
                 String name = (String) cardData.get("name");
-                int cost = ((Number) cardData.get("cost")).intValue();
+                int cost = cardData.containsKey("cost") && cardData.get("cost") != null
+                        ? ((Number) cardData.get("cost")).intValue() : 1;
                 int damage = cardData.get("damage") != null ? ((Number) cardData.get("damage")).intValue() : 0;
                 int block = cardData.get("block") != null ? ((Number) cardData.get("block")).intValue() : 0;
-                Card.CardType type = Card.CardType.valueOf((String) cardData.get("type"));
+                Card.CardType type = Card.CardType.ATTACK;
+                if (cardData.containsKey("type") && cardData.get("type") != null) {
+                    try { type = Card.CardType.valueOf((String) cardData.get("type")); }
+                    catch (IllegalArgumentException ignored) {}
+                }
                 card = new Card(name, cost, damage, block, type);
                 card.setRarity("COMMON");
             }
