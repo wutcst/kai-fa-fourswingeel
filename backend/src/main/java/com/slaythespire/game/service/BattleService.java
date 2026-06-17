@@ -26,6 +26,7 @@ public class BattleService {
     private boolean gameOver;
     private String winner;
     private int attackCountThisTurn; // 本场战斗累计攻击牌计数（黄金戒指，跨回合累计）
+    private int skillCountCombat;    // 本场战斗累计技能牌计数（黄金项链，跨回合累计）
 
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp, String nodeType) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
@@ -76,6 +77,7 @@ public class BattleService {
         this.gameOver = false;
         this.winner = null;
         this.attackCountThisTurn = 0;
+        this.skillCountCombat = 0;
 
         // 🆕 【核心机制：固有牌处理】
         List<Card> innateCards = new ArrayList<>();
@@ -222,6 +224,17 @@ public class BattleService {
                 if (dex != null) {
                     player.addStatus(dex);
                     logList.add("💍 黄金戒指触发，获得 " + dex.getCount() + " 层敏捷（已打出 " + attackCountThisTurn + " 张攻击牌）");
+                }
+            }
+        }
+        // 🆕 黄金项链：每打出3张技能牌获得1层力量（跨回合累计）
+        if (card.getType() == Card.CardType.SKILL) {
+            skillCountCombat++;
+            if (skillCountCombat % 3 == 0 && RelicEffectHandler.hasEffect(player, "SKILL_STRENGTH")) {
+                StatusEffect str = StatusFactory.create("STRENGTH", RelicEffectHandler.getEffectValue(player, "SKILL_STRENGTH"), dataRepo);
+                if (str != null) {
+                    player.addStatus(str);
+                    logList.add("📿 黄金项链触发，获得 " + str.getCount() + " 层力量（已打出 " + skillCountCombat + " 张技能牌）");
                 }
             }
         }
