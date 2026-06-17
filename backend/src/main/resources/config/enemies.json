@@ -267,11 +267,11 @@
     "type": "NORMAL",
     "maxHp": 160,
     "attackDamage": 16,
-    "description": "首回合缠绕(虚弱3)。之后：鞭打(16)/重击(22)/缠绕随机，不能连续两次缠绕。",
+    "description": "首回合缠绕(缠绕10)。之后：鞭打(16)/重击(22)/缠绕随机，不能连续两次缠绕。",
     "intents": [
       { "type": "ATTACK", "value": 16, "desc": "鞭打" },
       { "type": "ATTACK", "value": 22, "desc": "重击" },
-      { "type": "DEBUFF", "value": 0, "desc": "缠绕", "applyStatusType": "WEAK", "applyStatusCount": 3, "applyStatusTarget": "PLAYER" }
+      { "type": "DEBUFF", "value": 0, "desc": "缠绕", "applyStatusType": "CONSTRICTED", "applyStatusCount": 10, "applyStatusTarget": "PLAYER" }
     ]
   }
 ]
