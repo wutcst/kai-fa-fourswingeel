@@ -155,6 +155,7 @@
               if (relic.id === 'apple') saveData.playerHp = Math.min((saveData.playerHp || 0) + 5, saveData.maxHp || 70);
               if (relic.id === 'pear') saveData.playerHp = Math.min((saveData.playerHp || 0) + 20, saveData.maxHp || 70);
               if (relic.id === 'waffle') saveData.playerHp = saveData.maxHp || 80;
+              if (relic.id === 'jiucai_anger') window.showModal('怪物太难都是九才8干的，大家一起骂他', { title: '😡 九才8之怒', icon: '😡', borderColor: '#e74c3c' });
               await saveSaveData(saveData);
               alert(`购买成功：${relic.name}`);
               relicDiv.classList.add('sold');
