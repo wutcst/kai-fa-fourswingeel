@@ -292,8 +292,15 @@ public class BattleService {
             logList.add(String.format("⚡ 获得 %d 点能量，当前能量: %d", card.getEnergyGain(), energy));
         }
 
+        // ================= 全身撞击：伤害=当前格挡 =================
+        int actualCardDamage = card.getDamage();
+        if (card.isBlockToDamage()) {
+            actualCardDamage = player.getBlock();
+            logList.add(String.format("💥 全身撞击！当前格挡 %d 转化为伤害", actualCardDamage));
+        }
+
         // ================= 伤害计算（包含力量倍率和随机目标） =================
-        if (card.getDamage() > 0) {
+        if (actualCardDamage > 0) {
             int strengthMultiplier = card.getStrengthMultiplier();
             int strengthCount = 0;
             StatusEffect savedStrength = null;
@@ -311,7 +318,7 @@ public class BattleService {
                 logList.add("💪 力量发挥 " + strengthMultiplier + " 倍效果，临时锁定力量值: " + strengthCount);
             }
 
-            int baseDamage = card.getDamage() * xValue;
+            int baseDamage = actualCardDamage * xValue;
             if (strengthMultiplier > 1) {
                 baseDamage += strengthCount * strengthMultiplier;
                 logList.add("💪 额外增加 " + (strengthCount * strengthMultiplier) + " 伤害");
@@ -399,6 +406,40 @@ public class BattleService {
         removeDeadEnemies();
 
         int playedCardIndex = index;
+
+        // ================= 硬撑：增加伤口到手牌 =================
+        if (card.getAddWoundCount() > 0) {
+            for (int i = 0; i < card.getAddWoundCount(); i++) {
+                Card wound = new Card("伤口", -1, 0, 0, Card.CardType.STATUS);
+                wound.setUnplayable(true);
+                wound.setEthereal(true);
+                wound.setRarity("COMMON");
+                hand.add(playedCardIndex + 1 + i, wound);
+            }
+            logList.add(String.format("🩹 增加了 %d 张伤口到手牌", card.getAddWoundCount()));
+        }
+
+        // ================= 重振精神：消耗手牌中所有非攻击牌，每张获得格挡 =================
+        if (card.getExhaustNonAttackBlock() > 0) {
+            int exhaustedCount = 0;
+            for (int i = hand.size() - 1; i >= 0; i--) {
+                if (i == playedCardIndex) continue;
+                Card hc = hand.get(i);
+                if (hc.getType() != Card.CardType.ATTACK) {
+                    hand.remove(i);
+                    exhaustPile.add(hc);
+                    exhaustedCount++;
+                    if (i < playedCardIndex) playedCardIndex--;
+                    logList.add("🔥 重振精神消耗了 " + hc.getName());
+                    triggerDrawOnExhaust();
+                }
+            }
+            if (exhaustedCount > 0) {
+                int bonusBlock = card.getExhaustNonAttackBlock() * exhaustedCount;
+                player.gainBlock(bonusBlock);
+                logList.add(String.format("🛡️ 重振精神消耗 %d 张牌，额外获得 %d 格挡（当前: %d）", exhaustedCount, bonusBlock, player.getBlock()));
+            }
+        }
 
         if (card.isDrawFirst()) {
             if (card.getDrawCount() > 0) {
@@ -737,6 +778,15 @@ public class BattleService {
             if (cardData.containsKey("energyLossOnDraw") && cardData.get("energyLossOnDraw") != null) {
                 card.setEnergyLossOnDraw(((Number) cardData.get("energyLossOnDraw")).intValue());
             }
+            if (cardData.containsKey("exhaustNonAttackBlock") && cardData.get("exhaustNonAttackBlock") != null) {
+                card.setExhaustNonAttackBlock(((Number) cardData.get("exhaustNonAttackBlock")).intValue());
+            }
+            if (cardData.containsKey("addWoundCount") && cardData.get("addWoundCount") != null) {
+                card.setAddWoundCount(((Number) cardData.get("addWoundCount")).intValue());
+            }
+            if (cardData.containsKey("blockToDamage") && cardData.get("blockToDamage") != null) {
+                card.setBlockToDamage((Boolean) cardData.get("blockToDamage"));
+            }
 
             deck.add(card);
         }
@@ -834,6 +884,9 @@ public class BattleService {
             // 🆕 传递特殊状态牌数值给前端
             cardInfo.put("endOfTurnDamage", c.getEndOfTurnDamage());
             cardInfo.put("energyLossOnDraw", c.getEnergyLossOnDraw());
+            cardInfo.put("exhaustNonAttackBlock", c.getExhaustNonAttackBlock());
+            cardInfo.put("addWoundCount", c.getAddWoundCount());
+            cardInfo.put("blockToDamage", c.isBlockToDamage());
 
             handCards.add(cardInfo);
         }
@@ -907,6 +960,9 @@ public class BattleService {
             // 🆕 传递特殊状态牌数值给前端
             info.put("endOfTurnDamage", c.getEndOfTurnDamage());
             info.put("energyLossOnDraw", c.getEnergyLossOnDraw());
+            info.put("exhaustNonAttackBlock", c.getExhaustNonAttackBlock());
+            info.put("addWoundCount", c.getAddWoundCount());
+            info.put("blockToDamage", c.isBlockToDamage());
 
             list.add(info);
         }

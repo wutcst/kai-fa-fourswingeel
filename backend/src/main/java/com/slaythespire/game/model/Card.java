@@ -51,6 +51,10 @@ public class Card {
     // 🆕 新增字段：支持特殊状态牌机制
     private int endOfTurnDamage;
     private int energyLossOnDraw;
+    // 🆕 新增字段：特殊卡牌机制
+    private int exhaustNonAttackBlock;
+    private int addWoundCount;
+    private boolean blockToDamage;
 
     // 🆕 修改：枚举增加 STATUS 类型
     public enum CardType { 
@@ -98,6 +102,9 @@ public class Card {
         // 🆕 新增字段赋值
         this.endOfTurnDamage = template.getEndOfTurnDamage();
         this.energyLossOnDraw = template.getEnergyLossOnDraw();
+        this.exhaustNonAttackBlock = template.getExhaustNonAttackBlock();
+        this.addWoundCount = template.getAddWoundCount();
+        this.blockToDamage = template.isBlockToDamage();
     }
 
     public Card(String name, int cost, int damage, int block, CardType type) {
@@ -135,6 +142,9 @@ public class Card {
         // 🆕 新增字段默认赋值
         this.endOfTurnDamage = 0;
         this.energyLossOnDraw = 0;
+        this.exhaustNonAttackBlock = 0;
+        this.addWoundCount = 0;
+        this.blockToDamage = false;
     }
 
     // copy constructor for Anger copy
@@ -178,6 +188,9 @@ public class Card {
         // 🆕 新增字段拷贝
         this.endOfTurnDamage = original.endOfTurnDamage;
         this.energyLossOnDraw = original.energyLossOnDraw;
+        this.exhaustNonAttackBlock = original.exhaustNonAttackBlock;
+        this.addWoundCount = original.addWoundCount;
+        this.blockToDamage = original.blockToDamage;
     }
 
     // ==================== Getter 方法 ====================
@@ -219,6 +232,9 @@ public class Card {
     // 🆕 新增 Getter 方法
     public int getEndOfTurnDamage() { return endOfTurnDamage; }
     public int getEnergyLossOnDraw() { return energyLossOnDraw; }
+    public int getExhaustNonAttackBlock() { return exhaustNonAttackBlock; }
+    public int getAddWoundCount() { return addWoundCount; }
+    public boolean isBlockToDamage() { return blockToDamage; }
 
     // ==================== Setter 方法 ====================
 
@@ -256,6 +272,9 @@ public class Card {
     // 🆕 新增 Setter 方法
     public void setEndOfTurnDamage(int endOfTurnDamage) { this.endOfTurnDamage = endOfTurnDamage; }
     public void setEnergyLossOnDraw(int energyLossOnDraw) { this.energyLossOnDraw = energyLossOnDraw; }
+    public void setExhaustNonAttackBlock(int exhaustNonAttackBlock) { this.exhaustNonAttackBlock = exhaustNonAttackBlock; }
+    public void setAddWoundCount(int addWoundCount) { this.addWoundCount = addWoundCount; }
+    public void setBlockToDamage(boolean blockToDamage) { this.blockToDamage = blockToDamage; }
 
     // ==================== 辅助方法 (状态效果相关) ====================
 

@@ -121,6 +121,17 @@
       "energyLossOnDraw": 1,
       "charId": "0",
       "rarity": "SPECIAL"
-    }
+    },
+
+    {"id":"wound","name":"伤口","cost":-1,"damage":0,"block":0,"type":"STATUS","unplayable":true,"ethereal":true,"charId":"0","rarity":"SPECIAL"},
+
+    {"id":"second_wind","name":"重振精神","cost":1,"damage":0,"block":0,"type":"SKILL","exhaustNonAttackBlock":8,"upgraded":false,"charId":"1","rarity":"UNCOMMON"},
+    {"id":"second_wind+","name":"重振精神+","cost":1,"damage":0,"block":0,"type":"SKILL","exhaustNonAttackBlock":10,"upgraded":true,"charId":"1","rarity":"UNCOMMON"},
+
+    {"id":"power_through","name":"硬撑","cost":1,"damage":0,"block":20,"type":"SKILL","addWoundCount":2,"upgraded":false,"charId":"1","rarity":"UNCOMMON"},
+    {"id":"power_through+","name":"硬撑+","cost":1,"damage":0,"block":25,"type":"SKILL","addWoundCount":2,"upgraded":true,"charId":"1","rarity":"UNCOMMON"},
+
+    {"id":"body_slam","name":"全身撞击","cost":1,"damage":0,"block":0,"type":"ATTACK","blockToDamage":true,"upgraded":false,"charId":"1","rarity":"COMMON"},
+    {"id":"body_slam+","name":"全身撞击+","cost":0,"damage":0,"block":0,"type":"ATTACK","blockToDamage":true,"upgraded":true,"charId":"1","rarity":"COMMON"}
 
 ]

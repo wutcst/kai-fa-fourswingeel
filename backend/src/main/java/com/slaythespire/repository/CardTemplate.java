@@ -43,6 +43,10 @@ public class CardTemplate {
     // === 新增字段：支持特殊状态牌机制 ===
     private final int endOfTurnDamage;
     private final int energyLossOnDraw;
+    // === 新增字段：特殊卡牌机制 ===
+    private final int exhaustNonAttackBlock;
+    private final int addWoundCount;
+    private final boolean blockToDamage;
 
     @JsonCreator
     public CardTemplate(
@@ -77,7 +81,10 @@ public class CardTemplate {
             @JsonProperty("randomTarget") Boolean randomTarget,
             // === 新增构造函数参数 ===
             @JsonProperty("endOfTurnDamage") Integer endOfTurnDamage,
-            @JsonProperty("energyLossOnDraw") Integer energyLossOnDraw) {
+            @JsonProperty("energyLossOnDraw") Integer energyLossOnDraw,
+            @JsonProperty("exhaustNonAttackBlock") Integer exhaustNonAttackBlock,
+            @JsonProperty("addWoundCount") Integer addWoundCount,
+            @JsonProperty("blockToDamage") Boolean blockToDamage) {
 
         this.id = id; 
         this.name = name; 
@@ -112,6 +119,9 @@ public class CardTemplate {
         // === 新增字段初始化 ===
         this.endOfTurnDamage = endOfTurnDamage != null ? endOfTurnDamage : 0;
         this.energyLossOnDraw = energyLossOnDraw != null ? energyLossOnDraw : 0;
+        this.exhaustNonAttackBlock = exhaustNonAttackBlock != null ? exhaustNonAttackBlock : 0;
+        this.addWoundCount = addWoundCount != null ? addWoundCount : 0;
+        this.blockToDamage = blockToDamage != null ? blockToDamage : false;
     }
 
     // ==================== Getter 方法 ====================
@@ -153,6 +163,9 @@ public class CardTemplate {
     // === 新增 Getter 方法 ===
     public int getEndOfTurnDamage() { return endOfTurnDamage; }
     public int getEnergyLossOnDraw() { return energyLossOnDraw; }
+    public int getExhaustNonAttackBlock() { return exhaustNonAttackBlock; }
+    public int getAddWoundCount() { return addWoundCount; }
+    public boolean isBlockToDamage() { return blockToDamage; }
 
     // ==================== 辅助方法 ====================
 
