@@ -35,7 +35,6 @@ public class GameConfigController {
     @Autowired
     private RelicPoolService relicPoolService;
 
-    // 🆕 注入 SaveService 用于读写地图存档
     @Autowired
     private SaveService saveService;
 
@@ -45,7 +44,6 @@ public class GameConfigController {
 
     @GetMapping("/map")
     public Map<String, Object> getMapData() {
-        // 🆕 1. 优先从全局存档中读取地图数据
         SaveData saveData = saveService.loadGame();
         if (saveData != null 
                 && saveData.getMapNodes() != null && !saveData.getMapNodes().isEmpty()
@@ -58,10 +56,8 @@ public class GameConfigController {
             return mapData;
         }
 
-        // 🆕 2. 存档中没有地图，生成新地图
         Map<String, Object> newMap = generateNewMap();
 
-        // 🆕 3. 将生成的地图数据写入全局存档
         if (saveData == null) {
             saveData = new SaveData();
         }
@@ -73,7 +69,6 @@ public class GameConfigController {
         return newMap;
     }
 
-    // 🆕 将原有的地图生成逻辑整体移入此私有方法
     private Map<String, Object> generateNewMap() {
         Map<String, Object> mapData = new LinkedHashMap<>();
         List<Map<String, Object>> nodes = new ArrayList<>();
@@ -180,10 +175,12 @@ public class GameConfigController {
         int shopCount = (int) Math.round(totalSpecialNodes * 0.05);
         int questionCount = (int) Math.round(totalSpecialNodes * 0.22);
         int eliteCount = (int) Math.round(totalSpecialNodes * 0.08);
-        int monsterCount = totalSpecialNodes - shopCount - questionCount - eliteCount;
+        int campfireCount = (int) Math.round(totalSpecialNodes * 0.04);
+        if (campfireCount < 1) campfireCount = 1;
+        int monsterCount = totalSpecialNodes - shopCount - questionCount - eliteCount - campfireCount;
 
         int remainingShop = shopCount;
-        int remainingCampfire = 0;  
+        int remainingCampfire = campfireCount;
         int remainingQuestion = questionCount;
         int remainingElite = eliteCount;
         int remainingMonster = monsterCount;
@@ -233,7 +230,7 @@ public class GameConfigController {
 
                 String type = rollBucketType(floorIdx,
                         remainingShop, remainingCampfire, remainingQuestion, remainingElite, remainingMonster,
-                        forbidShop, true, forbidEliteCont, forbidElite);
+                        forbidShop, false, forbidEliteCont, forbidElite);
                 switch (type) {
                     case "shop":     remainingShop--; break;
                     case "campfire": remainingCampfire--; break;
