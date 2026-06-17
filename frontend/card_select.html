@@ -71,8 +71,14 @@
           });
           
           await saveSaveData(saveData);
-          alert(`获得卡牌：${card.name}`);
-          window.location.href = `reward.html?${query}&gotCard=1`;
+          window.showModal(`获得卡牌：${card.name}`, {
+            title: '🃏 获得卡牌',
+            icon: '🃏',
+            borderColor: '#f1c40f',
+            onClose: function() {
+              window.location.href = `reward.html?${query}&gotCard=1`;
+            }
+          });
         });
         listDiv.appendChild(div);
       });

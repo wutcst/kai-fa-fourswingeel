@@ -354,7 +354,7 @@ fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}
           if (healTimes > 0) {
             const healAmt = healTimes * 10;
             saveData.playerHp = Math.min((saveData.playerHp || 0) + healAmt, saveData.maxHp || 70);
-            alert(`💊 累计金币突破 ${Math.floor(after / 100) * 100}，恢复 ${healAmt} 点生命！`);
+            window.showModal(`累计金币突破 ${Math.floor(after / 100) * 100}，恢复 ${healAmt} 点生命！`, { title: '💰 金币回血', icon: '💊', borderColor: '#2ecc71' });
           }
           saveData.goldTotalEarned = after;
         }
@@ -367,7 +367,7 @@ fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}
 
         localGotGold = true;
 
-        alert(`获得 ${amount} 金币！`);
+        window.showModal(`获得 ${amount} 金币！`, { title: '💰 获取金币', icon: '💰', borderColor: '#f1c40f' });
 
         updateUrlParam('gotGold', '1');
 
@@ -410,7 +410,7 @@ fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}
 
         btn.textContent = `✅ 已获得 ${btn.dataset.relicName}`;
 
-        alert(`获得遗物：${btn.dataset.relicName}`);
+        window.showModal(`获得遗物：${btn.dataset.relicName}`, { title: '📿 获得遗物', icon: '📿', borderColor: '#9b59b6' });
 
         updateUrlParam('gotRelic', '1');
 

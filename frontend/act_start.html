@@ -121,9 +121,14 @@
           sessionStorage.removeItem(`mapData_act${nextAct}`);
           sessionStorage.removeItem(`mapData_act${nextAct - 1}`); // 顺便清理旧阶段地图
 
-          alert(`已获得 Boss 遗物：${option.name}！`);
-          // 跳转到地图
-          window.location.href = `map.html?char=${char}&act=${nextAct}&currentNode=start`;
+          window.showModal(`已获得 Boss 遗物：${option.name}！`, {
+            title: '🏆 获得 Boss 遗物',
+            icon: option.icon || '🏆',
+            borderColor: '#e67e22',
+            onClose: function() {
+              window.location.href = `map.html?char=${char}&act=${nextAct}&currentNode=start`;
+            }
+          });
         });
         listDiv.appendChild(div);
       });

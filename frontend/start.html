@@ -41,8 +41,14 @@
       const hasChosenStarterRelic = starterRelicIds.some(id => currentSaveData.relics.includes(id));
 
       if (hasChosenStarterRelic) {
-        alert('你已经选择过初始遗物了！');
-        window.location.href = `map.html?char=${char}&currentNode=${currentNode}`;
+        window.showModal('你已经选择过初始遗物了！', {
+          title: '已选择',
+          icon: '⚠️',
+          borderColor: '#e74c3c',
+          onClose: function() {
+            window.location.href = `map.html?char=${char}&currentNode=${currentNode}`;
+          }
+        });
         return;
       }
 
@@ -59,8 +65,10 @@
           name: '血之契约', icon: '🩸', desc: '失去 10 点生命，然后从卡组中删除两张牌。',
           action: () => {
             currentSaveData.playerHp = Math.max(1, currentSaveData.playerHp - 10);
-            alert('你失去了 10 点生命！');
-            startRemoveCards(2, 'neow_blood');
+            window.showModal('你失去了 10 点生命！', {
+              title: '🩸 血之契约', icon: '🩸', borderColor: '#e74c3c',
+              onClose: () => { startRemoveCards(2, 'neow_blood'); }
+            });
           }
         },
         {
@@ -93,8 +101,7 @@
 
       function startRemoveCards(countToRemove, relicId) {
         if (currentSaveData.deck.length === 0) {
-          alert('卡组为空，无法删除！'); 
-          finishStart(relicId); 
+          window.showModal('卡组为空，无法删除！', { title: '提示', icon: '⚠️', borderColor: '#e74c3c', onClose: () => finishStart(relicId) });
           return;
         }
 
@@ -121,8 +128,7 @@
               
               removed++;
               if (removed >= countToRemove) {
-                alert(`成功删除了 ${countToRemove} 张牌！`);
-                finishStart(relicId);
+                window.showModal(`成功删除了 ${countToRemove} 张牌！`, { title: '📜 净化完成', icon: '📜', borderColor: '#2ecc71', onClose: () => finishStart(relicId) });
               } else {
                 mainDiv.querySelector('h3').innerText = `点击卡牌将其删除（还需删除 ${countToRemove - removed} 张）`;
                 renderDeckForRemoval();
@@ -137,8 +143,7 @@
       function startUpgradeCard(relicId) {
         const upgradeable = currentSaveData.deck.filter(card => !card.upgraded);
         if (upgradeable.length === 0) {
-          alert('没有可升级的卡牌！'); 
-          finishStart(relicId); 
+          window.showModal('没有可升级的卡牌！', { title: '提示', icon: '⚠️', borderColor: '#e74c3c', onClose: () => finishStart(relicId) });
           return;
         }
 
@@ -164,15 +169,16 @@
                   const upgradedCardData = await resp.json();
                   currentSaveData.deck[index] = upgradedCardData;
                   await saveSaveData(currentSaveData);
-                  alert(`【${baseCard.name}】升级为【${upgradedCardData.name}】！`);
-                  finishStart(relicId);
+                  window.showModal(`【${baseCard.name}】升级为【${upgradedCardData.name}】！`, {
+                    title: '🔨 升级成功', icon: '🔨', borderColor: '#f1c40f', onClose: () => finishStart(relicId)
+                  });
                   return;
                 }
               } catch (e) {
                 console.warn('无法获取升级模板', e);
               }
             }
-            alert('无法升级该卡牌（缺少升级模板）');
+            window.showModal('该卡牌缺少升级模板，暂时无法升级', { title: '升级失败', icon: '❌', borderColor: '#e74c3c' });
           });
           cardListDiv.appendChild(div);
         });
@@ -194,8 +200,12 @@
         // ✅ 标记起点已完成，允许访问下一层
         localStorage.setItem('startRelicDone', 'true');
         
-        alert('初始遗物选择完毕，开始冒险吧！');
-        window.location.href = `map.html?char=${char}&currentNode=${currentNode}`;
+        window.showModal('初始遗物选择完毕，开始冒险吧！', {
+          title: '🏕️ 准备出发', icon: '⚔️', borderColor: '#f1c40f',
+          onClose: function() {
+            window.location.href = `map.html?char=${char}&currentNode=${currentNode}`;
+          }
+        });
       }
 
       renderRelics();
@@ -203,7 +213,7 @@
 
     initStartRoom().catch(err => {
       console.error("初始化房间失败:", err);
-      alert("加载存档失败，请检查控制台。");
+      window.showModal('请检查控制台获取详细信息', { title: '加载失败', icon: '❌', borderColor: '#e74c3c' });
     });
   </script>
 </body>

@@ -74,7 +74,7 @@
         await saveSaveData(saveData);
         
         document.getElementById('hp-display').textContent = `${saveData.playerHp}/${saveData.maxHp}`;
-        alert(`恢复了 ${heal} 点生命！`);
+        window.showModal(`恢复了 ${heal} 点生命！`, { title: '😴 休息恢复', icon: '💚', borderColor: '#2ecc71' });
         sessionStorage.setItem('campfireAction', 'sleep');
         disableAll();
         sleepBtn.textContent = '😴 已休息';
