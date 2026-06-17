@@ -216,10 +216,10 @@
     "type": "NORMAL",
     "maxHp": 48,
     "attackDamage": 8,
-    "description": "首回合随机：脆弱打击(8+脆弱2)/强化(全体+2力量)。不能连续两次同招。",
+    "description": "首回合随机：脆弱打击(8+脆弱2)/治愈(全体回6+力量2)。不能连续两次同招。",
     "intents": [
       { "type": "ATTACK", "value": 8, "desc": "脆弱打击", "applyStatusType": "FRAIL", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
-      { "type": "BUFF", "value": 0, "desc": "强化", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" }
+      { "type": "BUFF", "value": 0, "desc": "治愈", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ENEMY", "healAmount": 6 }
     ]
   },
   {

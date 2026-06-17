@@ -572,12 +572,34 @@ public class BattleService {
             if (actualDmg > 0) logList.add(String.format("⚔️ %s %s，造成 %d 点伤害。玩家 HP: %d | 格挡: %d", enemy.getEnemyName(), enemy.getIntentDesc(), actualDmg, player.getHp(), player.getBlock()));
             else logList.add(String.format("🛡️ %s %s", enemy.getEnemyName(), enemy.getIntentDesc()));
 
+            // 🆕 BUFF意图中的治疗：如果意图有heal字段，治疗所有敌人
             IntentTemplate intent = enemy.getCurrentIntentTemplate();
-            if (intent != null && intent.getApplyStatusType() != null) {
-                StatusEffect status = StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo);
-                if (status != null) {
-                    if ("ENEMY".equals(intent.getApplyStatusTarget())) enemy.addStatus(status);
-                    else player.addStatus(status);
+            if (intent != null) {
+                if (intent.getHealAmount() > 0) {
+                    for (Enemy ally : enemies) {
+                        if (ally.isAlive()) {
+                            ally.heal(intent.getHealAmount());
+                        }
+                    }
+                    logList.add("💚 " + enemy.getEnemyName() + "为所有敌人恢复了 " + intent.getHealAmount() + " 点生命");
+                }
+                if (intent.getApplyStatusType() != null) {
+                    StatusEffect status = StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo);
+                    if (status != null) {
+                        if ("ENEMY".equals(intent.getApplyStatusTarget())) {
+                            // 给所有敌方加buff（神秘术士的群体强化/治愈）
+                            for (Enemy ally : enemies) {
+                                ally.addStatus(StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo));
+                            }
+                            logList.add("✨ " + enemy.getEnemyName() + "为所有敌人施加了 " + intent.getApplyStatusCount() + " 层" + status.getName());
+                        } else if ("PLAYER".equals(intent.getApplyStatusTarget()) || "SELF".equals(intent.getApplyStatusTarget())) {
+                            // 修正：给玩家施加debuff（PLAYER目标）
+                            player.addStatus(StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo));
+                            logList.add("☠️ " + enemy.getEnemyName() + "对玩家施加了 " + intent.getApplyStatusCount() + " 层" + status.getName());
+                        } else {
+                            enemy.addStatus(status);
+                        }
+                    }
                 }
             }
 
