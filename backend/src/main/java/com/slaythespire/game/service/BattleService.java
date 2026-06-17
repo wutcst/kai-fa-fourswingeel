@@ -206,6 +206,17 @@ public class BattleService {
             energy -= card.getCost();
         }
 
+        // 🆕 熔火之怒：每打出一张牌，随机敌人受2点伤害
+        if (RelicEffectHandler.hasEffect(player, "MOLTEN_FURY")) {
+            List<Enemy> alive = getAliveEnemies();
+            if (!alive.isEmpty()) {
+                Enemy target = alive.get(new Random().nextInt(alive.size()));
+                int dmg = target.takeDamage(2, player);
+                logList.addAll(target.getLastCombatLogs());
+                logList.add("🔥 熔火之怒对 " + target.getEnemyName() + " 造成 " + dmg + " 点伤害");
+            }
+        }
+
         // 🆕 地精大块头被动：玩家打出技能牌时，激怒敌人
         if (card.getType() == Card.CardType.SKILL) {
             for (Enemy e : enemies) {
