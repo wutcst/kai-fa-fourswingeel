@@ -114,7 +114,7 @@
         <button v-for="(card, index) in hand" :key="index" @click="previewCard(index)" :disabled="!canPlayCard(card) || state.gameOver" :class="['card-btn', { 'disabled': !canPlayCard(card), 'attack': card.type === 'ATTACK', 'skill': card.type === 'SKILL', 'power': card.type === 'POWER' }]" :style="{ background: getCardCharStyle(card), borderColor: getRarityBorderColor(card), borderWidth: '3px', opacity: card.unplayable ? 0.6 : 1 }" @mouseenter="showTooltip(index, $event)" @mouseleave="hideTooltip">
           <span class="cost">{{ card.xCost ? 'X' : card.cost }}</span>
           <span class="name">{{ card.name }}</span>
-          <span class="card-type-label">{{ card.type === 'ATTACK' ? '攻击' : card.type === 'SKILL' ? '技能' : '能力' }}</span>
+          <span class="card-type-label">{{ card.type === 'ATTACK' ? '攻击' : card.type === 'SKILL' ? '技能' : card.type === 'POWER' ? '能力' : '状态' }}</span>
           <span class="card-effect-text">{{ getCardEffectText(card) }}</span>
           <span v-if="card.unplayable" class="card-badge badge-unplayable">🚫 无法打出</span>
           <span v-else>

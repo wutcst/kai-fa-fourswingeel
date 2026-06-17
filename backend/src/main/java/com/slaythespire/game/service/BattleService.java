@@ -30,6 +30,36 @@ public class BattleService {
     private boolean hasDealtDamageThisTurn; // 魔力花：本回合是否已造成过伤害
     private boolean exhaustedThisAction;   // 本次操作是否消耗了卡牌（安东尼之怒）
 
+    // 🔥 简单状态牌模板（晕眩、灼伤）
+    private static class StatusCardTemplate {
+        String name;
+        int cost;
+        boolean ethereal;
+        boolean unplayable;
+        StatusCardTemplate(String name, int cost, boolean ethereal, boolean unplayable) {
+            this.name = name; this.cost = cost; this.ethereal = ethereal; this.unplayable = unplayable;
+        }
+    }
+    private static final Map<String, StatusCardTemplate> STATUS_CARD_TEMPLATES = new HashMap<>();
+    static {
+        STATUS_CARD_TEMPLATES.put("burn", new StatusCardTemplate("灼伤", 1, false, false));
+        STATUS_CARD_TEMPLATES.put("dazed", new StatusCardTemplate("晕眩", 0, true, true));
+        STATUS_CARD_TEMPLATES.put("wound", new StatusCardTemplate("伤口", 1, false, false));
+        STATUS_CARD_TEMPLATES.put("slime", new StatusCardTemplate("黏液", 1, false, false));
+    }
+
+    /** 向抽牌堆中塞入一张状态牌 */
+    public void addStatusCardToDrawPile(String type) {
+        StatusCardTemplate tpl = STATUS_CARD_TEMPLATES.get(type);
+        if (tpl == null) return;
+        // 构造一张简单卡片对象
+        Card card = new Card(tpl.name, tpl.cost, 0, 0, Card.CardType.STATUS);
+        if (tpl.ethereal) card.setEthereal(true);
+        if (tpl.unplayable) card.setUnplayable(true);
+        drawPile.add(new Random().nextInt(drawPile.size() + 1), card); // 随机位置洗入
+        logList.add("🃏 一张【" + tpl.name + "】被洗入抽牌堆");
+    }
+
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp, String nodeType) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
         this.player.resetBattleFlags();
@@ -83,7 +113,12 @@ public class BattleService {
         this.enemies = new ArrayList<>();
         for (String eid : chosenGroup.getEnemies()) {
             EnemyTemplate tpl = dataRepo.getEnemyById(eid);
-            if (tpl != null) enemies.add(new Enemy(tpl, dataRepo));
+            if (tpl != null) {
+                Enemy e = new Enemy(tpl, dataRepo);
+                // 绑定塞牌回调
+                e.setDrawer(cardType -> addStatusCardToDrawPile(cardType));
+                enemies.add(e);
+            }
         }
         if (enemies.isEmpty()) {
             List<EnemyTemplate> all = dataRepo.getAllEnemies();

@@ -2,6 +2,8 @@ package com.slaythespire.game.model;
 
 import com.slaythespire.repository.GameDataRepository;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class Player extends Combatant {
     private int energy;
@@ -41,7 +43,6 @@ public class Player extends Combatant {
     @Override
     public void onTurnStart() {
         actualDamageTakenThisTurn = 0;
-        // 🆕 阿斯加德之庇护：保留上回合格挡
         boolean hasAsgard = false;
         for (Relic r : relics) {
             if (r instanceof GameRelic && "ASGARD_PROTECTION".equals(((GameRelic) r).getEffectType())) {
@@ -56,19 +57,20 @@ public class Player extends Combatant {
             addTurnStartLog(s.onTurnStart(this));
         }
 
-        // 遗物效果统一由 RelicEffectHandler 处理
         RelicEffectHandler.onPlayerTurnStart(this);
+    }
+
+    /** 🔥 向抽牌堆中洗入状态牌（晕眩、灼伤、伤口等） */
+    public void addCardToDrawPile(String cardType) {
+        // 由 BattleService 实现具体塞牌逻辑，这里作为标记接口
     }
 
     /** 添加状态牌（灼伤、晕眩等）到玩家的弃牌堆/手中 */
     public void addStatusCard(String statusCardType) {
-        // 状态牌暂为简化实现：直接造成伤害或效果
         if ("burn".equals(statusCardType)) {
-            // 灼伤：可考虑在未来实现为牌堆中的负面状态牌
             this.takeDamage(2, null, false);
         } else if ("dazed".equals(statusCardType)) {
-            // 晕眩：目前简化实现，后续可扩展为塞入弃牌堆
-            // 空实现，作为占位
+            // 空实现，通过 BattleService 直接塞入抽牌堆
         }
     }
 

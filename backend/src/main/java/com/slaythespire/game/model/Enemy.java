@@ -6,19 +6,19 @@ import com.slaythespire.repository.GameDataRepository;
 import com.slaythespire.repository.IntentTemplate;
 import com.slaythespire.repository.IntentType;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Consumer;
 
 public class Enemy extends Combatant {
     private String name;
-    private String enemyType;   // NORMAL, ELITE, BOSS
+    private String enemyType;
     private final List<IntentTemplate> intentSequence;
     private int currentTurn;
     private IntentTemplate currentIntent;
     private GameDataRepository dataRepo;
-    private boolean hexaghostFirstCycleDone = false;
-    private int hexCyclePosition = 0;
+    private int lastIntentIndex = -1;
+    private int consecutiveSameIntent = 0;
+    private Consumer<String> drawer; // 回调：向抽牌堆塞牌
 
     public Enemy(EnemyTemplate template, GameDataRepository dataRepo) {
         super(template.getMaxHp(), template.getMaxHp());
@@ -37,6 +37,9 @@ public class Enemy extends Combatant {
         updateCurrentIntent();
     }
 
+    /** 设置塞牌回调（由 BattleService 在创建敌人后调用） */
+    public void setDrawer(Consumer<String> drawer) { this.drawer = drawer; }
+
     public String getEnemyType() { return enemyType; }
 
     @Override
@@ -46,9 +49,7 @@ public class Enemy extends Combatant {
     public void onTurnStart() {
         actualDamageTakenThisTurn = 0;
         clearBlock();
-        turnStartLogs.clear(); // 使用父类的 protected 字段
-        
-        // ✅ 遍历副本防止并发修改异常
+        turnStartLogs.clear();
         for (StatusEffect s : new ArrayList<>(statuses)) {
             addTurnStartLog(s.onTurnStart(this));
         }
@@ -61,18 +62,16 @@ public class Enemy extends Combatant {
 
         if (type == IntentType.ATTACK) {
             int result = target.takeDamage(currentIntent.getValue(), this);
-            // 塞牌：灼伤/晕眩等（仅在战斗内生效）
-            if (!currentIntent.isSkipBurnCards() && currentIntent.getBurnCards() > 0) {
-                if (target instanceof Player) {
+            if (target instanceof Player) {
+                Player p = (Player) target;
+                if (!currentIntent.isSkipBurnCards() && currentIntent.getBurnCards() > 0) {
                     for (int i = 0; i < currentIntent.getBurnCards(); i++) {
-                        ((Player)target).addStatusCard("burn");
+                        if (drawer != null) drawer.accept("burn");
                     }
                 }
-            }
-            if (currentIntent.getStunCards() > 0) {
-                if (target instanceof Player) {
+                if (currentIntent.getStunCards() > 0) {
                     for (int i = 0; i < currentIntent.getStunCards(); i++) {
-                        ((Player)target).addStatusCard("dazed");
+                        if (drawer != null) drawer.accept("dazed");
                     }
                 }
             }
@@ -104,11 +103,17 @@ public class Enemy extends Combatant {
             for (int i = 0; i < hitCount; i++) {
                 totalDmg += target.takeDamage(dmg, this);
             }
-            // 地狱火特殊：第一次不塞灼伤，skipBurnCards标记处理
-            if (!currentIntent.isSkipBurnCards() && currentIntent.getBurnCards() > 0) {
-                if (target instanceof Player) {
+            // 🆕 塞牌逻辑
+            if (target instanceof Player) {
+                Player p = (Player) target;
+                if (!currentIntent.isSkipBurnCards() && currentIntent.getBurnCards() > 0) {
                     for (int i = 0; i < currentIntent.getBurnCards(); i++) {
-                        ((Player)target).addStatusCard("burn");
+                        if (drawer != null) drawer.accept("burn");
+                    }
+                }
+                if (currentIntent.getStunCards() > 0) {
+                    for (int i = 0; i < currentIntent.getStunCards(); i++) {
+                        if (drawer != null) drawer.accept("dazed");
                     }
                 }
             }
@@ -117,17 +122,16 @@ public class Enemy extends Combatant {
         if (type == IntentType.DEBUFF) {
             int stunCards = currentIntent.getStunCards();
             int burnCards = currentIntent.getBurnCards();
-            if (burnCards > 0) {
-                if (target instanceof Player) {
+            if (target instanceof Player) {
+                Player p = (Player) target;
+                if (burnCards > 0) {
                     for (int i = 0; i < burnCards; i++) {
-                        ((Player)target).addStatusCard("burn");
+                        if (drawer != null) drawer.accept("burn");
                     }
                 }
-            }
-            if (stunCards > 0) {
-                if (target instanceof Player) {
+                if (stunCards > 0) {
                     for (int i = 0; i < stunCards; i++) {
-                        ((Player)target).addStatusCard("dazed");
+                        if (drawer != null) drawer.accept("dazed");
                     }
                 }
             }
@@ -150,7 +154,6 @@ public class Enemy extends Combatant {
         if (currentIntent.getType() == IntentType.ATTACK || currentIntent.getType() == IntentType.MULTI_ATTACK) {
             int dmg = currentIntent.getValue();
             if (currentIntent.isHpScaling()) {
-                // hpScaling由execute时动态计算，预览时用近似值
                 dmg = Math.max(1, 6);
             }
             if (currentIntent.getType() == IntentType.MULTI_ATTACK) {
@@ -175,16 +178,63 @@ public class Enemy extends Combatant {
             return;
         }
 
+        int size = intentSequence.size();
+
+        // === 第1回合：固定使用 intents[0] ===
         if (currentTurn == 0) {
             this.currentIntent = intentSequence.get(0);
-        } else {
-            int remainingSize = intentSequence.size() - 1;
-            if (remainingSize <= 0) {
-                this.currentIntent = null;
-                return;
-            }
-            int index = 1 + ((currentTurn - 1) % remainingSize);
-            this.currentIntent = intentSequence.get(index);
+            this.lastIntentIndex = 0;
+            this.consecutiveSameIntent = 1;
+            return;
         }
+
+        // === 第2回合起 ===
+        // 特殊规则：如果 intents 只有1个元素，固定使用它
+        if (size == 1) {
+            this.currentIntent = intentSequence.get(0);
+            this.lastIntentIndex = 0;
+            return;
+        }
+
+        Random random = new Random();
+
+        // 尝试从 intents[1] 开始随机选，避开不能选的
+        List<Integer> candidates = new ArrayList<>();
+        for (int i = 1; i < size; i++) {
+            candidates.add(i);
+        }
+
+        // 过滤：不能连续使用的规则
+        List<Integer> validCandidates = new ArrayList<>();
+        for (int idx : candidates) {
+            if (shouldSkipIntent(idx)) continue;
+            validCandidates.add(idx);
+        }
+
+        // 如果所有候选都被过滤了，放宽限制
+        if (validCandidates.isEmpty()) {
+            validCandidates = candidates;
+        }
+
+        int chosenIndex = validCandidates.get(random.nextInt(validCandidates.size()));
+
+        // 更新连续计数
+        if (chosenIndex == lastIntentIndex) {
+            consecutiveSameIntent++;
+        } else {
+            consecutiveSameIntent = 1;
+        }
+
+        this.currentIntent = intentSequence.get(chosenIndex);
+        this.lastIntentIndex = chosenIndex;
+    }
+
+    /** 判断某个意图索引是否应该被跳过 */
+    private boolean shouldSkipIntent(int idx) {
+        if (idx == lastIntentIndex) {
+            // 不能连续两次同招
+            if (consecutiveSameIntent >= 1) return true;
+        }
+        return false;
     }
 }
