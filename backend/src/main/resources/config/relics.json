@@ -15,6 +15,18 @@
   { "id": "neow_upgrade", "name": "锻造圣锤", "description": "初始恩惠：升级卡组中的一张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },
   { "id": "snake_eye_ring", "name": "蛇眼戒指", "description": "每场战斗的第一回合，多抽2张牌。", "effectType": "FIRST_DRAW_BONUS", "value": 2, "rarity": "STARTER", "charId": "2" },
 
+  { "id": "heal_badge", "name": "回复徽章", "description": "每回合开始时，恢复 2 点生命。", "effectType": "HEAL_START_TURN", "value": 2, "rarity": "COMMON", "charId": null },
+  { "id": "iron_amulet", "name": "铁壁护符", "description": "每回合开始时，获得 2 点格挡。", "effectType": "BLOCK_START_TURN", "value": 2, "rarity": "COMMON", "charId": null },
+  { "id": "power_shard", "name": "力量碎片", "description": "最大生命值 +5。", "effectType": "MAX_HP", "value": 5, "rarity": "COMMON", "charId": null },
+  { "id": "light_boots", "name": "轻灵靴", "description": "每回合结束时，获得 4 点格挡。", "effectType": "BLOCK_END_TURN", "value": 4, "rarity": "COMMON", "charId": null },
+
+  { "id": "life_spring", "name": "生命之泉", "description": "每回合结束时，恢复 3 点生命。", "effectType": "HEAL_END_TURN", "value": 3, "rarity": "RARE", "charId": null },
+  { "id": "thorn_armor", "name": "荆棘铠甲", "description": "受到攻击时，对攻击者造成 5 点伤害。", "effectType": "THORNS", "value": 5, "rarity": "RARE", "charId": null },
+  { "id": "rage_blood", "name": "血怒", "description": "每回合最多失去 25 点生命。", "effectType": "DAMAGE_CAP_PER_TURN", "value": 25, "rarity": "RARE", "charId": null },
+
+  { "id": "lucky_dice", "name": "幸运骰子", "description": "每回合第一次抽牌多抽 2 张。", "effectType": "FIRST_DRAW_BONUS", "value": 2, "rarity": "LEGENDARY", "charId": null },
+  { "id": "dragon_scale", "name": "龙鳞", "description": "每回合开始时，恢复 4 点生命。", "effectType": "HEAL_START_TURN", "value": 4, "rarity": "LEGENDARY", "charId": null },
+
   { "id": "energy_cube", "name": "能量方块", "description": "每回合获得 1 点额外能量。", "effectType": "ENERGY_PER_TURN", "value": 1, "rarity": "BOSS", "charId": null },
   { "id": "rune_cube", "name": "符文立方体", "description": "每回合多抽 1 张牌。", "effectType": "DRAW_PER_TURN", "value": 1, "rarity": "BOSS", "charId": null },
   { "id": "chaos_core", "name": "混沌之核", "description": "战斗开始时获得 3 层力量。", "effectType": "STRENGTH_START_BATTLE", "value": 3, "rarity": "BOSS", "charId": null },
