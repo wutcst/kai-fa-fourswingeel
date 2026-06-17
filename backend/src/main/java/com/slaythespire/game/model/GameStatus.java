@@ -60,18 +60,39 @@ public class GameStatus implements StatusEffect {
         return null;
     }
 
-    // ✅ 原有的：处理回合结束时的效果（如毒、再生）
+    // 处理回合结束时的效果（毒、再生、多层护甲）
     @Override
     public String onTurnEnd(Combatant owner) {
         if ("TURN_END_DAMAGE".equals(effectType)) {
             int dmg = (int) (value * count);
-            owner.takeDamage(dmg, null, true); 
+            owner.takeDamage(dmg, null, true);
             return "☠️ " + name + "发作，造成 " + dmg + " 点伤害";
         }
         if ("TURN_END_HEAL".equals(effectType)) {
             int healAmount = (int) (value * count);
             owner.heal(healAmount);
             return "🌿 " + name + "恢复 " + healAmount + " 点生命";
+        }
+        // 🆕 多层护甲：回合结束时获得等量格挡
+        if ("GAIN_BLOCK_PER_TURN".equals(effectType)) {
+            int blockAmt = (int) (value * count);
+            if (blockAmt > 0) {
+                owner.gainBlock(blockAmt);
+                return "🛡️ " + name + "提供 " + blockAmt + " 点格挡";
+            }
+        }
+        return null;
+    }
+
+    // 🆕 受到生命伤害时减少层数（多层护甲、分裂判断等）
+    @Override
+    public String onHpLost(Combatant owner) {
+        if ("GAIN_BLOCK_PER_TURN".equals(effectType)) {
+            // 多层护甲：每次受到生命伤害减少1层
+            count--;
+            if (count <= 0) {
+                return "💔 " + name + "被击破！";
+            }
         }
         return null;
     }

@@ -215,7 +215,8 @@
     "type": "NORMAL",
     "maxHp": 68,
     "attackDamage": 6,
-    "description": "首回合随机：双击(6×2)/汲取(10)。后续三招随机，不能连续三次同招。",
+    "description": "双击(6×2)、汲取(10)、脆弱打击(18+脆弱2)。自带14层多层护甲。",
+    "initialStatuses": { "PLATED_ARMOR": 14 },
     "intents": [
       { "type": "MULTI_ATTACK", "value": 6, "desc": "双击", "multiHit": 2 },
       { "type": "ATTACK", "value": 10, "desc": "汲取" },
