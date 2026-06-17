@@ -62,6 +62,10 @@ public class EventService {
      * @return 执行结果（成功/失败消息）
      */
     public String executeOption(String eventId, int optionIndex, String charId) {
+        return executeOption(eventId, optionIndex, charId, null);
+    }
+
+    public String executeOption(String eventId, int optionIndex, String charId, List<Integer> cardIndices) {
         // 查找事件
         EventTemplate event = events.stream().filter(e -> e.getId().equals(eventId)).findFirst().orElse(null);
         if (event == null) return "事件不存在";
@@ -139,6 +143,31 @@ public class EventService {
                         logs.add("删除了 " + removed + " 张卡牌: " + String.join(", ", removedNames));
                     } else {
                         logs.add("卡组为空，没有可删除的卡牌");
+                    }
+                    break;
+                }
+                case "CHOOSE_REMOVE_CARD": {
+                    int count = effect.get("count") != null ? ((Number) effect.get("count")).intValue() : 1;
+                    List<Map<String, Object>> deck = saveData.getDeck();
+                    int removed = 0;
+                    List<String> removedNames = new ArrayList<>();
+                    if (cardIndices != null && !cardIndices.isEmpty()) {
+                        // 按索引降序排列，从后往前删避免下标偏移
+                        List<Integer> sorted = new ArrayList<>(cardIndices);
+                        sorted.sort(Collections.reverseOrder());
+                        for (int idx : sorted) {
+                            if (idx >= 0 && idx < deck.size()) {
+                                Map<String, Object> card = deck.remove(idx);
+                                String name = (String) card.getOrDefault("name", "未知卡牌");
+                                removedNames.add(name);
+                                removed++;
+                            }
+                        }
+                    }
+                    if (removed > 0) {
+                        logs.add("选择性删除了 " + removed + " 张卡牌: " + String.join(", ", removedNames));
+                    } else {
+                        logs.add("未选择任何卡牌");
                     }
                     break;
                 }
