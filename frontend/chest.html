@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>宝箱</title>
+  <script src="card_ui.js"></script>
   <style>
     body {
       background: #1a1a2e; display: flex; flex-direction: column;
@@ -27,7 +28,7 @@
 <script>
   const params = new URLSearchParams(window.location.search);
   const char = params.get('char') || '1';
-  const currentNode = params.get('currentNode') || '';
+  const currentNode = params.get('currentNode') || 'start';
   const nextNode = params.get('nextNode') || currentNode;
   const act = params.get('act') || '1';
 

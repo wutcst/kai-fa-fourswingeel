@@ -10,6 +10,7 @@
 
   <title>奖励</title>
 
+  <script src="card_ui.js"></script>
   <script src="save_helper.js"></script>
 
   <style>
@@ -346,6 +347,18 @@ fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}
         const saveData = await loadSaveData(char);
 
         saveData.gold += amount;
+        // gxyy：累计金币回血（每100金回10血）
+        if ((saveData.relics || []).includes('gxyy')) {
+          const before = saveData.goldTotalEarned || 0;
+          const after = before + amount;
+          const healTimes = Math.floor(after / 100) - Math.floor(before / 100);
+          if (healTimes > 0) {
+            const healAmt = healTimes * 10;
+            saveData.playerHp = Math.min((saveData.playerHp || 0) + healAmt, saveData.maxHp || 70);
+            window.showModal(`累计金币突破 ${Math.floor(after / 100) * 100}，恢复 ${healAmt} 点生命！`, { title: '💰 金币回血', icon: '💊', borderColor: '#2ecc71' });
+          }
+          saveData.goldTotalEarned = after;
+        }
 
         // 🆕 保留 act
 
@@ -355,7 +368,7 @@ fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}
 
         localGotGold = true;
 
-        alert(`获得 ${amount} 金币！`);
+        window.showModal(`获得 ${amount} 金币！`, { title: '💰 获取金币', icon: '💰', borderColor: '#f1c40f' });
 
         updateUrlParam('gotGold', '1');
 
@@ -367,7 +380,7 @@ fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}
 
         const saveData = await loadSaveData(char);
 
-        saveData.relics.push(relicId);
+        if (!saveData.relics.includes(relicId)) saveData.relics.push(relicId);
 
         if (effectType === 'MAX_HP' && value > 0) {
 
@@ -376,6 +389,16 @@ fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}
           saveData.playerHp = Math.min((saveData.playerHp || saveData.maxHp) + value, saveData.maxHp);
 
         }
+        // 拾起回血遗物
+        // 拾起金币遗物
+        if (relicId === 'small_gold_bag') saveData.gold = (saveData.gold || 0) + 50;
+        if (relicId === 'treasure_bag') saveData.gold = (saveData.gold || 0) + 150;
+        if (relicId === 'ancient_coin') saveData.gold = (saveData.gold || 0) + 500;
+        if (relicId === 'small_blood') saveData.playerHp = Math.min((saveData.playerHp || 0) + 10, saveData.maxHp);
+        if (relicId === 'apple') saveData.playerHp = Math.min((saveData.playerHp || 0) + 5, saveData.maxHp);
+        if (relicId === 'pear') saveData.playerHp = Math.min((saveData.playerHp || 0) + 20, saveData.maxHp);
+        if (relicId === 'waffle') saveData.playerHp = saveData.maxHp;
+        if (relicId === 'jiucai_anger') window.showModal('怪物太难都是九才8干的，大家一起骂他', { title: '😡 九才8之怒', icon: '😡', borderColor: '#e74c3c' });
 
         if (saveData.act === undefined) saveData.act = 1;
 
@@ -389,7 +412,7 @@ fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}
 
         btn.textContent = `✅ 已获得 ${btn.dataset.relicName}`;
 
-        alert(`获得遗物：${btn.dataset.relicName}`);
+        window.showModal(`获得遗物：${btn.dataset.relicName}`, { title: '📿 获得遗物', icon: '📿', borderColor: '#9b59b6' });
 
         updateUrlParam('gotRelic', '1');
 
@@ -403,7 +426,7 @@ fetch(`/api/reward?nodeType=${encodeURIComponent(nodeType)}&ownedRelics=${owned}
 
         const query =
 `char=${encodeURIComponent(char)}&prevNode=${encodeURIComponent(prevNode)}&nextNode=${encodeURIComponent(nextNode)}&node
-Type=${encodeURIComponent(nodeType)}&gotGold=${localGotGold ? '1' : '0'}&gotRelic=${localGotRelic ? '1' : '0'}`;
+Type=${encodeURIComponent(nodeType)}&act=${encodeURIComponent(act)}&gotGold=${localGotGold ? '1' : '0'}&gotRelic=${localGotRelic ? '1' : '0'}`;
 
         window.location.href = `card_select.html?${query}`;
 
@@ -455,10 +478,8 @@ Type=${encodeURIComponent(nodeType)}&gotGold=${localGotGold ? '1' : '0'}&gotReli
 
       }
 
-
-
-      if (nodeType === 'elite' || nodeType === 'chest' || nodeType === 'boss') {
-
+      // Boss 战不给普通遗物，通过独立的三选一界面发放 Boss 遗物
+      if (nodeType === 'elite' || nodeType === 'chest') {
         (reward.relics || []).forEach((relicData) => {
 
           if (!relicData) return;

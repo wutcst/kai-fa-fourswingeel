@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>篝火</title>
+  <script src="card_ui.js"></script>
   <script src="save_helper.js"></script>
   <style>
     body {
@@ -50,7 +51,7 @@
       const nextNode = params.get('nextNode') || currentNode;
       const act = params.get('act') || '1';
 
-      const charIcons = { '1': '🦾', '2': '❓' };
+      const charIcons = { '1': '🦾', '2': '🔪' };
       document.getElementById('char-icon').textContent = charIcons[char] || '🦾';
 
       // 从后端加载最新存档
@@ -74,7 +75,7 @@
         await saveSaveData(saveData);
         
         document.getElementById('hp-display').textContent = `${saveData.playerHp}/${saveData.maxHp}`;
-        alert(`恢复了 ${heal} 点生命！`);
+        window.showModal(`恢复了 ${heal} 点生命！`, { title: '😴 休息恢复', icon: '💚', borderColor: '#2ecc71' });
         sessionStorage.setItem('campfireAction', 'sleep');
         disableAll();
         sleepBtn.textContent = '😴 已休息';

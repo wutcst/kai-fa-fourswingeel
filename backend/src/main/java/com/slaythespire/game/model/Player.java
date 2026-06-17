@@ -7,6 +7,10 @@ public class Player extends Combatant {
     private int energy;
     private GameDataRepository dataRepo;
 
+    // ================ 每场战斗生命周期标志（Boss 遗物相关） ================
+    private boolean firstDamageTakenThisBattle = false;
+    private boolean deathSaveUsedThisBattle = false;
+
     public Player(int hp, int maxHp, GameDataRepository dataRepo) {
         super(hp, maxHp);
         this.dataRepo = dataRepo;
@@ -17,13 +21,35 @@ public class Player extends Combatant {
     public void resetEnergy() { this.energy = 3; }
     public void useEnergy(int cost) { this.energy -= cost; }
 
+    /** 每场战斗开始前调用，重置一次性的遗物效果标志 */
+    public void resetBattleFlags() {
+        this.firstDamageTakenThisBattle = false;
+        this.deathSaveUsedThisBattle = false;
+    }
+
+    // ----- FIRST_HIT_HEAL 灵魂之炉 -----
+    public boolean isFirstDamageTakenThisBattle() { return firstDamageTakenThisBattle; }
+    public void markFirstDamageTaken() { this.firstDamageTakenThisBattle = true; }
+
+    // ----- DEATH_SAVE 凤凰之羽 -----
+    public boolean isDeathSaveUsedThisBattle() { return deathSaveUsedThisBattle; }
+    public void markDeathSaveUsed() { this.deathSaveUsedThisBattle = true; }
+
     @Override
     public GameDataRepository getDataRepo() { return this.dataRepo; }
 
     @Override
     public void onTurnStart() {
         actualDamageTakenThisTurn = 0;
-        clearBlock();
+        // 🆕 阿斯加德之庇护：保留上回合格挡
+        boolean hasAsgard = false;
+        for (Relic r : relics) {
+            if (r instanceof GameRelic && "ASGARD_PROTECTION".equals(((GameRelic) r).getEffectType())) {
+                hasAsgard = true;
+                break;
+            }
+        }
+        if (!hasAsgard) clearBlock();
         turnStartLogs.clear();
 
         for (StatusEffect s : new ArrayList<>(statuses)) {

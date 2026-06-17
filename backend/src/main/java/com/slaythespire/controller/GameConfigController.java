@@ -132,11 +132,8 @@ public class GameConfigController {
 
                 double yPercent = 95.0 - floorIdx * (93.0 / BOSS_FLOOR);
                 double xPercent;
-                if (count == 1) {
-                    xPercent = 50.0;
-                } else {
-                    xPercent = 5.0 + 90.0 * k / (count - 1);
-                }
+                double dell= 15*(count-1)/2.0;
+                xPercent= 50.0 - dell + k * 15.0;
                 childNode.put("x", xPercent);
                 childNode.put("y", yPercent);
 
@@ -172,10 +169,10 @@ public class GameConfigController {
             totalSpecialNodes += nodeCount[floorIdx];
         }
 
-        int shopCount = (int) Math.round(totalSpecialNodes * 0.05);
-        int questionCount = (int) Math.round(totalSpecialNodes * 0.22);
-        int eliteCount = (int) Math.round(totalSpecialNodes * 0.08);
-        int campfireCount = (int) Math.round(totalSpecialNodes * 0.04);
+        int shopCount = (int) Math.round(totalSpecialNodes * 0.08);
+        int questionCount = (int) Math.round(totalSpecialNodes * 0.24);
+        int eliteCount = (int) Math.round(totalSpecialNodes * 0.11);
+        int campfireCount = (int) Math.round(totalSpecialNodes * 0.12);
         if (campfireCount < 1) campfireCount = 1;
         int monsterCount = totalSpecialNodes - shopCount - questionCount - eliteCount - campfireCount;
 

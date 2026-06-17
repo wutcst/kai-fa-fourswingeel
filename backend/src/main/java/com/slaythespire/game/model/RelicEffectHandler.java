@@ -8,9 +8,17 @@ import com.slaythespire.game.model.factory.StatusFactory;
  */
 public class RelicEffectHandler {
 
+    /** 🪶 凤凰之羽：整局游戏仅触发一次的全局标记 */
+    private static boolean deathSaveUsedInRun = false;
+
+    public static boolean isDeathSaveUsedInRun() { return deathSaveUsedInRun; }
+    public static void markDeathSaveUsedInRun() { deathSaveUsedInRun = true; }
+    public static void resetDeathSaveInRun() { deathSaveUsedInRun = false; }
+
     /** 玩家回合开始时触发 */
     public static void onPlayerTurnStart(Player player) {
         for (Relic r : player.getRelics()) {
+            if (!(r instanceof GameRelic)) continue;
             GameRelic gr = (GameRelic) r;
             switch (gr.getEffectType()) {
                 case "HEAL_START_TURN" -> player.heal(gr.getValue());
@@ -24,6 +32,14 @@ public class RelicEffectHandler {
                         }
                     }
                 }
+                // 🆕 Boss 遗物：无限之石 — 每回合开始获得 1 层敏捷
+                case "DEXTERITY_PER_TURN" -> {
+                    StatusEffect dex = StatusFactory.create("DEXTERITY", gr.getValue(), player.getDataRepo());
+                    if (dex != null) {
+                        player.addStatus(dex);
+                        player.addTurnStartLog("🪨 无限之石触发，获得 " + gr.getValue() + " 层敏捷");
+                    }
+                }
             }
         }
     }
@@ -31,6 +47,7 @@ public class RelicEffectHandler {
     /** 玩家回合结束时触发 */
     public static void onPlayerTurnEnd(Player player) {
         for (Relic r : player.getRelics()) {
+            if (!(r instanceof GameRelic)) continue;
             GameRelic gr = (GameRelic) r;
             switch (gr.getEffectType()) {
                 case "HEAL_END_TURN" -> player.heal(gr.getValue());

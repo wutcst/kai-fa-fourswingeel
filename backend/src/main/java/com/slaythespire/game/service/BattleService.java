@@ -25,9 +25,18 @@ public class BattleService {
     private List<String> logList;
     private boolean gameOver;
     private String winner;
+    private int attackCountThisTurn; // 本场战斗累计攻击牌计数（黄金戒指，跨回合累计）
+    private int skillCountCombat;    // 本场战斗累计技能牌计数（黄金项链，跨回合累计）
+    private boolean hasDealtDamageThisTurn; // 魔力花：本回合是否已造成过伤害
+    private boolean exhaustedThisAction;   // 本次操作是否消耗了卡牌（安东尼之怒）
 
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp, String nodeType) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
+        this.player.resetBattleFlags();
+        // 🆕 凤凰之羽全局重置：如果新开一局（遗物列表不含 phoenix_feather），重置重生标记
+        if (playerRelics == null || !playerRelics.contains("phoenix_feather")) {
+            RelicEffectHandler.resetDeathSaveInRun();
+        }
         if (playerRelics != null) {
             for (String relicId : playerRelics) {
                 RelicTemplate tpl = dataRepo.getRelicById(relicId);
@@ -86,9 +95,14 @@ public class BattleService {
         this.discardPile = new ArrayList<>();
         this.exhaustPile = new ArrayList<>();
         this.logList = new ArrayList<>();
+        this.logList.add("━━━ 战斗开始 ━━━");
         this.energy = 0;
         this.gameOver = false;
         this.winner = null;
+        this.attackCountThisTurn = 0;
+        this.skillCountCombat = 0;
+        this.hasDealtDamageThisTurn = false;
+        this.exhaustedThisAction = false;
 
         List<Card> innateCards = new ArrayList<>();
         Iterator<Card> iterator = drawPile.iterator();
@@ -112,12 +126,72 @@ public class BattleService {
         if (RelicEffectHandler.hasEffect(player, "ENERGY_FIRST_TURN")) {
             int val = RelicEffectHandler.getEffectValue(player, "ENERGY_FIRST_TURN");
             energy += val;
-            logList.add("🏮 灯笼使初始能量 +" + val);
+            logList.add("🏮 灯笼/战场号角使初始能量 +" + val);
+        }
+        if (RelicEffectHandler.hasEffect(player, "ENERGY_PER_TURN")) {
+            int val = RelicEffectHandler.getEffectValue(player, "ENERGY_PER_TURN");
+            energy += val;
+            logList.add("✳️ 能量方块使初始能量 +" + val);
+        }
+        // 🆕 音叉：每场战斗第一回合获得格挡
+        if (RelicEffectHandler.hasEffect(player, "BLOCK_FIRST_TURN")) {
+            int val = RelicEffectHandler.getEffectValue(player, "BLOCK_FIRST_TURN");
+            player.gainBlock(val);
+            logList.add("🔔 音叉触发，获得 " + val + " 点格挡");
+        }
+        // 🆕 佩尔之眼：第一回合开始给所有敌人施加虚弱
+        if (RelicEffectHandler.hasEffect(player, "WEAKEN_FIRST_TURN")) {
+            int weakCount = RelicEffectHandler.getEffectValue(player, "WEAKEN_FIRST_TURN");
+            List<Enemy> alive = getAliveEnemies();
+            for (Enemy e : alive) {
+                StatusEffect weak = StatusFactory.create("WEAK", weakCount, dataRepo);
+                if (weak != null) e.addStatus(weak);
+            }
+            logList.add("👁️ 佩尔之眼触发，所有敌人获得 " + weakCount + " 层虚弱");
+        }
+        // 🆕 佩尔之泪：第一回合开始给所有敌人施加易伤
+        if (RelicEffectHandler.hasEffect(player, "VULNERABLE_FIRST_TURN")) {
+            int vulnCount = RelicEffectHandler.getEffectValue(player, "VULNERABLE_FIRST_TURN");
+            for (Enemy e : getAliveEnemies()) {
+                StatusEffect vuln = StatusFactory.create("VULNERABLE", vulnCount, dataRepo);
+                if (vuln != null) e.addStatus(vuln);
+            }
+            logList.add("💧 佩尔之泪触发，所有敌人获得 " + vulnCount + " 层易伤");
+        }
+        // 🆕 节日拉炮：第一回合开始对所有敌人造成伤害
+        if (RelicEffectHandler.hasEffect(player, "AOE_FIRST_TURN")) {
+            int dmg = RelicEffectHandler.getEffectValue(player, "AOE_FIRST_TURN");
+            for (Enemy e : getAliveEnemies()) {
+                int actual = e.takeDamage(dmg, player);
+                logList.addAll(e.getLastCombatLogs());
+                logList.add("🧨 节日拉炮对 " + e.getEnemyName() + " 造成 " + actual + " 点伤害");
+            }
         }
 
         int drawCount = Math.max(0, 5 - innateCards.size());
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) drawCount++;
+        if (RelicEffectHandler.hasEffect(player, "DRAW_PER_TURN")) drawCount++;
         drawCards(drawCount);
+
+        // 🆕 Boss 遗物：混沌之核 — 战斗开始获得力量
+        int strengthVal = RelicEffectHandler.getEffectValue(player, "STRENGTH_START_BATTLE");
+        if (strengthVal > 0) {
+            StatusEffect strength = StatusFactory.create("STRENGTH", strengthVal, dataRepo);
+            if (strength != null) {
+                player.addStatus(strength);
+                logList.add("🌀 混沌之核触发，获得 " + strengthVal + " 层力量");
+            }
+        }
+
+        // 🆕 Boss 遗物：暗影斗篷 — 战斗开始获得无实体
+        int intangibleVal = RelicEffectHandler.getEffectValue(player, "INTANGIBLE_START");
+        if (intangibleVal > 0) {
+            StatusEffect intangible = StatusFactory.create("INTANGIBLE", intangibleVal, dataRepo);
+            if (intangible != null) {
+                player.addStatus(intangible);
+                logList.add("🌑 暗影斗篷触发，获得 " + intangibleVal + " 层无实体");
+            }
+        }
 
         return getCurrentState();
     }
@@ -132,8 +206,8 @@ public class BattleService {
         if (card.isXCost() && energy <= 0) throw new IllegalStateException("X耗能卡牌需要至少1点能量才能打出！");
         if (!card.isXCost() && card.getCost() > energy) throw new IllegalStateException("能量不足");
 
-        logList.clear();
-        logList.add("🃏 使用: " + card.getName());
+        exhaustedThisAction = false;
+        logList.add("━━━ 🃏 使用: " + card.getName() + " ━━━");
 
         List<Enemy> aliveEnemies = getAliveEnemies();
         if (aliveEnemies.isEmpty()) {
@@ -151,7 +225,18 @@ public class BattleService {
             energy -= card.getCost();
         }
 
-        // 地精大块头被动
+        // 🆕 熔火之怒：每打出一张牌，随机敌人受2点伤害
+        if (RelicEffectHandler.hasEffect(player, "MOLTEN_FURY")) {
+            List<Enemy> alive = getAliveEnemies();
+            if (!alive.isEmpty()) {
+                Enemy randomTarget = alive.get(new Random().nextInt(alive.size()));
+                int dmg = randomTarget.takeDamage(2, player);
+                logList.addAll(randomTarget.getLastCombatLogs());
+                logList.add("🔥 熔火之怒对 " + randomTarget.getEnemyName() + " 造成 " + dmg + " 点伤害");
+            }
+        }
+
+        // 🆕 地精大块头被动：玩家打出技能牌时，激怒敌人
         if (card.getType() == Card.CardType.SKILL) {
             for (Enemy e : enemies) {
                 for (StatusEffect s : e.getStatuses()) {
@@ -163,6 +248,28 @@ public class BattleService {
                             logList.add("🔥 " + e.getEnemyName() + "因【激怒】获得 " + angryPower + " 点力量！");
                         }
                     }
+                }
+            }
+        }
+        // 🆕 黄金戒指：每打出3张攻击牌获得1层敏捷（跨回合累计）
+        if (card.getType() == Card.CardType.ATTACK) {
+            attackCountThisTurn++;
+            if (attackCountThisTurn % 3 == 0 && RelicEffectHandler.hasEffect(player, "ATTACK_DEXTERITY")) {
+                StatusEffect dex = StatusFactory.create("DEXTERITY", RelicEffectHandler.getEffectValue(player, "ATTACK_DEXTERITY"), dataRepo);
+                if (dex != null) {
+                    player.addStatus(dex);
+                    logList.add("💍 黄金戒指触发，获得 " + dex.getCount() + " 层敏捷（已打出 " + attackCountThisTurn + " 张攻击牌）");
+                }
+            }
+        }
+        // 🆕 黄金项链：每打出3张技能牌获得1层力量（跨回合累计）
+        if (card.getType() == Card.CardType.SKILL) {
+            skillCountCombat++;
+            if (skillCountCombat % 3 == 0 && RelicEffectHandler.hasEffect(player, "SKILL_STRENGTH")) {
+                StatusEffect str = StatusFactory.create("STRENGTH", RelicEffectHandler.getEffectValue(player, "SKILL_STRENGTH"), dataRepo);
+                if (str != null) {
+                    player.addStatus(str);
+                    logList.add("📿 黄金项链触发，获得 " + str.getCount() + " 层力量（已打出 " + skillCountCombat + " 张技能牌）");
                 }
             }
         }
@@ -191,11 +298,13 @@ public class BattleService {
             int strengthCount = 0;
             StatusEffect savedStrength = null;
             if (strengthMultiplier > 1) {
-                for (StatusEffect s : player.getStatuses()) {
+                Iterator<StatusEffect> iter = player.getStatuses().iterator();
+                while (iter.hasNext()) {
+                    StatusEffect s = iter.next();
                     if ("STRENGTH".equals(s.getId())) {
                         strengthCount = s.getCount();
                         savedStrength = s;
-                        player.getStatuses().remove(s);
+                        iter.remove();
                         break;
                     }
                 }
@@ -213,6 +322,8 @@ public class BattleService {
                     int actualDmg = e.takeDamage(baseDamage, player);
                     logList.addAll(e.getLastCombatLogs());
                     logList.add(String.format("💥 AOE对 %s 造成 %d 点伤害，HP: %d", e.getEnemyName(), actualDmg, e.getHp()));
+                    if (actualDmg > 0) triggerManaFlower();
+                    if (!e.isAlive()) triggerGoblinHorn();
                 }
             } else {
                 int hitCount = Math.max(1, card.getMultiHitCount());
@@ -244,6 +355,8 @@ public class BattleService {
                     if (!currentTarget.isAlive()) {
                         currentAlive.remove(currentTarget);
                     }
+                    if (actualDmg > 0) triggerManaFlower();
+                    if (!currentTarget.isAlive()) triggerGoblinHorn();
                 }
             }
 
@@ -267,7 +380,10 @@ public class BattleService {
 
                 if ("ENEMY".equals(targetStr)) {
                     if (card.isAoe()) {
-                        for (Enemy e : aliveEnemies) e.addStatus(StatusFactory.create(effect.getType(), effect.getCount() * xValue, dataRepo));
+                        for (Enemy e : aliveEnemies) {
+                            StatusEffect s = StatusFactory.create(effect.getType(), effect.getCount() * xValue, dataRepo);
+                            if (s != null) e.addStatus(s);
+                        }
                         logList.add(String.format("给所有敌人施加了 %d 层 %s", effect.getCount() * xValue, status.getName()));
                     } else {
                         target.addStatus(StatusFactory.create(effect.getType(), effect.getCount() * xValue, dataRepo));
@@ -364,6 +480,8 @@ public class BattleService {
     }
 
     public synchronized Map<String, Object> endTurn() {
+        exhaustedThisAction = false;
+        logList.add("━━━ 结束回合 ━━━");
         validateBattleActive();
 
         player.onTurnEnd();
@@ -436,15 +554,31 @@ public class BattleService {
         }
         removeDeadEnemies();
 
+        // 🆕 【反甲反死修复】如果所有敌人在敌人回合被反伤/荆棘等击杀，立即结束战斗
+        if (getAliveEnemies().isEmpty()) {
+            gameOver = true;
+            winner = "玩家";
+            logList.add("🎉 所有敌人被击败！");
+            return getCurrentState();
+        }
+
+        // ================= 3. 敌人回合结束 =================
+        // 🆕 【关键修复】所有敌人行动完毕后，衰减玩家身上的无实体（持续了一整回合，现在消失）
         decrementIntangible(player);
 
+        // ================= 4. 玩家新回合开始 =================
+        hasDealtDamageThisTurn = false;
         player.onTurnStart();
         logList.addAll(player.getLastTurnStartLogs());
         if (!player.isAlive()) { gameOver = true; winner = "敌人"; logList.add("💀 玩家倒下..."); return getCurrentState(); }
 
         energy = 3;
+        if (RelicEffectHandler.hasEffect(player, "ENERGY_PER_TURN")) {
+            energy += RelicEffectHandler.getEffectValue(player, "ENERGY_PER_TURN");
+        }
         int turnDrawCount = 5 - retained.size();
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) turnDrawCount++;
+        if (RelicEffectHandler.hasEffect(player, "DRAW_PER_TURN")) turnDrawCount++;
         drawCards(Math.max(0, turnDrawCount));
         for (Enemy enemy : enemies) enemy.advanceIntent();
         return getCurrentState();
@@ -526,10 +660,15 @@ public class BattleService {
             }
             if (card == null) {
                 String name = (String) cardData.get("name");
-                int cost = ((Number) cardData.get("cost")).intValue();
+                int cost = cardData.containsKey("cost") && cardData.get("cost") != null
+                        ? ((Number) cardData.get("cost")).intValue() : 1;
                 int damage = cardData.get("damage") != null ? ((Number) cardData.get("damage")).intValue() : 0;
                 int block = cardData.get("block") != null ? ((Number) cardData.get("block")).intValue() : 0;
-                Card.CardType type = Card.CardType.valueOf((String) cardData.get("type"));
+                Card.CardType type = Card.CardType.ATTACK;
+                if (cardData.containsKey("type") && cardData.get("type") != null) {
+                    try { type = Card.CardType.valueOf((String) cardData.get("type")); }
+                    catch (IllegalArgumentException ignored) {}
+                }
                 card = new Card(name, cost, damage, block, type);
                 card.setRarity("COMMON");
             }
@@ -671,6 +810,7 @@ public class BattleService {
             Map<String, Object> cardInfo = new LinkedHashMap<>();
             cardInfo.put("index", i); cardInfo.put("name", c.getName()); cardInfo.put("cost", c.getCost());
             cardInfo.put("damage", c.getDamage()); cardInfo.put("block", c.getBlock()); cardInfo.put("type", c.getType().name());
+            cardInfo.put("applyStatusType", c.getApplyStatusType()); cardInfo.put("applyStatusCount", c.getApplyStatusCount()); cardInfo.put("applyStatusTarget", c.getApplyStatusTarget());
             cardInfo.put("effects", effectsToStateList(c.getEffects()));
             cardInfo.put("exhaust", c.isExhaust()); cardInfo.put("retain", c.isRetain()); cardInfo.put("ethereal", c.isEthereal());
             cardInfo.put("drawCount", c.getDrawCount()); cardInfo.put("charId", c.getCharId()); cardInfo.put("rarity", c.getRarity());
@@ -701,11 +841,35 @@ public class BattleService {
         state.put("drawPile", cardsToStateList(drawPile));
         state.put("discardPile", cardsToStateList(discardPile));
         state.put("exhaustPile", cardsToStateList(exhaustPile));
+        state.put("exhaustHappened", exhaustedThisAction); // 🆕 安东尼之怒
         state.put("log", new ArrayList<>(logList)); state.put("gameOver", gameOver); state.put("winner", winner);
         return state;
     }
 
+    /** 🆕 魔力花：每回合首次造成伤害时获得能量 */
+    private void triggerManaFlower() {
+        if (!hasDealtDamageThisTurn && RelicEffectHandler.hasEffect(player, "FIRST_HIT_ENERGY")) {
+            hasDealtDamageThisTurn = true;
+            int val = RelicEffectHandler.getEffectValue(player, "FIRST_HIT_ENERGY");
+            energy += val;
+            logList.add("🌸 魔力花触发，获得 " + val + " 点能量（当前能量: " + energy + "）");
+        }
+    }
+
+    /** 🆕 地精之角：击杀敌人时获得能量+抽牌+力量+敏捷 */
+    private void triggerGoblinHorn() {
+        if (!RelicEffectHandler.hasEffect(player, "GOBLIN_HORN")) return;
+        energy += 1;
+        drawCards(2);
+        StatusEffect str = StatusFactory.create("STRENGTH", 1, dataRepo);
+        if (str != null) player.addStatus(str);
+        StatusEffect dex = StatusFactory.create("DEXTERITY", 1, dataRepo);
+        if (dex != null) player.addStatus(dex);
+        logList.add("🦴 地精之角触发！获得1能量、抽2牌、+1力量、+1敏捷");
+    }
+
     private void triggerDrawOnExhaust() {
+        exhaustedThisAction = true; // 🆕 安东尼之怒标记
         if (RelicEffectHandler.hasEffect(player, "DRAW_ON_EXHAUST")) {
             drawCards(1);
             logList.add("📄 金纸触发，抽了一张牌");

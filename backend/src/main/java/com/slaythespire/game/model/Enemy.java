@@ -56,10 +56,27 @@ public class Enemy extends Combatant {
 
     public int executeCurrentIntent(Combatant target) {
         if (currentIntent == null) return 0;
+        if (target == null) return 0;
         IntentType type = currentIntent.getType();
 
         if (type == IntentType.ATTACK) {
-            return target.takeDamage(currentIntent.getValue(), this);
+            int result = target.takeDamage(currentIntent.getValue(), this);
+            // 塞牌：灼伤/晕眩等（仅在战斗内生效）
+            if (!currentIntent.isSkipBurnCards() && currentIntent.getBurnCards() > 0) {
+                if (target instanceof Player) {
+                    for (int i = 0; i < currentIntent.getBurnCards(); i++) {
+                        ((Player)target).addStatusCard("burn");
+                    }
+                }
+            }
+            if (currentIntent.getStunCards() > 0) {
+                if (target instanceof Player) {
+                    for (int i = 0; i < currentIntent.getStunCards(); i++) {
+                        ((Player)target).addStatusCard("dazed");
+                    }
+                }
+            }
+            return result;
         }
         if (type == IntentType.DEFEND) {
             this.gainBlock(currentIntent.getValue());

@@ -60,7 +60,8 @@ async function loadSaveData(charId) {
 
             mapEdges: JSON.parse(localStorage.getItem('mapEdges') || '[]'),
 
-            act: parseInt(localStorage.getItem('act')) || 1   // 🆕 读取 act
+            act: parseInt(localStorage.getItem('act')) || 1,   // 🆕 读取 act
+            goldTotalEarned: parseInt(localStorage.getItem('goldTotalEarned')) || 0
 
         };
 
@@ -74,7 +75,7 @@ async function loadSaveData(charId) {
 
     localStorage.setItem('playerHP', data.playerHp);
 
-    localStorage.setItem('maxHp', data.maxHp);
+    localStorage.setItem('maxHP', data.maxHp);
 
     localStorage.setItem('gold', data.gold);
 
@@ -93,6 +94,14 @@ async function loadSaveData(charId) {
     if (data.act !== undefined) {
 
         localStorage.setItem('act', data.act);
+
+    }
+
+    // 🆕 同步累计金币（gxyy 遗物用）
+
+    if (data.goldTotalEarned !== undefined) {
+
+        localStorage.setItem('goldTotalEarned', data.goldTotalEarned);
 
     }
 
@@ -132,7 +141,7 @@ async function saveSaveData(data) {
 
     localStorage.setItem('playerHP', data.playerHp);
 
-    localStorage.setItem('maxHp', data.maxHp);
+    localStorage.setItem('maxHP', data.maxHp);
 
     localStorage.setItem('gold', data.gold);
 

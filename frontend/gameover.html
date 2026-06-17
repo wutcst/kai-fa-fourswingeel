@@ -119,9 +119,15 @@
         document.getElementById('stat-progress').textContent = (stats.nodesVisited || 0) + ' / 15';
       }
 
-      // 返回主菜单：清除游戏数据并跳转账面
-      document.getElementById('return-btn').addEventListener('click', function() {
-        // 清除本局游戏数据
+      // 返回主菜单：删除存档并跳转账面
+      document.getElementById('return-btn').addEventListener('click', async function() {
+        // 删除后端存档
+        try {
+          await fetch('/api/save', { method: 'DELETE' });
+        } catch (e) {
+          console.warn('删除后端存档失败', e);
+        }
+        // 清除前端游戏数据
         localStorage.removeItem('playerHP');
         localStorage.removeItem('maxHP');
         localStorage.removeItem('gold');
@@ -129,6 +135,7 @@
         localStorage.removeItem('relics');
         localStorage.removeItem('visitedNodes');
         localStorage.removeItem('startRelicDone');
+        localStorage.removeItem('goldTotalEarned');
         sessionStorage.clear();
         window.location.href = 'cover.html';
       });

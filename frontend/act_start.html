@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>选择 Boss 遗物</title>
+  <script src="card_ui.js"></script>
   <script src="save_helper.js"></script>
   <style>
     body {
@@ -38,12 +39,41 @@
       const char = params.get('char') || '1';
       const nextAct = parseInt(params.get('nextAct')) || 2;
 
-      // 三个占位 Boss 遗物
-      const bossRelicOptions = [
-        { id: 'bossRelic_1', name: '混沌之核', icon: '💎', desc: '战斗开始时获得 1 点能量。' },
-        { id: 'bossRelic_2', name: '命运之镜', icon: '🔮', desc: '每次战斗首次受伤时，恢复 5 点生命。' },
-        { id: 'bossRelic_3', name: '无限之石', icon: '🪨', desc: '每回合获得 1 点敏捷。' }
-      ];
+      // 从后端获取 3 个 Boss 遗物选项
+      let bossRelicOptions = [];
+      try {
+        const saveData = await loadSaveData(char);
+        const owned = (saveData.relics || []).join(',');
+        const resp = await fetch(`/api/bossRelics?charId=${char}&ownedRelics=${owned}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          bossRelicOptions = data.map((r, i) => ({
+            id: r.id,
+            name: r.name,
+            description: r.description,
+            effectType: r.effectType,
+            value: r.value || 0,
+            rarity: r.rarity || 'BOSS',
+            icon: getIconForBossRelic(i)
+          }));
+        }
+      } catch (e) {
+        console.warn('Boss遗物接口不可用', e);
+      }
+
+      // 降级：如果 API 失败，用默认数据
+      if (bossRelicOptions.length === 0) {
+        bossRelicOptions = [
+          { id: 'energy_cube', name: '能量方块', icon: '💎', description: '每回合获得 1 点额外能量。', effectType: 'ENERGY_PER_TURN', value: 1, rarity: 'BOSS' },
+          { id: 'soul_furnace', name: '灵魂之炉', icon: '🔥', description: '每场战斗首次受伤时，恢复 8 点生命。', effectType: 'FIRST_HIT_HEAL', value: 8, rarity: 'BOSS' },
+          { id: 'rune_cube', name: '符文立方体', icon: '📖', description: '每回合多抽 1 张牌。', effectType: 'DRAW_PER_TURN', value: 1, rarity: 'BOSS' }
+        ];
+      }
+
+      function getIconForBossRelic(index) {
+        const icons = ['💎', '🔮', '🪨', '🔥', '🪶', '🌑', '📯', '👁️', '💪', '🌀'];
+        return icons[index % icons.length];
+      }
 
       const listDiv = document.getElementById('relic-list');
       let selected = false;
@@ -54,7 +84,8 @@
         div.innerHTML = `
           <div class="relic-icon">${option.icon}</div>
           <div class="relic-name">${option.name}</div>
-          <div class="relic-desc">${option.desc}</div>
+          <div class="relic-desc">${option.description || option.desc || ''}</div>
+          <div style="font-size:11px;color:#f1c40f;margin-top:8px;">${option.effectType ? '⚡ ' + option.effectType : ''}</div>
         `;
         div.addEventListener('click', async () => {
           if (selected) return;
@@ -67,6 +98,21 @@
           if (!saveData.relics.includes(option.id)) {
             saveData.relics.push(option.id);
           }
+          // 处理 MAX_HP 类遗物（如巨人之力）
+          if (option.effectType === 'MAX_HP' && option.value > 0) {
+            saveData.maxHp = (saveData.maxHp || 70) + option.value;
+            saveData.playerHp = Math.min((saveData.playerHp || saveData.maxHp) + option.value, saveData.maxHp);
+          }
+          // 拾起回血遗物
+          // 拾起金币遗物
+          if (option.id === 'small_gold_bag') saveData.gold = (saveData.gold || 0) + 50;
+          if (option.id === 'treasure_bag') saveData.gold = (saveData.gold || 0) + 150;
+          if (option.id === 'ancient_coin') saveData.gold = (saveData.gold || 0) + 500;
+          if (option.id === 'small_blood') saveData.playerHp = Math.min((saveData.playerHp || 0) + 10, saveData.maxHp || 70);
+          if (option.id === 'apple') saveData.playerHp = Math.min((saveData.playerHp || 0) + 5, saveData.maxHp || 70);
+          if (option.id === 'pear') saveData.playerHp = Math.min((saveData.playerHp || 0) + 20, saveData.maxHp || 70);
+          if (option.id === 'waffle') saveData.playerHp = saveData.maxHp || 80;
+          if (option.id === 'jiucai_anger') window.showModal('怪物太难都是九才8干的，大家一起骂他', { title: '😡 九才8之怒', icon: '😡', borderColor: '#e74c3c' });
           // 设置阶段信息
           saveData.act = nextAct;
           saveData.currentNode = 'start';
@@ -75,10 +121,16 @@
 
           // 清除旧地图缓存，新阶段会重新生成
           sessionStorage.removeItem(`mapData_act${nextAct}`);
+          sessionStorage.removeItem(`mapData_act${nextAct - 1}`); // 顺便清理旧阶段地图
 
-          alert(`已获得 ${option.name}！`);
-          // 跳转到地图
-          window.location.href = `map.html?char=${char}&act=${nextAct}&currentNode=start`;
+          window.showModal(`已获得 Boss 遗物：${option.name}！`, {
+            title: '🏆 获得 Boss 遗物',
+            icon: option.icon || '🏆',
+            borderColor: '#e67e22',
+            onClose: function() {
+              window.location.href = `map.html?char=${char}&act=${nextAct}&currentNode=start`;
+            }
+          });
         });
         listDiv.appendChild(div);
       });

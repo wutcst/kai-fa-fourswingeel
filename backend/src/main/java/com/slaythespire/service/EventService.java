@@ -123,6 +123,25 @@ public class EventService {
                     }
                     break;
                 }
+                case "REMOVE_CARD": {
+                    int count = effect.get("count") != null ? ((Number) effect.get("count")).intValue() : 1;
+                    List<Map<String, Object>> deck = saveData.getDeck();
+                    int removed = 0;
+                    List<String> removedNames = new ArrayList<>();
+                    for (int i = 0; i < count && !deck.isEmpty(); i++) {
+                        int idx = random.nextInt(deck.size());
+                        Map<String, Object> card = deck.remove(idx);
+                        String name = (String) card.getOrDefault("name", "未知卡牌");
+                        removedNames.add(name);
+                        removed++;
+                    }
+                    if (removed > 0) {
+                        logs.add("删除了 " + removed + " 张卡牌: " + String.join(", ", removedNames));
+                    } else {
+                        logs.add("卡组为空，没有可删除的卡牌");
+                    }
+                    break;
+                }
                 case "ADD_RANDOM_CARD": {
                     // 从卡牌池随机选一张（未升级、非起始、匹配角色）
                     List<com.slaythespire.repository.CardTemplate> allCards = dataRepo.getAllCards();

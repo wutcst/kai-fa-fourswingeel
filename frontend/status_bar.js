@@ -150,7 +150,7 @@
     }
 
     function rarityColor(rarity) {
-        const colors = { 'COMMON': '#95a5a6', 'UNCOMMON': '#5dade2', 'RARE': '#f1c40f', 'LEGENDARY': '#e74c3c', 'STARTER': '#999999', 'SPECIAL': '#9b59b6' };
+        const colors = { 'COMMON': '#95a5a6', 'UNCOMMON': '#5dade2', 'RARE': '#3498db', 'LEGENDARY': '#ffd700', 'STARTER': '#999999', 'SPECIAL': '#9b59b6', 'BOSS': '#ff4757' };
         return colors[rarity] || '#95a5a6';
     }
 
@@ -206,6 +206,49 @@
 
     // ** 对外暴露更新函数，供 save_helper.js 调用 **
     window.updateStatusBar = updateBar;
+
+    // ** 对外暴露弹出窗函数，供所有页面使用 **
+    window.showModal = function(message, options) {
+        const opts = options || {};
+        const title = opts.title || '提示';
+        const icon = opts.icon || '✨';
+        const buttonText = opts.buttonText || '确定';
+        const onClose = opts.onClose || null;
+        const bgColor = opts.bgColor || '#1a1a2e';
+        const borderColor = opts.borderColor || '#f1c40f';
+
+        const html = `
+            <div style="background:${bgColor}; border:2px solid ${borderColor}; border-radius:16px; max-width:420px; width:90%; padding:32px 24px; color:#ecf0f1; text-align:center; animation: spire-modal-in 0.3s ease-out;">
+                <div style="font-size:48px; margin-bottom:12px;">${icon}</div>
+                <h2 style="margin:0 0 12px; color:${borderColor}; font-size:20px;">${title}</h2>
+                <p style="font-size:16px; line-height:1.6; margin:0 0 24px; white-space:pre-wrap;">${message}</p>
+                <button id="spire-modal-close-btn" style="padding:12px 40px; background:${borderColor}; border:none; border-radius:8px; font-size:16px; cursor:pointer; color:#1a1a2e; font-weight:bold; transition:all 0.2s;"
+                    onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">${buttonText}</button>
+            </div>
+        `;
+
+        createOverlay(html);
+
+        // 绑定关闭按钮
+        setTimeout(function() {
+            const closeBtn = document.getElementById('spire-modal-close-btn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    closeOverlay();
+                    if (onClose) onClose();
+                });
+                closeBtn.focus();
+            }
+        }, 0);
+
+        // 添加弹出动画样式（只加一次）
+        if (!document.getElementById('spire-modal-style')) {
+            const style = document.createElement('style');
+            style.id = 'spire-modal-style';
+            style.textContent = '@keyframes spire-modal-in { from { opacity:0; transform:scale(0.85) translateY(-20px); } to { opacity:1; transform:scale(1) translateY(0); } }';
+            document.head.appendChild(style);
+        }
+    };
 
     function createStatusBar() {
         // 确保初始遗物已存在
