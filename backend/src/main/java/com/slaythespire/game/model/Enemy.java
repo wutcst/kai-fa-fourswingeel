@@ -196,6 +196,14 @@ public class Enemy extends Combatant {
             return;
         }
 
+        // 如果 size == 2，则是严格的交替模式（如哨卫）：第2回合用另一个，第3回合交替回来
+        if (size == 2) {
+            int altIndex = (currentTurn % 2 == 1) ? 1 : 0;
+            this.currentIntent = intentSequence.get(altIndex);
+            this.lastIntentIndex = altIndex;
+            return;
+        }
+
         Random random = new Random();
 
         // 尝试从 intents[1] 开始随机选，避开不能选的

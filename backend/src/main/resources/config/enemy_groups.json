@@ -37,7 +37,7 @@
     "type": "ELITE",
     "minAct": 1,
     "maxAct": 1,
-    "enemies": ["sentry", "sentry", "sentry"]
+    "enemies": ["sentry_a", "sentry_b", "sentry_a"]
   },
   {
     "id": "boss_hexaghost",

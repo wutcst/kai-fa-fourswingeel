@@ -37,12 +37,25 @@
     ]
   },
   {
-    "id": "sentry",
-    "name": "哨卫",
+    "id": "sentry_a",
+    "name": "哨卫·甲",
     "type": "ELITE",
     "maxHp": 38,
     "attackDamage": 9,
-    "description": "三只一组交替：第一回合两侧催眠中间激光，之后每回合轮换。人工制品×1。",
+    "description": "三哨卫中开局使用螺旋催眠的那只，之后交替。人工制品×1。",
+    "initialStatuses": { "ARTIFACT": 1 },
+    "intents": [
+      { "type": "DEBUFF", "value": 0, "desc": "螺旋催眠", "stunCards": 2 },
+      { "type": "ATTACK", "value": 9, "desc": "激光" }
+    ]
+  },
+  {
+    "id": "sentry_b",
+    "name": "哨卫·乙",
+    "type": "ELITE",
+    "maxHp": 38,
+    "attackDamage": 9,
+    "description": "三哨卫中开局使用激光的那只，之后交替。人工制品×1。",
     "initialStatuses": { "ARTIFACT": 1 },
     "intents": [
       { "type": "ATTACK", "value": 9, "desc": "激光" },
