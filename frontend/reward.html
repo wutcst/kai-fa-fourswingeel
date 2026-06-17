@@ -193,6 +193,11 @@
           saveData.maxHp = (saveData.maxHp || 70) + value;
           saveData.playerHp = Math.min((saveData.playerHp || saveData.maxHp) + value, saveData.maxHp);
         }
+        // 拾起回血遗物
+        if (relicId === 'small_blood') saveData.playerHp = Math.min((saveData.playerHp || 0) + 10, saveData.maxHp);
+        if (relicId === 'apple') saveData.playerHp = Math.min((saveData.playerHp || 0) + 5, saveData.maxHp);
+        if (relicId === 'pear') saveData.playerHp = Math.min((saveData.playerHp || 0) + 20, saveData.maxHp);
+        if (relicId === 'waffle') saveData.playerHp = saveData.maxHp;
         await saveSaveData(saveData);
         localGotRelic = true;
         collectedRelicCount++;

@@ -144,6 +144,11 @@
                 saveData.maxHp = (saveData.maxHp || 70) + relic.value;
                 saveData.playerHp = Math.min((saveData.playerHp || saveData.maxHp) + relic.value, saveData.maxHp);
               }
+              // 拾起回血遗物
+              if (relic.id === 'small_blood') saveData.playerHp = Math.min((saveData.playerHp || 0) + 10, saveData.maxHp || 70);
+              if (relic.id === 'apple') saveData.playerHp = Math.min((saveData.playerHp || 0) + 5, saveData.maxHp || 70);
+              if (relic.id === 'pear') saveData.playerHp = Math.min((saveData.playerHp || 0) + 20, saveData.maxHp || 70);
+              if (relic.id === 'waffle') saveData.playerHp = saveData.maxHp || 80;
               await saveSaveData(saveData);
               alert(`购买成功：${relic.name}`);
               relicDiv.classList.add('sold');
