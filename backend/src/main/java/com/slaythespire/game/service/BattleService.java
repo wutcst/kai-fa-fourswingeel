@@ -107,6 +107,16 @@ public class BattleService {
             player.gainBlock(val);
             logList.add("🔔 音叉触发，获得 " + val + " 点格挡");
         }
+        // 🆕 佩尔之眼：第一回合开始给所有敌人施加虚弱
+        if (RelicEffectHandler.hasEffect(player, "WEAKEN_FIRST_TURN")) {
+            int weakCount = RelicEffectHandler.getEffectValue(player, "WEAKEN_FIRST_TURN");
+            List<Enemy> alive = getAliveEnemies();
+            for (Enemy e : alive) {
+                StatusEffect weak = StatusFactory.create("WEAK", weakCount, dataRepo);
+                if (weak != null) e.addStatus(weak);
+            }
+            logList.add("👁️ 佩尔之眼触发，所有敌人获得 " + weakCount + " 层虚弱");
+        }
 
         int drawCount = Math.max(0, 5 - innateCards.size());
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) drawCount++;
