@@ -141,7 +141,13 @@ public class RelicPoolService {
         Set<String> usedIds = new HashSet<>();
         if (ownedRelicIds != null) usedIds.addAll(ownedRelicIds);
 
-        while (result.size() < count) {
+        // 检查 ring 是否存在，用于兜底
+        RelicTemplate ring = dataRepo.getRelicById("ring");
+
+        // 安全上限：最多循环 100 次，防止 ring 不存在时死循环
+        int safety = 0;
+        while (result.size() < count && safety < 100) {
+            safety++;
             // 从剩余 Boss 池中找未使用的
             RelicTemplate chosen = null;
             List<RelicTemplate> remaining = new ArrayList<>();
@@ -151,12 +157,13 @@ public class RelicPoolService {
             if (!remaining.isEmpty()) {
                 chosen = remaining.get(random.nextInt(remaining.size()));
                 usedIds.add(chosen.getId());
-            } else {
+            } else if (ring != null) {
                 // Boss 池已抽干，用头环补齐
-                chosen = dataRepo.getRelicById("ring");
+                chosen = ring;
             }
             if (chosen != null) result.add(chosen);
         }
+        // 如果 ring 不存在且池已空，返回已有的（可能不足 count）
         return result;
     }
 

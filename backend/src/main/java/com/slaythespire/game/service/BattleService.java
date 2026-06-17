@@ -379,10 +379,10 @@ public class BattleService {
                 if ("ENEMY".equals(targetStr)) {
                     if (card.isAoe()) {
                         for (Enemy e : aliveEnemies) {
-                            StatusEffect s = StatusFactory.create(card.getApplyStatusType(), card.getApplyStatusCount() * xValue, dataRepo);
+                            StatusEffect s = StatusFactory.create(effect.getType(), effect.getCount() * xValue, dataRepo);
                             if (s != null) e.addStatus(s);
                         }
-                        logList.add(String.format("给所有敌人施加了 %d 层 %s", card.getApplyStatusCount() * xValue, status.getName()));
+                        logList.add(String.format("给所有敌人施加了 %d 层 %s", effect.getCount() * xValue, status.getName()));
                     } else {
                         target.addStatus(StatusFactory.create(effect.getType(), effect.getCount() * xValue, dataRepo));
                         logList.add(String.format("给 %s 施加了 %d 层 %s", target.getEnemyName(), effect.getCount() * xValue, status.getName()));

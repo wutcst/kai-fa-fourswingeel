@@ -56,6 +56,7 @@ public class Enemy extends Combatant {
 
     public int executeCurrentIntent(Combatant target) {
         if (currentIntent == null) return 0;
+        if (target == null) return 0;
         IntentType type = currentIntent.getType();
 
         if (type == IntentType.ATTACK) {

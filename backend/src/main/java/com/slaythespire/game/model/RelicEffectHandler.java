@@ -18,6 +18,7 @@ public class RelicEffectHandler {
     /** 玩家回合开始时触发 */
     public static void onPlayerTurnStart(Player player) {
         for (Relic r : player.getRelics()) {
+            if (!(r instanceof GameRelic)) continue;
             GameRelic gr = (GameRelic) r;
             switch (gr.getEffectType()) {
                 case "HEAL_START_TURN" -> player.heal(gr.getValue());
@@ -46,6 +47,7 @@ public class RelicEffectHandler {
     /** 玩家回合结束时触发 */
     public static void onPlayerTurnEnd(Player player) {
         for (Relic r : player.getRelics()) {
+            if (!(r instanceof GameRelic)) continue;
             GameRelic gr = (GameRelic) r;
             switch (gr.getEffectType()) {
                 case "HEAL_END_TURN" -> player.heal(gr.getValue());

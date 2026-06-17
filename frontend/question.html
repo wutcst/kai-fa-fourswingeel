@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>问号事件</title>
+  <script src="card_ui.js"></script>
   <script src="save_helper.js"></script>
   <style>
     body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; position: relative; }
@@ -48,6 +49,14 @@
           document.getElementById('event-description').textContent = '一片未知的区域，什么也没有发生。';
           const optionsDiv = document.getElementById('options-container');
           optionsDiv.innerHTML = '';
+          // 提供继续前进按钮，防止玩家卡死
+          const skipBtn = document.createElement('button');
+          skipBtn.className = 'option-btn';
+          skipBtn.textContent = '继续前进 →';
+          skipBtn.addEventListener('click', () => {
+            window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
+          });
+          optionsDiv.appendChild(skipBtn);
         }
       }
 
