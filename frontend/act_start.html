@@ -112,6 +112,7 @@
           if (option.id === 'apple') saveData.playerHp = Math.min((saveData.playerHp || 0) + 5, saveData.maxHp || 70);
           if (option.id === 'pear') saveData.playerHp = Math.min((saveData.playerHp || 0) + 20, saveData.maxHp || 70);
           if (option.id === 'waffle') saveData.playerHp = saveData.maxHp || 80;
+          if (option.id === 'jiucai_anger') window.showModal('怪物太难都是九才8干的，大家一起骂他', { title: '😡 九才8之怒', icon: '😡', borderColor: '#e74c3c' });
           // 设置阶段信息
           saveData.act = nextAct;
           saveData.currentNode = 'start';

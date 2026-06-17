@@ -15,6 +15,7 @@
   { "id": "treasure_bag", "name": "宝藏袋", "description": "拾起时，获得 150 金币。", "effectType": "NO_EFFECT", "value": 150, "rarity": "RARE", "charId": null },
   { "id": "gxyy", "name": "gxyy", "description": "每累计获得 100 金币，回复 10 点生命。", "effectType": "NO_EFFECT", "value": 10, "rarity": "RARE", "charId": null },
   { "id": "anthony_anger", "name": "安东尼之怒😡", "description": "？？？", "effectType": "NO_EFFECT", "value": 0, "rarity": "RARE", "charId": null },
+  { "id": "jiucai_anger", "name": "九才8之怒😡", "description": "？？？", "effectType": "NO_EFFECT", "value": 0, "rarity": "RARE", "charId": null },
   { "id": "waffle", "name": "华夫饼", "description": "拾起时，回复所有生命，最大生命 +10。", "effectType": "MAX_HP", "value": 10, "rarity": "LEGENDARY", "charId": null },
   { "id": "ancient_coin", "name": "古钱币", "description": "拾起时，获得 500 金币。", "effectType": "NO_EFFECT", "value": 500, "rarity": "LEGENDARY", "charId": null },
   { "id": "rune_pyramid", "name": "符文金字塔", "description": "回合结束时，手牌不会洗入弃牌堆。", "effectType": "RUNE_PYRAMID", "value": 0, "rarity": "LEGENDARY", "charId": null },
