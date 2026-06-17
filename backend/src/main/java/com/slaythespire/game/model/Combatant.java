@@ -89,7 +89,7 @@ public abstract class Combatant {
             finalDamage = 1; // 伤害强制截断为 1
             // 🆕 不再减少层数，因为现在是“持续一回合”
             
-            String entityName = (this instanceof Player) ? "玩家" : ((Enemy) this).getEnemyName();
+            String entityName = (this instanceof Player) ? "玩家" : (this instanceof Enemy ? ((Enemy) this).getEnemyName() : "未知");
             lastCombatLogs.add(String.format("👻 %s 的【无实体】生效，伤害被截断为 1", entityName));
         }
 
