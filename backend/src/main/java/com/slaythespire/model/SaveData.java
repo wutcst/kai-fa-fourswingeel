@@ -12,8 +12,14 @@ public class SaveData {
     private List<String> relics;
     private List<String> visitedNodes;
     private String currentNode;
-    private int act = 1; // 新增：当前阶段（1~3）
 
+    // 🆕 新增：地图数据持久化字段
+    private List<Map<String, Object>> mapNodes;
+    private List<Map<String, String>> mapEdges;
+
+    public SaveData() {}
+
+    // --- Getters & Setters ---
     public String getCharId() { return charId; }
     public void setCharId(String charId) { this.charId = charId; }
 
@@ -38,6 +44,9 @@ public class SaveData {
     public String getCurrentNode() { return currentNode; }
     public void setCurrentNode(String currentNode) { this.currentNode = currentNode; }
 
-    public int getAct() { return act; }
-    public void setAct(int act) { this.act = act; }
+    public List<Map<String, Object>> getMapNodes() { return mapNodes; }
+    public void setMapNodes(List<Map<String, Object>> mapNodes) { this.mapNodes = mapNodes; }
+
+    public List<Map<String, String>> getMapEdges() { return mapEdges; }
+    public void setMapEdges(List<Map<String, String>> mapEdges) { this.mapEdges = mapEdges; }
 }

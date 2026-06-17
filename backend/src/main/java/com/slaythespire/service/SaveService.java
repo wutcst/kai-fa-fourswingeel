@@ -16,10 +16,11 @@ public class SaveService {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private String saveDir = "saves/";
+    // 🆕 统一全局存档文件名
+    private String saveFileName = "save.json";
 
     @PostConstruct
     public void init() {
-        // 确保存档目录存在
         try {
             Path path = Paths.get(saveDir);
             if (!Files.exists(path)) {
@@ -31,11 +32,12 @@ public class SaveService {
         }
     }
 
-    public void saveGame(String charId, SaveData data) {
+    // 🆕 移除 charId 参数
+    public void saveGame(SaveData data) {
         try {
-            File file = new File(saveDir + "save_" + charId + ".json");
+            File file = new File(saveDir + saveFileName);
             mapper.writerWithDefaultPrettyPrinter().writeValue(file, data);
-            System.out.println("✅ 存档已保存: " + file.getAbsolutePath());
+            System.out.println("✅ 全局存档已保存: " + file.getAbsolutePath());
         } catch (IOException e) {
             System.err.println("❌ 存档失败: " + e.getMessage());
             e.printStackTrace();
@@ -43,10 +45,11 @@ public class SaveService {
         }
     }
 
-    public SaveData loadGame(String charId) {
-        File file = new File(saveDir + "save_" + charId + ".json");
+    // 🆕 移除 charId 参数
+    public SaveData loadGame() {
+        File file = new File(saveDir + saveFileName);
         if (!file.exists()) {
-            System.out.println("⚠️ 存档不存在: " + file.getAbsolutePath());
+            System.out.println("⚠️ 全局存档不存在: " + file.getAbsolutePath());
             return null;
         }
         try {
@@ -60,11 +63,12 @@ public class SaveService {
         }
     }
 
-    public void deleteSave(String charId) {
-        File file = new File(saveDir + "save_" + charId + ".json");
+    // 🆕 移除 charId 参数
+    public void deleteSave() {
+        File file = new File(saveDir + saveFileName);
         if (file.exists()) {
             file.delete();
-            System.out.println("✅ 存档已删除: " + file.getAbsolutePath());
+            System.out.println("✅ 全局存档已删除: " + file.getAbsolutePath());
         }
     }
 }

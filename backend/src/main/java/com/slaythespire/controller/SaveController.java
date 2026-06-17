@@ -19,15 +19,13 @@ public class SaveController {
     private QuestionService questionService;
 
     /**
-     * 保存游戏
+     * 保存游戏 (全局唯一存档)
      */
     @PostMapping("/save")
     public ResponseEntity<String> saveGame(@RequestBody SaveData data) {
         try {
-            if (data.getCharId() == null || data.getCharId().isEmpty()) {
-                return ResponseEntity.badRequest().body("角色ID不能为空");
-            }
-            saveService.saveGame(data.getCharId(), data);
+            // 🆕 直接保存，不再校验 charId
+            saveService.saveGame(data);
             return ResponseEntity.ok("保存成功");
         } catch (Exception e) {
             e.printStackTrace();
@@ -36,12 +34,13 @@ public class SaveController {
     }
 
     /**
-     * 加载游戏
+     * 加载游戏 (全局唯一存档)
      */
     @GetMapping("/load")
-    public ResponseEntity<?> loadGame(@RequestParam String charId) {
+    public ResponseEntity<?> loadGame() {
         try {
-            SaveData data = saveService.loadGame(charId);
+            // 🆕 移除 @RequestParam String charId
+            SaveData data = saveService.loadGame();
             if (data == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -58,10 +57,6 @@ public class SaveController {
     @PostMapping("/init")
     public ResponseEntity<?> initGame(@RequestBody SaveData data) {
         try {
-            if (data.getCharId() == null || data.getCharId().isEmpty()) {
-                return ResponseEntity.badRequest().body("角色ID不能为空");
-            }
-            // 设置默认值
             if (data.getVisitedNodes() == null) {
                 data.setVisitedNodes(java.util.Arrays.asList("start"));
             }
@@ -72,10 +67,13 @@ public class SaveController {
                 data.setRelics(new java.util.ArrayList<>());
             }
             
-            // 保存前重置该角色的未知房间概率
-            questionService.resetChar(data.getCharId());
+            // 如果 QuestionService 仍按角色区分概率，保留此逻辑
+            if (data.getCharId() != null && !data.getCharId().isEmpty()) {
+                questionService.resetChar(data.getCharId());
+            }
             
-            saveService.saveGame(data.getCharId(), data);
+            // 🆕 直接保存全局存档
+            saveService.saveGame(data);
             return ResponseEntity.ok(data);
         } catch (Exception e) {
             e.printStackTrace();
@@ -84,12 +82,13 @@ public class SaveController {
     }
 
     /**
-     * 删除存档
+     * 删除存档 (全局唯一存档)
      */
     @DeleteMapping("/save")
-    public ResponseEntity<String> deleteSave(@RequestParam String charId) {
+    public ResponseEntity<String> deleteSave() {
         try {
-            saveService.deleteSave(charId);
+            // 🆕 移除 @RequestParam String charId
+            saveService.deleteSave();
             return ResponseEntity.ok("删除成功");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("删除失败: " + e.getMessage());
