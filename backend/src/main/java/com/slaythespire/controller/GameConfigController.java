@@ -623,6 +623,39 @@ public class GameConfigController {
         return result;
     }
 
+    @GetMapping("/cards")
+    public List<Map<String, Object>> getAllCards() {
+        List<CardTemplate> all = dataRepo.getAllCards();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (CardTemplate tpl : all) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("id", tpl.getId()); map.put("name", tpl.getName()); map.put("cost", tpl.getCost());
+            map.put("damage", tpl.getDamage()); map.put("block", tpl.getBlock()); map.put("type", tpl.getType().name());
+            map.put("rarity", tpl.getRarity()); map.put("charId", tpl.getCharId());
+            map.put("upgraded", tpl.isUpgraded());
+            map.put("effects", CardEffect.listToMapList(tpl.getEffects()));
+            map.put("exhaust", tpl.isExhaust()); map.put("ethereal", tpl.isEthereal());
+            map.put("drawCount", tpl.getDrawCount());
+            map.put("aoe", tpl.isAoe()); map.put("xCost", tpl.isXCost());
+            map.put("selfDamage", tpl.getSelfDamage()); map.put("energyGain", tpl.getEnergyGain());
+            map.put("multiHitCount", tpl.getMultiHitCount());
+            map.put("exhaustNonAttackBlock", tpl.getExhaustNonAttackBlock());
+            map.put("addWoundCount", tpl.getAddWoundCount());
+            map.put("blockToDamage", tpl.isBlockToDamage());
+            map.put("blockPerAttack", tpl.getBlockPerAttack());
+            map.put("poisonAllPerCard", tpl.getPoisonAllPerCard());
+            map.put("doublePoison", tpl.isDoublePoison());
+            map.put("discardAllForCards", tpl.getDiscardAllForCards());
+            map.put("discardAllForDraw", tpl.isDiscardAllForDraw());
+            map.put("addCardId", tpl.getAddCardId()); map.put("addCardCount", tpl.getAddCardCount());
+            map.put("upgradeHandCount", tpl.getUpgradeHandCount()); map.put("upgradeHandMode", tpl.getUpgradeHandMode());
+            map.put("upgradeAllInHand", tpl.isUpgradeAllInHand());
+            map.put("requiresEmptyDrawPile", tpl.isRequiresEmptyDrawPile());
+            result.add(map);
+        }
+        return result;
+    }
+
     @GetMapping("/card/{id}")
     public Map<String, Object> getCardById(@PathVariable String id) {
         CardTemplate tpl = dataRepo.getCardById(id);
