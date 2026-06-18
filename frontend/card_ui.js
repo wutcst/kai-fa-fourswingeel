@@ -73,7 +73,7 @@ const CARD_UI = {
     if (card.discardAllForDraw) parts.push(`丢弃所有手牌，抽对应数量的牌`);
     if (card.buffCardName && card.buffDamageAmount > 0) parts.push(`本场战斗${card.buffCardName === 'shiv' ? '小刀' : card.buffCardName}伤害 +${card.buffDamageAmount}`);
     if (card.doublePoison) parts.push(`将目标敌人的中毒翻倍`);
-    if (card.drawPoisonAll > 0) parts.push(`本回合每抽1张牌，所有敌人获 ${card.drawPoisonAll} 层毒`);
+    if (card.poisonAllPerCard > 0) parts.push(`本回合之后每抽1张牌，所有敌人获 ${card.poisonAllPerCard} 层毒`);
     if (card.extraPoisonTick) parts.push(`回合结束时中毒额外结算1次`);
     if (card.addCardId && card.addCardCount > 0) parts.push(`增加 ${card.addCardCount} 张${card.addCardId === 'shiv' ? '小刀' : card.addCardId}到手牌`);
     if (card.requiresEmptyDrawPile) parts.push('抽牌堆为空时才可打出');

@@ -57,7 +57,7 @@ public class CardTemplate {
     private final String buffCardName;
     private final int buffDamageAmount;
     private final boolean doublePoison;
-    private final int drawPoisonAll;
+    private final int poisonAllPerCard;
     private final boolean extraPoisonTick;
     private final String addCardId;
     private final int addCardCount;
@@ -110,7 +110,7 @@ public class CardTemplate {
             @JsonProperty("buffCardName") String buffCardName,
             @JsonProperty("buffDamageAmount") Integer buffDamageAmount,
             @JsonProperty("doublePoison") Boolean doublePoison,
-            @JsonProperty("drawPoisonAll") Integer drawPoisonAll,
+            @JsonProperty("poisonAllPerCard") Integer poisonAllPerCard,
             @JsonProperty("extraPoisonTick") Boolean extraPoisonTick,
             @JsonProperty("addCardId") String addCardId,
             @JsonProperty("addCardCount") Integer addCardCount,
@@ -162,7 +162,7 @@ public class CardTemplate {
         this.buffCardName = buffCardName;
         this.buffDamageAmount = buffDamageAmount != null ? buffDamageAmount : 0;
         this.doublePoison = doublePoison != null ? doublePoison : false;
-        this.drawPoisonAll = drawPoisonAll != null ? drawPoisonAll : 0;
+        this.poisonAllPerCard = poisonAllPerCard != null ? poisonAllPerCard : 0;
         this.extraPoisonTick = extraPoisonTick != null ? extraPoisonTick : false;
         this.addCardId = addCardId;
         this.addCardCount = addCardCount != null ? addCardCount : 0;
@@ -221,7 +221,7 @@ public class CardTemplate {
     public String getBuffCardName() { return buffCardName; }
     public int getBuffDamageAmount() { return buffDamageAmount; }
     public boolean isDoublePoison() { return doublePoison; }
-    public int getDrawPoisonAll() { return drawPoisonAll; }
+    public int getPoisonAllPerCard() { return poisonAllPerCard; }
     public boolean isExtraPoisonTick() { return extraPoisonTick; }
     public String getAddCardId() { return addCardId; }
     public int getAddCardCount() { return addCardCount; }

@@ -144,7 +144,7 @@ public class RewardController {
         map.put("buffCardName", tpl.getBuffCardName());
         map.put("buffDamageAmount", tpl.getBuffDamageAmount());
         map.put("doublePoison", tpl.isDoublePoison());
-        map.put("drawPoisonAll", tpl.getDrawPoisonAll());
+        map.put("poisonAllPerCard", tpl.getPoisonAllPerCard());
         map.put("extraPoisonTick", tpl.isExtraPoisonTick());
         map.put("addCardId", tpl.getAddCardId());
         map.put("addCardCount", tpl.getAddCardCount());

@@ -464,7 +464,7 @@ public class GameConfigController {
                 cardMap.put("buffCardName", tpl.getBuffCardName());
                 cardMap.put("buffDamageAmount", tpl.getBuffDamageAmount());
                 cardMap.put("doublePoison", tpl.isDoublePoison());
-                cardMap.put("drawPoisonAll", tpl.getDrawPoisonAll());
+                cardMap.put("poisonAllPerCard", tpl.getPoisonAllPerCard());
                 cardMap.put("extraPoisonTick", tpl.isExtraPoisonTick());
                 cardMap.put("addCardId", tpl.getAddCardId());
                 cardMap.put("addCardCount", tpl.getAddCardCount());
@@ -583,7 +583,7 @@ public class GameConfigController {
                     cardMap.put("buffCardName", tpl.getBuffCardName());
                     cardMap.put("buffDamageAmount", tpl.getBuffDamageAmount());
                     cardMap.put("doublePoison", tpl.isDoublePoison());
-                    cardMap.put("drawPoisonAll", tpl.getDrawPoisonAll());
+                    cardMap.put("poisonAllPerCard", tpl.getPoisonAllPerCard());
                     cardMap.put("extraPoisonTick", tpl.isExtraPoisonTick());
                     cardMap.put("addCardId", tpl.getAddCardId());
                     cardMap.put("addCardCount", tpl.getAddCardCount());

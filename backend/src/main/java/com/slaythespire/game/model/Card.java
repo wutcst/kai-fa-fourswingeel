@@ -62,7 +62,7 @@ public class Card {
     private String buffCardName;
     private int buffDamageAmount;
     private boolean doublePoison;
-    private int drawPoisonAll;
+    private int poisonAllPerCard;
     private boolean extraPoisonTick;
     private String addCardId;
     private int addCardCount;
@@ -127,7 +127,7 @@ public class Card {
         this.buffCardName = template.getBuffCardName();
         this.buffDamageAmount = template.getBuffDamageAmount();
         this.doublePoison = template.isDoublePoison();
-        this.drawPoisonAll = template.getDrawPoisonAll();
+        this.poisonAllPerCard = template.getPoisonAllPerCard();
         this.extraPoisonTick = template.isExtraPoisonTick();
         this.addCardId = template.getAddCardId();
         this.addCardCount = template.getAddCardCount();
@@ -182,7 +182,7 @@ public class Card {
         this.buffCardName = null;
         this.buffDamageAmount = 0;
         this.doublePoison = false;
-        this.drawPoisonAll = 0;
+        this.poisonAllPerCard = 0;
         this.extraPoisonTick = false;
         this.addCardId = null;
         this.addCardCount = 0;
@@ -243,7 +243,7 @@ public class Card {
         this.buffCardName = original.buffCardName;
         this.buffDamageAmount = original.buffDamageAmount;
         this.doublePoison = original.doublePoison;
-        this.drawPoisonAll = original.drawPoisonAll;
+        this.poisonAllPerCard = original.poisonAllPerCard;
         this.extraPoisonTick = original.extraPoisonTick;
         this.addCardId = original.addCardId;
         this.addCardCount = original.addCardCount;
@@ -302,7 +302,7 @@ public class Card {
     public String getBuffCardName() { return buffCardName; }
     public int getBuffDamageAmount() { return buffDamageAmount; }
     public boolean isDoublePoison() { return doublePoison; }
-    public int getDrawPoisonAll() { return drawPoisonAll; }
+    public int getPoisonAllPerCard() { return poisonAllPerCard; }
     public boolean isExtraPoisonTick() { return extraPoisonTick; }
 
     // ==================== Setter 方法 ====================
@@ -351,7 +351,7 @@ public class Card {
     public void setBuffCardName(String v) { this.buffCardName = v; }
     public void setBuffDamageAmount(int v) { this.buffDamageAmount = v; }
     public void setDoublePoison(boolean v) { this.doublePoison = v; }
-    public void setDrawPoisonAll(int v) { this.drawPoisonAll = v; }
+    public void setPoisonAllPerCard(int v) { this.poisonAllPerCard = v; }
     public void setExtraPoisonTick(boolean v) { this.extraPoisonTick = v; }
     public String getAddCardId() { return addCardId; }
     public int getAddCardCount() { return addCardCount; }

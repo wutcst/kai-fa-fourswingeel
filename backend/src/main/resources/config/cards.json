@@ -1,241 +1,1887 @@
 [
-    {"id":"strike","name":"打击","cost":1,"damage":6,"block":0,"type":"ATTACK","upgraded":false,"charId":"1","rarity":"START"},
-    {"id":"strike+","name":"打击+","cost":1,"damage":9,"block":0,"type":"ATTACK","upgraded":true,"charId":"1","rarity":"START"},
-    {"id":"defend","name":"防御","cost":1,"damage":0,"block":5,"type":"SKILL","upgraded":false,"charId":"1","rarity":"START"},
-    {"id":"defend+","name":"防御+","cost":1,"damage":0,"block":8,"type":"SKILL","upgraded":true,"charId":"1","rarity":"START"},
-    {"id":"bash","name":"痛击","cost":2,"damage":8,"block":0,"type":"ATTACK","effects":[{"type":"VULNERABLE","count":2,"target":"ENEMY"}],"upgraded":false,"charId":"1","rarity":"START"},
-    {"id":"bash+","name":"痛击+","cost":2,"damage":10,"block":0,"type":"ATTACK","effects":[{"type":"VULNERABLE","count":3,"target":"ENEMY"}],"upgraded":true,"charId":"1","rarity":"START"},
-    {"id":"ironwave","name":"铁斩波","cost":1,"damage":5,"block":5,"type":"ATTACK","upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"ironwave+","name":"铁斩波+","cost":1,"damage":7,"block":7,"type":"ATTACK","upgraded":true,"charId":"1","rarity":"COMMON"},
-    {"id":"shrug_off","name":"耸肩无视","cost":1,"damage":0,"block":8,"type":"SKILL","drawCount":1,"upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"shrug_off+","name":"耸肩无视+","cost":1,"damage":0,"block":11,"type":"SKILL","drawCount":1,"upgraded":true,"charId":"1","rarity":"COMMON"},
-    {"id":"inflame","name":"燃烧","cost":1,"damage":0,"block":0,"type":"POWER","effects":[{"type":"STRENGTH","count":2,"target":"SELF"}],"upgraded":false,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"inflame+","name":"燃烧+","cost":1,"damage":0,"block":0,"type":"POWER","effects":[{"type":"STRENGTH","count":3,"target":"SELF"}],"upgraded":true,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"bloodletting","name":"放血","cost":0,"damage":0,"block":0,"type":"SKILL","selfDamage":3,"energyGain":2,"upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"bloodletting+","name":"放血+","cost":0,"damage":0,"block":0,"type":"SKILL","selfDamage":2,"energyGain":3,"upgraded":true,"charId":"1","rarity":"COMMON"},
-    {"id":"pommel_strike","name":"剑柄打击","cost":1,"damage":9,"block":0,"type":"ATTACK","drawCount":1,"upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"pommel_strike+","name":"剑柄打击+","cost":1,"damage":10,"block":0,"type":"ATTACK","drawCount":2,"upgraded":true,"charId":"1","rarity":"COMMON"},
-    {"id":"twin_strike","name":"双重打击","cost":1,"damage":5,"block":0,"type":"ATTACK","multiHitCount":2,"upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"twin_strike+","name":"双重打击+","cost":1,"damage":7,"block":0,"type":"ATTACK","multiHitCount":2,"upgraded":true,"charId":"1","rarity":"COMMON"},
-    {"id":"thirst_for_knowledge","name":"燃烧契约","cost":1,"damage":0,"block":0,"type":"SKILL","drawCount":3,"exhaustHandCount":1,"exhaustHandMode":"SELECT","upgraded":false,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"thirst_for_knowledge+","name":"燃烧契约+","cost":1,"damage":0,"block":0,"type":"SKILL","drawCount":4,"exhaustHandCount":1,"exhaustHandMode":"SELECT","upgraded":true,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"entrench","name":"坚毅","cost":1,"damage":0,"block":7,"type":"SKILL","exhaustHandCount":1,"exhaustHandMode":"RANDOM","upgraded":false,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"entrench+","name":"坚毅+","cost":1,"damage":0,"block":8,"type":"SKILL","exhaustHandCount":1,"exhaustHandMode":"SELECT","upgraded":true,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"tremor","name":"战栗","cost":1,"damage":0,"block":0,"type":"SKILL","effects":[{"type":"VULNERABLE","count":3,"target":"ENEMY"}],"exhaust":true,"upgraded":false,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"tremor+","name":"战栗+","cost":1,"damage":0,"block":0,"type":"SKILL","effects":[{"type":"VULNERABLE","count":4,"target":"ENEMY"}],"exhaust":true,"upgraded":true,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"heavy_strike","name":"重击","cost":2,"damage":14,"block":0,"type":"ATTACK","exhaust":true,"upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"heavy_strike+","name":"重击+","cost":2,"damage":18,"block":0,"type":"ATTACK","exhaust":true,"upgraded":true,"charId":"1","rarity":"COMMON"},
-    {"id":"anger","name":"愤怒","cost":0,"damage":6,"block":0,"type":"ATTACK","upgraded":false,"charId":"1","rarity":"COMMON","copyToDiscard":true},
-    {"id":"anger+","name":"愤怒+","cost":0,"damage":8,"block":0,"type":"ATTACK","upgraded":true,"charId":"1","rarity":"COMMON","copyToDiscard":true},
-    {"id":"heavy_blade","name":"重刃","cost":2,"damage":14,"block":0,"type":"ATTACK","upgraded":false,"charId":"1","rarity":"COMMON","strengthMultiplier":3},
-    {"id":"heavy_blade+","name":"重刃+","cost":2,"damage":14,"block":0,"type":"ATTACK","upgraded":true,"charId":"1","rarity":"COMMON","strengthMultiplier":5},
-    {"id":"flying_boomerang","name":"飞剑回旋镖","cost":1,"damage":3,"block":0,"type":"ATTACK","multiHitCount":3,"randomTarget":true,"upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"flying_boomerang+","name":"飞剑回旋镖+","cost":1,"damage":3,"block":0,"type":"ATTACK","multiHitCount":4,"randomTarget":true,"upgraded":true,"charId":"1","rarity":"COMMON"},
-    {"id":"thunder_strike","name":"闪电霹雳","cost":1,"damage":4,"block":0,"type":"ATTACK","aoe":true,"effects":[{"type":"VULNERABLE","count":1,"target":"ENEMY"}],"upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"thunder_strike+","name":"闪电霹雳+","cost":1,"damage":7,"block":0,"type":"ATTACK","aoe":true,"effects":[{"type":"VULNERABLE","count":1,"target":"ENEMY"}],"upgraded":true,"charId":"1","rarity":"COMMON"},
-    {"id":"cleave","name":"顺劈斩","cost":1,"damage":8,"block":0,"type":"ATTACK","aoe":true,"upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"cleave+","name":"顺劈斩+","cost":1,"damage":11,"block":0,"type":"ATTACK","aoe":true,"upgraded":true,"charId":"1","rarity":"COMMON"},
-    {"id":"iron_arm","name":"金刚臂","cost":2,"damage":12,"block":0,"type":"ATTACK","effects":[{"type":"WEAK","count":2,"target":"ENEMY"}],"upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"iron_arm+","name":"金刚臂+","cost":2,"damage":14,"block":0,"type":"ATTACK","effects":[{"type":"WEAK","count":3,"target":"ENEMY"}],"upgraded":true,"charId":"1","rarity":"COMMON"},
-    {"id":"blood_for_blood","name":"御血术","cost":1,"damage":15,"block":0,"type":"ATTACK","selfDamage":2,"upgraded":false,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"blood_for_blood+","name":"御血术+","cost":1,"damage":20,"block":0,"type":"ATTACK","selfDamage":2,"upgraded":true,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"pummel","name":"连续拳","cost":1,"damage":2,"block":0,"type":"ATTACK","multiHitCount":4,"exhaust":true,"upgraded":false,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"pummel+","name":"连续拳+","cost":1,"damage":2,"block":0,"type":"ATTACK","multiHitCount":5,"exhaust":true,"upgraded":true,"charId":"1","rarity":"UNCOMMON"},
-
-
-    {"id":"strike_silent","name":"打击","cost":1,"damage":6,"block":0,"type":"ATTACK","upgraded":false,"charId":"2","rarity":"START"},
-    {"id":"strike_silent+","name":"打击+","cost":1,"damage":9,"block":0,"type":"ATTACK","upgraded":true,"charId":"2","rarity":"START"},
-    {"id":"defend_silent","name":"防御","cost":1,"damage":0,"block":5,"type":"SKILL","upgraded":false,"charId":"2","rarity":"START"},
-    {"id":"defend_silent+","name":"防御+","cost":1,"damage":0,"block":8,"type":"SKILL","upgraded":true,"charId":"2","rarity":"START"},
-    {"id":"poison_dart","name":"带毒刺击","cost":1,"damage":6,"block":0,"type":"ATTACK","effects":[{"type":"POISON","count":3,"target":"ENEMY"}],"upgraded":false,"charId":"2","rarity":"COMMON"},
-    {"id":"poison_dart+","name":"带毒刺击+","cost":1,"damage":8,"block":0,"type":"ATTACK","effects":[{"type":"POISON","count":4,"target":"ENEMY"}],"upgraded":true,"charId":"2","rarity":"COMMON"},
-    {"id":"survivor","name":"生存者","cost":1,"damage":0,"block":8,"type":"SKILL","discardCount":1,"discardMode":"RANDOM","upgraded":false,"charId":"2","rarity":"START"},
-    {"id":"survivor+","name":"生存者+","cost":1,"damage":0,"block":11,"type":"SKILL","discardCount":1,"discardMode":"SELECT","upgraded":true,"charId":"2","rarity":"START"},
-    {"id":"neutralize","name":"中和","cost":0,"damage":3,"block":0,"type":"ATTACK","effects":[{"type":"WEAK","count":1,"target":"ENEMY"}],"upgraded":false,"charId":"2","rarity":"START"},
-    {"id":"neutralize+","name":"中和+","cost":0,"damage":4,"block":0,"type":"ATTACK","effects":[{"type":"WEAK","count":2,"target":"ENEMY"}],"upgraded":true,"charId":"2","rarity":"START"},
-    {"id":"deflect","name":"灵动步法","cost":1,"damage":0,"block":0,"type":"POWER","effects":[{"type":"DEXTERITY","count":2,"target":"SELF"}],"upgraded":false,"charId":"2","rarity":"UNCOMMON"},
-    {"id":"deflect+","name":"灵动步法+","cost":1,"damage":0,"block":0,"type":"POWER","effects":[{"type":"DEXTERITY","count":3,"target":"SELF"}],"upgraded":true,"charId":"2","rarity":"UNCOMMON"},
-
-
-    {"id":"oneshot","name":"秒杀","cost":0,"damage":999,"block":0,"type":"ATTACK","upgraded":false,"innate":true,"aoe":true,"charId":"0","rarity":"START","exhaust":true},
-    {"id":"regen_potion","name":"自我再生","cost":1,"damage":0,"block":0,"type":"SKILL","effects":[{"type":"REGENERATION","count":4,"target":"SELF"}],"upgraded":false,"charId":"0","rarity":"RARE"},
-    {"id":"regen_potion+","name":"自我再生+","cost":1,"damage":0,"block":0,"type":"SKILL","effects":[{"type":"REGENERATION","count":6,"target":"SELF"}],"upgraded":true,"charId":"0","rarity":"RARE"},
-    
-
-
-        {
-      "id": "slime",
-      "name": "粘液",
-      "cost": 1,
-      "damage": 0,
-      "block": 0,
-      "type": "STATUS",
-      "exhaust": true,
-      "charId": "0",
-      "rarity": "SPECIAL"
-    },
-    {
-      "id": "dazed",
-      "name": "晕眩",
-      "cost": 0,
-      "damage": 0,
-      "block": 0,
-      "type": "STATUS",
-      "ethereal": true,
-      "unplayable": true,
-      "charId": "0",
-      "rarity": "SPECIAL"
-    },
-    {
-      "id": "wound",
-      "name": "伤口",
-      "cost": 0,
-      "damage": 0,
-      "block": 0,
-      "type": "STATUS",
-      "unplayable": true,
-      "charId": "0",
-      "rarity": "SPECIAL"
-    },
-    {
-      "id": "burn",
-      "name": "灼烧",
-      "cost": 0,
-      "damage": 0,
-      "block": 0,
-      "type": "STATUS",
-      "unplayable": true,
-      "endOfTurnDamage": 2,
-      "charId": "0",
-      "rarity": "SPECIAL"
-    },
-    {
-      "id": "void",
-      "name": "虚空",
-      "cost": 0,
-      "damage": 0,
-      "block": 0,
-      "type": "STATUS",
-      "ethereal": true,
-      "unplayable": true,
-      "energyLossOnDraw": 1,
-      "charId": "0",
-      "rarity": "SPECIAL"
-    },
-
-    {"id":"wound","name":"伤口","cost":-1,"damage":0,"block":0,"type":"STATUS","unplayable":true,"ethereal":true,"charId":"0","rarity":"SPECIAL"},
-
-    {"id":"second_wind","name":"重振精神","cost":1,"damage":0,"block":0,"type":"SKILL","exhaustNonAttackBlock":8,"upgraded":false,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"second_wind+","name":"重振精神+","cost":1,"damage":0,"block":0,"type":"SKILL","exhaustNonAttackBlock":10,"upgraded":true,"charId":"1","rarity":"UNCOMMON"},
-
-    {"id":"power_through","name":"硬撑","cost":1,"damage":0,"block":20,"type":"SKILL","addWoundCount":2,"upgraded":false,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"power_through+","name":"硬撑+","cost":1,"damage":0,"block":25,"type":"SKILL","addWoundCount":2,"upgraded":true,"charId":"1","rarity":"UNCOMMON"},
-
-    {"id":"body_slam","name":"全身撞击","cost":1,"damage":0,"block":0,"type":"ATTACK","blockToDamage":true,"upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"body_slam+","name":"全身撞击+","cost":0,"damage":0,"block":0,"type":"ATTACK","blockToDamage":true,"upgraded":true,"charId":"1","rarity":"COMMON"},
-
-    {"id":"rage","name":"狂怒","cost":0,"damage":0,"block":0,"type":"SKILL","blockPerAttack":3,"upgraded":false,"charId":"1","rarity":"UNCOMMON"},
-    {"id":"rage+","name":"狂怒+","cost":0,"damage":0,"block":0,"type":"SKILL","blockPerAttack":5,"upgraded":true,"charId":"1","rarity":"UNCOMMON"},
-
-    {"id":"searing_blow","name":"灼热攻击","cost":2,"damage":14,"block":0,"type":"ATTACK","upgraded":false,"charId":"1","rarity":"UNCOMMON","forgeDamageBonus":5},
-    {"id":"searing_blow+","name":"灼热攻击+1","cost":2,"damage":19,"block":0,"type":"ATTACK","upgraded":true,"charId":"1","rarity":"UNCOMMON","forgeDamageBonus":5},
-
-    {"id":"whirlwind","name":"旋风斩","cost":1,"damage":8,"block":0,"type":"ATTACK","xCost":true,"aoe":true,"upgraded":false,"charId":"1","rarity":"RARE"},
-    {"id":"whirlwind+","name":"旋风斩+","cost":1,"damage":10,"block":0,"type":"ATTACK","xCost":true,"aoe":true,"upgraded":true,"charId":"1","rarity":"RARE"},
-
-    {"id":"offering","name":"献祭","cost":0,"damage":0,"block":0,"type":"SKILL","selfDamage":6,"energyGain":2,"drawCount":3,"exhaust":true,"upgraded":false,"charId":"1","rarity":"RARE"},
-    {"id":"offering+","name":"献祭+","cost":0,"damage":0,"block":0,"type":"SKILL","selfDamage":4,"energyGain":2,"drawCount":5,"exhaust":true,"upgraded":true,"charId":"1","rarity":"RARE"},
-
-    {"id":"impervious","name":"金刚不坏","cost":2,"damage":0,"block":30,"type":"SKILL","exhaust":true,"upgraded":false,"charId":"1","rarity":"RARE"},
-    {"id":"impervious+","name":"金刚不坏+","cost":2,"damage":0,"block":40,"type":"SKILL","exhaust":true,"upgraded":true,"charId":"1","rarity":"RARE"},
-
-    {"id":"bludgeon","name":"盛怒","cost":3,"damage":32,"block":0,"type":"ATTACK","upgraded":false,"charId":"1","rarity":"RARE"},
-    {"id":"bludgeon+","name":"盛怒+","cost":3,"damage":42,"block":0,"type":"ATTACK","upgraded":true,"charId":"1","rarity":"RARE"},
-
-    {"id":"armaments","name":"武装","cost":1,"damage":0,"block":5,"type":"SKILL","upgradeHandCount":1,"upgradeHandMode":"SELECT","upgraded":false,"charId":"1","rarity":"COMMON"},
-    {"id":"armaments+","name":"武装+","cost":1,"damage":0,"block":8,"type":"SKILL","upgradeAllInHand":true,"upgraded":true,"charId":"1","rarity":"COMMON"},
-
-    {"id":"demon_form","name":"恶魔形态","cost":3,"damage":0,"block":0,"type":"POWER","effects":[{"type":"RITUAL","count":3,"target":"SELF"}],"upgraded":false,"charId":"1","rarity":"RARE"},
-    {"id":"demon_form+","name":"恶魔形态+","cost":3,"damage":0,"block":0,"type":"POWER","effects":[{"type":"RITUAL","count":4,"target":"SELF"}],"upgraded":true,"charId":"1","rarity":"RARE"},
-
-    {"id":"shiv","name":"小刀","cost":0,"damage":4,"block":0,"type":"ATTACK","exhaust":true,"upgraded":false,"charId":"2","rarity":"SPECIAL"},
-
-    {"id":"prepared","name":"早有准备","cost":0,"damage":0,"block":0,"type":"SKILL","drawCount":1,"discardCount":1,"discardMode":"RANDOM","drawFirst":true,"upgraded":false,"charId":"2","rarity":"COMMON"},
-    {"id":"prepared+","name":"早有准备+","cost":0,"damage":0,"block":0,"type":"SKILL","drawCount":2,"discardCount":1,"discardMode":"RANDOM","drawFirst":true,"upgraded":true,"charId":"2","rarity":"COMMON"},
-
-    {"id":"acrobatics","name":"杂技","cost":1,"damage":0,"block":0,"type":"SKILL","drawCount":3,"discardCount":1,"discardMode":"RANDOM","drawFirst":true,"upgraded":false,"charId":"2","rarity":"COMMON"},
-    {"id":"acrobatics+","name":"杂技+","cost":1,"damage":0,"block":0,"type":"SKILL","drawCount":4,"discardCount":1,"discardMode":"RANDOM","drawFirst":true,"upgraded":true,"charId":"2","rarity":"COMMON"},
-
-    {"id":"concentrate","name":"全神贯注","cost":0,"damage":0,"block":0,"type":"SKILL","discardCount":2,"discardMode":"SELECT","energyGain":3,"upgraded":false,"charId":"2","rarity":"UNCOMMON"},
-    {"id":"concentrate+","name":"全神贯注+","cost":0,"damage":0,"block":0,"type":"SKILL","discardCount":2,"discardMode":"SELECT","energyGain":4,"upgraded":true,"charId":"2","rarity":"UNCOMMON"},
-
-    {"id":"sneaky_strike","name":"隐秘打击","cost":2,"damage":12,"block":0,"type":"ATTACK","energyGainIfDiscarded":2,"upgraded":false,"charId":"2","rarity":"UNCOMMON"},
-    {"id":"sneaky_strike+","name":"隐秘打击+","cost":2,"damage":16,"block":0,"type":"ATTACK","energyGainIfDiscarded":2,"upgraded":true,"charId":"2","rarity":"UNCOMMON"},
-
-    {"id":"storm_of_steel","name":"钢铁风暴","cost":1,"damage":0,"block":0,"type":"SKILL","discardAllForCards":"shiv","upgraded":false,"charId":"2","rarity":"RARE"},
-    {"id":"storm_of_steel+","name":"钢铁风暴+","cost":0,"damage":0,"block":0,"type":"SKILL","discardAllForCards":"shiv","upgraded":true,"charId":"2","rarity":"RARE"},
-
-    {"id":"accuracy","name":"精准","cost":1,"damage":0,"block":0,"type":"POWER","buffCardName":"shiv","buffDamageAmount":3,"upgraded":false,"charId":"2","rarity":"UNCOMMON"},
-    {"id":"accuracy+","name":"精准+","cost":1,"damage":0,"block":0,"type":"POWER","buffCardName":"shiv","buffDamageAmount":5,"upgraded":true,"charId":"2","rarity":"UNCOMMON"},
-
-    {"id":"corrosive_wave","name":"腐蚀波","cost":2,"damage":0,"block":0,"type":"SKILL","drawPoisonAll":3,"drawCount":2,"upgraded":false,"charId":"2","rarity":"RARE"},
-    {"id":"corrosive_wave+","name":"腐蚀波+","cost":2,"damage":0,"block":0,"type":"SKILL","drawPoisonAll":3,"drawCount":3,"upgraded":true,"charId":"2","rarity":"RARE"},
-
-    {"id":"calculated_gamble","name":"计算下注","cost":0,"damage":0,"block":0,"type":"SKILL","discardAllForDraw":true,"exhaust":true,"upgraded":false,"charId":"2","rarity":"UNCOMMON"},
-    {"id":"calculated_gamble+","name":"计算下注+","cost":0,"damage":0,"block":0,"type":"SKILL","discardAllForDraw":true,"upgraded":true,"charId":"2","rarity":"UNCOMMON"},
-
-    {"id":"catalyst","name":"催化剂","cost":1,"damage":0,"block":0,"type":"SKILL","doublePoison":true,"exhaust":true,"upgraded":false,"charId":"2","rarity":"RARE"},
-    {"id":"catalyst+","name":"催化剂+","cost":1,"damage":0,"block":0,"type":"SKILL","doublePoison":true,"exhaust":true,"upgraded":true,"charId":"2","rarity":"RARE"},
-
-    {"id":"noxious_fumes","name":"触媒","cost":1,"damage":0,"block":0,"type":"POWER","extraPoisonTick":true,"upgraded":false,"charId":"2","rarity":"RARE"},
-    {"id":"noxious_fumes+","name":"触媒+","cost":1,"damage":0,"block":0,"type":"POWER","extraPoisonTick":true,"upgraded":true,"charId":"2","rarity":"RARE"},
-
-    {"id":"deadly_poison","name":"致命毒药","cost":1,"damage":0,"block":0,"type":"SKILL","effects":[{"type":"POISON","count":5,"target":"ENEMY"}],"upgraded":false,"charId":"2","rarity":"COMMON"},
-    {"id":"deadly_poison+","name":"致命毒药+","cost":1,"damage":0,"block":0,"type":"SKILL","effects":[{"type":"POISON","count":7,"target":"ENEMY"}],"upgraded":true,"charId":"2","rarity":"COMMON"},
-
-    {"id":"blade_dance","name":"刀刃之舞","cost":1,"damage":0,"block":0,"type":"SKILL","addCardId":"shiv","addCardCount":3,"upgraded":false,"charId":"2","rarity":"COMMON"},
-    {"id":"blade_dance+","name":"刀刃之舞+","cost":1,"damage":0,"block":0,"type":"SKILL","addCardId":"shiv","addCardCount":4,"upgraded":true,"charId":"2","rarity":"COMMON"},
-
-    {"id":"cloak_and_dagger","name":"斗篷与匕首","cost":1,"damage":0,"block":6,"type":"SKILL","addCardId":"shiv","addCardCount":1,"upgraded":false,"charId":"2","rarity":"COMMON"},
-    {"id":"cloak_and_dagger+","name":"斗篷与匕首+","cost":1,"damage":0,"block":8,"type":"SKILL","addCardId":"shiv","addCardCount":2,"upgraded":true,"charId":"2","rarity":"COMMON"},
-
-    {"id":"backflip","name":"后空翻","cost":1,"damage":0,"block":5,"type":"SKILL","drawCount":2,"upgraded":false,"charId":"2","rarity":"COMMON"},
-    {"id":"backflip+","name":"后空翻+","cost":1,"damage":0,"block":8,"type":"SKILL","drawCount":2,"upgraded":true,"charId":"2","rarity":"COMMON"},
-
-    {"id":"dodge_and_roll","name":"闪避翻滚","cost":1,"damage":0,"block":6,"type":"SKILL","upgraded":false,"charId":"2","rarity":"COMMON"},
-    {"id":"dodge_and_roll+","name":"闪避翻滚+","cost":1,"damage":0,"block":9,"type":"SKILL","upgraded":true,"charId":"2","rarity":"COMMON"},
-
-    {"id":"noxious_blast","name":"毒雾爆发","cost":2,"damage":0,"block":0,"type":"SKILL","effects":[{"type":"POISON","count":4,"target":"ENEMY"}],"aoe":true,"upgraded":false,"charId":"2","rarity":"UNCOMMON"},
-    {"id":"noxious_blast+","name":"毒雾爆发+","cost":2,"damage":0,"block":0,"type":"SKILL","effects":[{"type":"POISON","count":6,"target":"ENEMY"}],"aoe":true,"upgraded":true,"charId":"2","rarity":"UNCOMMON"},
-
-    {"id":"quick_slash","name":"快速斩击","cost":1,"damage":7,"block":0,"type":"ATTACK","drawCount":1,"upgraded":false,"charId":"2","rarity":"COMMON"},
-    {"id":"quick_slash+","name":"快速斩击+","cost":1,"damage":10,"block":0,"type":"ATTACK","drawCount":1,"upgraded":true,"charId":"2","rarity":"COMMON"},
-
-    {"id":"shadow_strike","name":"暗影打击","cost":2,"damage":15,"block":0,"type":"ATTACK","upgraded":false,"charId":"2","rarity":"COMMON"},
-    {"id":"shadow_strike+","name":"暗影打击+","cost":2,"damage":20,"block":0,"type":"ATTACK","upgraded":true,"charId":"2","rarity":"COMMON"},
-
-    {"id":"escape_plan","name":"逃脱计划","cost":0,"damage":0,"block":3,"type":"SKILL","drawCount":1,"upgraded":false,"charId":"2","rarity":"COMMON"},
-    {"id":"escape_plan+","name":"逃脱计划+","cost":0,"damage":0,"block":5,"type":"SKILL","drawCount":1,"upgraded":true,"charId":"2","rarity":"COMMON"},
-
-    {"id":"double_throw","name":"双重飞刀","cost":1,"damage":4,"block":0,"type":"ATTACK","multiHitCount":2,"upgraded":false,"charId":"2","rarity":"COMMON"},
-    {"id":"double_throw+","name":"双重飞刀+","cost":1,"damage":6,"block":0,"type":"ATTACK","multiHitCount":2,"upgraded":true,"charId":"2","rarity":"COMMON"},
-
-    {"id":"nimble_step","name":"灵巧闪避","cost":1,"damage":0,"block":7,"type":"SKILL","drawCount":1,"upgraded":false,"charId":"2","rarity":"UNCOMMON"},
-    {"id":"nimble_step+","name":"灵巧闪避+","cost":1,"damage":0,"block":9,"type":"SKILL","drawCount":1,"upgraded":true,"charId":"2","rarity":"UNCOMMON"},
-
-    {"id":"poison_trap","name":"毒雾陷阱","cost":2,"damage":0,"block":8,"type":"SKILL","effects":[{"type":"POISON","count":3,"target":"ENEMY"}],"upgraded":false,"charId":"2","rarity":"UNCOMMON"},
-    {"id":"poison_trap+","name":"毒雾陷阱+","cost":2,"damage":0,"block":10,"type":"SKILL","effects":[{"type":"POISON","count":5,"target":"ENEMY"}],"upgraded":true,"charId":"2","rarity":"UNCOMMON"},
-
-    {"id":"venom_burst","name":"毒液爆发","cost":1,"damage":5,"block":0,"type":"ATTACK","effects":[{"type":"POISON","count":2,"target":"ENEMY"}],"aoe":true,"upgraded":false,"charId":"2","rarity":"UNCOMMON"},
-    {"id":"venom_burst+","name":"毒液爆发+","cost":1,"damage":7,"block":0,"type":"ATTACK","effects":[{"type":"POISON","count":3,"target":"ENEMY"}],"aoe":true,"upgraded":true,"charId":"2","rarity":"UNCOMMON"},
-
-    {"id":"hoard","name":"囤积","cost":2,"damage":0,"block":0,"type":"SKILL","drawCount":4,"exhaust":true,"upgraded":false,"charId":"2","rarity":"RARE"},
-    {"id":"hoard+","name":"囤积+","cost":2,"damage":0,"block":0,"type":"SKILL","drawCount":5,"exhaust":true,"upgraded":true,"charId":"2","rarity":"RARE"},
-
-    {"id":"wraith_form","name":"幽魂形态","cost":3,"damage":0,"block":0,"type":"POWER","effects":[{"type":"INTANGIBLE","count":2,"target":"SELF"}],"upgraded":false,"charId":"2","rarity":"RARE"},
-    {"id":"wraith_form+","name":"幽魂形态+","cost":3,"damage":0,"block":0,"type":"POWER","effects":[{"type":"INTANGIBLE","count":3,"target":"SELF"}],"upgraded":true,"charId":"2","rarity":"RARE"},
-
-    {"id":"grand_finale","name":"华丽收场","cost":0,"damage":50,"block":0,"type":"ATTACK","aoe":true,"requiresEmptyDrawPile":true,"exhaust":true,"upgraded":false,"charId":"2","rarity":"RARE"},
-    {"id":"grand_finale+","name":"华丽收场+","cost":0,"damage":60,"block":0,"type":"ATTACK","aoe":true,"requiresEmptyDrawPile":true,"exhaust":true,"upgraded":true,"charId":"2","rarity":"RARE"}
-
+  {
+    "id": "strike",
+    "name": "打击",
+    "cost": 1,
+    "damage": 6,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "START"
+  },
+  {
+    "id": "strike+",
+    "name": "打击+",
+    "cost": 1,
+    "damage": 9,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "START"
+  },
+  {
+    "id": "defend",
+    "name": "防御",
+    "cost": 1,
+    "damage": 0,
+    "block": 5,
+    "type": "SKILL",
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "START"
+  },
+  {
+    "id": "defend+",
+    "name": "防御+",
+    "cost": 1,
+    "damage": 0,
+    "block": 8,
+    "type": "SKILL",
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "START"
+  },
+  {
+    "id": "bash",
+    "name": "痛击",
+    "cost": 2,
+    "damage": 8,
+    "block": 0,
+    "type": "ATTACK",
+    "effects": [
+      {
+        "type": "VULNERABLE",
+        "count": 2,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "START"
+  },
+  {
+    "id": "bash+",
+    "name": "痛击+",
+    "cost": 2,
+    "damage": 10,
+    "block": 0,
+    "type": "ATTACK",
+    "effects": [
+      {
+        "type": "VULNERABLE",
+        "count": 3,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "START"
+  },
+  {
+    "id": "ironwave",
+    "name": "铁斩波",
+    "cost": 1,
+    "damage": 5,
+    "block": 5,
+    "type": "ATTACK",
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "ironwave+",
+    "name": "铁斩波+",
+    "cost": 1,
+    "damage": 7,
+    "block": 7,
+    "type": "ATTACK",
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "shrug_off",
+    "name": "耸肩无视",
+    "cost": 1,
+    "damage": 0,
+    "block": 8,
+    "type": "SKILL",
+    "drawCount": 1,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "shrug_off+",
+    "name": "耸肩无视+",
+    "cost": 1,
+    "damage": 0,
+    "block": 11,
+    "type": "SKILL",
+    "drawCount": 1,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "inflame",
+    "name": "燃烧",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "POWER",
+    "effects": [
+      {
+        "type": "STRENGTH",
+        "count": 2,
+        "target": "SELF"
+      }
+    ],
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "inflame+",
+    "name": "燃烧+",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "POWER",
+    "effects": [
+      {
+        "type": "STRENGTH",
+        "count": 3,
+        "target": "SELF"
+      }
+    ],
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "bloodletting",
+    "name": "放血",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "selfDamage": 3,
+    "energyGain": 2,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "bloodletting+",
+    "name": "放血+",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "selfDamage": 2,
+    "energyGain": 3,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "pommel_strike",
+    "name": "剑柄打击",
+    "cost": 1,
+    "damage": 9,
+    "block": 0,
+    "type": "ATTACK",
+    "drawCount": 1,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "pommel_strike+",
+    "name": "剑柄打击+",
+    "cost": 1,
+    "damage": 10,
+    "block": 0,
+    "type": "ATTACK",
+    "drawCount": 2,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "twin_strike",
+    "name": "双重打击",
+    "cost": 1,
+    "damage": 5,
+    "block": 0,
+    "type": "ATTACK",
+    "multiHitCount": 2,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "twin_strike+",
+    "name": "双重打击+",
+    "cost": 1,
+    "damage": 7,
+    "block": 0,
+    "type": "ATTACK",
+    "multiHitCount": 2,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "thirst_for_knowledge",
+    "name": "燃烧契约",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "drawCount": 3,
+    "exhaustHandCount": 1,
+    "exhaustHandMode": "SELECT",
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "thirst_for_knowledge+",
+    "name": "燃烧契约+",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "drawCount": 4,
+    "exhaustHandCount": 1,
+    "exhaustHandMode": "SELECT",
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "entrench",
+    "name": "坚毅",
+    "cost": 1,
+    "damage": 0,
+    "block": 7,
+    "type": "SKILL",
+    "exhaustHandCount": 1,
+    "exhaustHandMode": "RANDOM",
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "entrench+",
+    "name": "坚毅+",
+    "cost": 1,
+    "damage": 0,
+    "block": 8,
+    "type": "SKILL",
+    "exhaustHandCount": 1,
+    "exhaustHandMode": "SELECT",
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "tremor",
+    "name": "战栗",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "effects": [
+      {
+        "type": "VULNERABLE",
+        "count": 3,
+        "target": "ENEMY"
+      }
+    ],
+    "exhaust": true,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "tremor+",
+    "name": "战栗+",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "effects": [
+      {
+        "type": "VULNERABLE",
+        "count": 4,
+        "target": "ENEMY"
+      }
+    ],
+    "exhaust": true,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "heavy_strike",
+    "name": "重击",
+    "cost": 2,
+    "damage": 14,
+    "block": 0,
+    "type": "ATTACK",
+    "exhaust": true,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "heavy_strike+",
+    "name": "重击+",
+    "cost": 2,
+    "damage": 18,
+    "block": 0,
+    "type": "ATTACK",
+    "exhaust": true,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "anger",
+    "name": "愤怒",
+    "cost": 0,
+    "damage": 6,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON",
+    "copyToDiscard": true
+  },
+  {
+    "id": "anger+",
+    "name": "愤怒+",
+    "cost": 0,
+    "damage": 8,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON",
+    "copyToDiscard": true
+  },
+  {
+    "id": "heavy_blade",
+    "name": "重刃",
+    "cost": 2,
+    "damage": 14,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON",
+    "strengthMultiplier": 3
+  },
+  {
+    "id": "heavy_blade+",
+    "name": "重刃+",
+    "cost": 2,
+    "damage": 14,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON",
+    "strengthMultiplier": 5
+  },
+  {
+    "id": "flying_boomerang",
+    "name": "飞剑回旋镖",
+    "cost": 1,
+    "damage": 3,
+    "block": 0,
+    "type": "ATTACK",
+    "multiHitCount": 3,
+    "randomTarget": true,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "flying_boomerang+",
+    "name": "飞剑回旋镖+",
+    "cost": 1,
+    "damage": 3,
+    "block": 0,
+    "type": "ATTACK",
+    "multiHitCount": 4,
+    "randomTarget": true,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "thunder_strike",
+    "name": "闪电霹雳",
+    "cost": 1,
+    "damage": 4,
+    "block": 0,
+    "type": "ATTACK",
+    "aoe": true,
+    "effects": [
+      {
+        "type": "VULNERABLE",
+        "count": 1,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "thunder_strike+",
+    "name": "闪电霹雳+",
+    "cost": 1,
+    "damage": 7,
+    "block": 0,
+    "type": "ATTACK",
+    "aoe": true,
+    "effects": [
+      {
+        "type": "VULNERABLE",
+        "count": 1,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "cleave",
+    "name": "顺劈斩",
+    "cost": 1,
+    "damage": 8,
+    "block": 0,
+    "type": "ATTACK",
+    "aoe": true,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "cleave+",
+    "name": "顺劈斩+",
+    "cost": 1,
+    "damage": 11,
+    "block": 0,
+    "type": "ATTACK",
+    "aoe": true,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "iron_arm",
+    "name": "金刚臂",
+    "cost": 2,
+    "damage": 12,
+    "block": 0,
+    "type": "ATTACK",
+    "effects": [
+      {
+        "type": "WEAK",
+        "count": 2,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "iron_arm+",
+    "name": "金刚臂+",
+    "cost": 2,
+    "damage": 14,
+    "block": 0,
+    "type": "ATTACK",
+    "effects": [
+      {
+        "type": "WEAK",
+        "count": 3,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "blood_for_blood",
+    "name": "御血术",
+    "cost": 1,
+    "damage": 15,
+    "block": 0,
+    "type": "ATTACK",
+    "selfDamage": 2,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "blood_for_blood+",
+    "name": "御血术+",
+    "cost": 1,
+    "damage": 20,
+    "block": 0,
+    "type": "ATTACK",
+    "selfDamage": 2,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "pummel",
+    "name": "连续拳",
+    "cost": 1,
+    "damage": 2,
+    "block": 0,
+    "type": "ATTACK",
+    "multiHitCount": 4,
+    "exhaust": true,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "pummel+",
+    "name": "连续拳+",
+    "cost": 1,
+    "damage": 2,
+    "block": 0,
+    "type": "ATTACK",
+    "multiHitCount": 5,
+    "exhaust": true,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "strike_silent",
+    "name": "打击",
+    "cost": 1,
+    "damage": 6,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "START"
+  },
+  {
+    "id": "strike_silent+",
+    "name": "打击+",
+    "cost": 1,
+    "damage": 9,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "START"
+  },
+  {
+    "id": "defend_silent",
+    "name": "防御",
+    "cost": 1,
+    "damage": 0,
+    "block": 5,
+    "type": "SKILL",
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "START"
+  },
+  {
+    "id": "defend_silent+",
+    "name": "防御+",
+    "cost": 1,
+    "damage": 0,
+    "block": 8,
+    "type": "SKILL",
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "START"
+  },
+  {
+    "id": "poison_dart",
+    "name": "带毒刺击",
+    "cost": 1,
+    "damage": 6,
+    "block": 0,
+    "type": "ATTACK",
+    "effects": [
+      {
+        "type": "POISON",
+        "count": 3,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "poison_dart+",
+    "name": "带毒刺击+",
+    "cost": 1,
+    "damage": 8,
+    "block": 0,
+    "type": "ATTACK",
+    "effects": [
+      {
+        "type": "POISON",
+        "count": 4,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "survivor",
+    "name": "生存者",
+    "cost": 1,
+    "damage": 0,
+    "block": 8,
+    "type": "SKILL",
+    "discardCount": 1,
+    "discardMode": "RANDOM",
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "START"
+  },
+  {
+    "id": "survivor+",
+    "name": "生存者+",
+    "cost": 1,
+    "damage": 0,
+    "block": 11,
+    "type": "SKILL",
+    "discardCount": 1,
+    "discardMode": "SELECT",
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "START"
+  },
+  {
+    "id": "neutralize",
+    "name": "中和",
+    "cost": 0,
+    "damage": 3,
+    "block": 0,
+    "type": "ATTACK",
+    "effects": [
+      {
+        "type": "WEAK",
+        "count": 1,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "START"
+  },
+  {
+    "id": "neutralize+",
+    "name": "中和+",
+    "cost": 0,
+    "damage": 4,
+    "block": 0,
+    "type": "ATTACK",
+    "effects": [
+      {
+        "type": "WEAK",
+        "count": 2,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "START"
+  },
+  {
+    "id": "deflect",
+    "name": "灵动步法",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "POWER",
+    "effects": [
+      {
+        "type": "DEXTERITY",
+        "count": 2,
+        "target": "SELF"
+      }
+    ],
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "deflect+",
+    "name": "灵动步法+",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "POWER",
+    "effects": [
+      {
+        "type": "DEXTERITY",
+        "count": 3,
+        "target": "SELF"
+      }
+    ],
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "oneshot",
+    "name": "秒杀",
+    "cost": 0,
+    "damage": 999,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": false,
+    "innate": true,
+    "aoe": true,
+    "charId": "0",
+    "rarity": "START",
+    "exhaust": true
+  },
+  {
+    "id": "regen_potion",
+    "name": "自我再生",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "effects": [
+      {
+        "type": "REGENERATION",
+        "count": 4,
+        "target": "SELF"
+      }
+    ],
+    "upgraded": false,
+    "charId": "0",
+    "rarity": "RARE"
+  },
+  {
+    "id": "regen_potion+",
+    "name": "自我再生+",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "effects": [
+      {
+        "type": "REGENERATION",
+        "count": 6,
+        "target": "SELF"
+      }
+    ],
+    "upgraded": true,
+    "charId": "0",
+    "rarity": "RARE"
+  },
+  {
+    "id": "slime",
+    "name": "粘液",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "STATUS",
+    "exhaust": true,
+    "charId": "0",
+    "rarity": "SPECIAL"
+  },
+  {
+    "id": "dazed",
+    "name": "晕眩",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "STATUS",
+    "ethereal": true,
+    "unplayable": true,
+    "charId": "0",
+    "rarity": "SPECIAL"
+  },
+  {
+    "id": "wound",
+    "name": "伤口",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "STATUS",
+    "unplayable": true,
+    "charId": "0",
+    "rarity": "SPECIAL"
+  },
+  {
+    "id": "burn",
+    "name": "灼烧",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "STATUS",
+    "unplayable": true,
+    "endOfTurnDamage": 2,
+    "charId": "0",
+    "rarity": "SPECIAL"
+  },
+  {
+    "id": "void",
+    "name": "虚空",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "STATUS",
+    "ethereal": true,
+    "unplayable": true,
+    "energyLossOnDraw": 1,
+    "charId": "0",
+    "rarity": "SPECIAL"
+  },
+  {
+    "id": "wound",
+    "name": "伤口",
+    "cost": -1,
+    "damage": 0,
+    "block": 0,
+    "type": "STATUS",
+    "unplayable": true,
+    "ethereal": true,
+    "charId": "0",
+    "rarity": "SPECIAL"
+  },
+  {
+    "id": "second_wind",
+    "name": "重振精神",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "exhaustNonAttackBlock": 8,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "second_wind+",
+    "name": "重振精神+",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "exhaustNonAttackBlock": 10,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "power_through",
+    "name": "硬撑",
+    "cost": 1,
+    "damage": 0,
+    "block": 20,
+    "type": "SKILL",
+    "addWoundCount": 2,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "power_through+",
+    "name": "硬撑+",
+    "cost": 1,
+    "damage": 0,
+    "block": 25,
+    "type": "SKILL",
+    "addWoundCount": 2,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "body_slam",
+    "name": "全身撞击",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "ATTACK",
+    "blockToDamage": true,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "body_slam+",
+    "name": "全身撞击+",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "ATTACK",
+    "blockToDamage": true,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "rage",
+    "name": "狂怒",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "blockPerAttack": 3,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "rage+",
+    "name": "狂怒+",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "blockPerAttack": 5,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "searing_blow",
+    "name": "灼热攻击",
+    "cost": 2,
+    "damage": 14,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "UNCOMMON",
+    "forgeDamageBonus": 5
+  },
+  {
+    "id": "searing_blow+",
+    "name": "灼热攻击+1",
+    "cost": 2,
+    "damage": 19,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "UNCOMMON",
+    "forgeDamageBonus": 5
+  },
+  {
+    "id": "whirlwind",
+    "name": "旋风斩",
+    "cost": 1,
+    "damage": 8,
+    "block": 0,
+    "type": "ATTACK",
+    "xCost": true,
+    "aoe": true,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "RARE"
+  },
+  {
+    "id": "whirlwind+",
+    "name": "旋风斩+",
+    "cost": 1,
+    "damage": 10,
+    "block": 0,
+    "type": "ATTACK",
+    "xCost": true,
+    "aoe": true,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "RARE"
+  },
+  {
+    "id": "offering",
+    "name": "献祭",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "selfDamage": 6,
+    "energyGain": 2,
+    "drawCount": 3,
+    "exhaust": true,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "RARE"
+  },
+  {
+    "id": "offering+",
+    "name": "献祭+",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "selfDamage": 4,
+    "energyGain": 2,
+    "drawCount": 5,
+    "exhaust": true,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "RARE"
+  },
+  {
+    "id": "impervious",
+    "name": "金刚不坏",
+    "cost": 2,
+    "damage": 0,
+    "block": 30,
+    "type": "SKILL",
+    "exhaust": true,
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "RARE"
+  },
+  {
+    "id": "impervious+",
+    "name": "金刚不坏+",
+    "cost": 2,
+    "damage": 0,
+    "block": 40,
+    "type": "SKILL",
+    "exhaust": true,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "RARE"
+  },
+  {
+    "id": "bludgeon",
+    "name": "盛怒",
+    "cost": 3,
+    "damage": 32,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "RARE"
+  },
+  {
+    "id": "bludgeon+",
+    "name": "盛怒+",
+    "cost": 3,
+    "damage": 42,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "RARE"
+  },
+  {
+    "id": "armaments",
+    "name": "武装",
+    "cost": 1,
+    "damage": 0,
+    "block": 5,
+    "type": "SKILL",
+    "upgradeHandCount": 1,
+    "upgradeHandMode": "SELECT",
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "armaments+",
+    "name": "武装+",
+    "cost": 1,
+    "damage": 0,
+    "block": 8,
+    "type": "SKILL",
+    "upgradeAllInHand": true,
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "demon_form",
+    "name": "恶魔形态",
+    "cost": 3,
+    "damage": 0,
+    "block": 0,
+    "type": "POWER",
+    "effects": [
+      {
+        "type": "RITUAL",
+        "count": 3,
+        "target": "SELF"
+      }
+    ],
+    "upgraded": false,
+    "charId": "1",
+    "rarity": "RARE"
+  },
+  {
+    "id": "demon_form+",
+    "name": "恶魔形态+",
+    "cost": 3,
+    "damage": 0,
+    "block": 0,
+    "type": "POWER",
+    "effects": [
+      {
+        "type": "RITUAL",
+        "count": 4,
+        "target": "SELF"
+      }
+    ],
+    "upgraded": true,
+    "charId": "1",
+    "rarity": "RARE"
+  },
+  {
+    "id": "shiv",
+    "name": "小刀",
+    "cost": 0,
+    "damage": 4,
+    "block": 0,
+    "type": "ATTACK",
+    "exhaust": true,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "SPECIAL"
+  },
+  {
+    "id": "prepared",
+    "name": "早有准备",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "drawCount": 1,
+    "discardCount": 1,
+    "discardMode": "RANDOM",
+    "drawFirst": true,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "prepared+",
+    "name": "早有准备+",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "drawCount": 2,
+    "discardCount": 1,
+    "discardMode": "RANDOM",
+    "drawFirst": true,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "acrobatics",
+    "name": "杂技",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "drawCount": 3,
+    "discardCount": 1,
+    "discardMode": "RANDOM",
+    "drawFirst": true,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "acrobatics+",
+    "name": "杂技+",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "drawCount": 4,
+    "discardCount": 1,
+    "discardMode": "RANDOM",
+    "drawFirst": true,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "concentrate",
+    "name": "全神贯注",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "discardCount": 2,
+    "discardMode": "SELECT",
+    "energyGain": 3,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "concentrate+",
+    "name": "全神贯注+",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "discardCount": 2,
+    "discardMode": "SELECT",
+    "energyGain": 4,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "sneaky_strike",
+    "name": "隐秘打击",
+    "cost": 2,
+    "damage": 12,
+    "block": 0,
+    "type": "ATTACK",
+    "energyGainIfDiscarded": 2,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "sneaky_strike+",
+    "name": "隐秘打击+",
+    "cost": 2,
+    "damage": 16,
+    "block": 0,
+    "type": "ATTACK",
+    "energyGainIfDiscarded": 2,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "storm_of_steel",
+    "name": "钢铁风暴",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "discardAllForCards": "shiv",
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "RARE"
+  },
+  {
+    "id": "storm_of_steel+",
+    "name": "钢铁风暴+",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "discardAllForCards": "shiv",
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "RARE"
+  },
+  {
+    "id": "accuracy",
+    "name": "精准",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "POWER",
+    "buffCardName": "shiv",
+    "buffDamageAmount": 3,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "accuracy+",
+    "name": "精准+",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "POWER",
+    "buffCardName": "shiv",
+    "buffDamageAmount": 5,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "corrosive_wave",
+    "name": "腐蚀波",
+    "cost": 2,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "poisonAllPerCard": 3,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "RARE",
+    "drawCount": 2
+  },
+  {
+    "id": "corrosive_wave+",
+    "name": "腐蚀波+",
+    "cost": 2,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "poisonAllPerCard": 3,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "RARE",
+    "drawCount": 3
+  },
+  {
+    "id": "calculated_gamble",
+    "name": "计算下注",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "discardAllForDraw": true,
+    "exhaust": true,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "calculated_gamble+",
+    "name": "计算下注+",
+    "cost": 0,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "discardAllForDraw": true,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "catalyst",
+    "name": "催化剂",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "doublePoison": true,
+    "exhaust": true,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "RARE"
+  },
+  {
+    "id": "catalyst+",
+    "name": "催化剂+",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "doublePoison": true,
+    "exhaust": true,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "RARE"
+  },
+  {
+    "id": "noxious_fumes",
+    "name": "触媒",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "POWER",
+    "extraPoisonTick": true,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "RARE"
+  },
+  {
+    "id": "noxious_fumes+",
+    "name": "触媒+",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "POWER",
+    "extraPoisonTick": true,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "RARE"
+  },
+  {
+    "id": "deadly_poison",
+    "name": "致命毒药",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "effects": [
+      {
+        "type": "POISON",
+        "count": 5,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "deadly_poison+",
+    "name": "致命毒药+",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "effects": [
+      {
+        "type": "POISON",
+        "count": 7,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "blade_dance",
+    "name": "刀刃之舞",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "addCardId": "shiv",
+    "addCardCount": 3,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "blade_dance+",
+    "name": "刀刃之舞+",
+    "cost": 1,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "addCardId": "shiv",
+    "addCardCount": 4,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "cloak_and_dagger",
+    "name": "斗篷与匕首",
+    "cost": 1,
+    "damage": 0,
+    "block": 6,
+    "type": "SKILL",
+    "addCardId": "shiv",
+    "addCardCount": 1,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "cloak_and_dagger+",
+    "name": "斗篷与匕首+",
+    "cost": 1,
+    "damage": 0,
+    "block": 8,
+    "type": "SKILL",
+    "addCardId": "shiv",
+    "addCardCount": 2,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "backflip",
+    "name": "后空翻",
+    "cost": 1,
+    "damage": 0,
+    "block": 5,
+    "type": "SKILL",
+    "drawCount": 2,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "backflip+",
+    "name": "后空翻+",
+    "cost": 1,
+    "damage": 0,
+    "block": 8,
+    "type": "SKILL",
+    "drawCount": 2,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "dodge_and_roll",
+    "name": "闪避翻滚",
+    "cost": 1,
+    "damage": 0,
+    "block": 6,
+    "type": "SKILL",
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "dodge_and_roll+",
+    "name": "闪避翻滚+",
+    "cost": 1,
+    "damage": 0,
+    "block": 9,
+    "type": "SKILL",
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "noxious_blast",
+    "name": "毒雾爆发",
+    "cost": 2,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "effects": [
+      {
+        "type": "POISON",
+        "count": 4,
+        "target": "ENEMY"
+      }
+    ],
+    "aoe": true,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "noxious_blast+",
+    "name": "毒雾爆发+",
+    "cost": 2,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "effects": [
+      {
+        "type": "POISON",
+        "count": 6,
+        "target": "ENEMY"
+      }
+    ],
+    "aoe": true,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "quick_slash",
+    "name": "快速斩击",
+    "cost": 1,
+    "damage": 7,
+    "block": 0,
+    "type": "ATTACK",
+    "drawCount": 1,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "quick_slash+",
+    "name": "快速斩击+",
+    "cost": 1,
+    "damage": 10,
+    "block": 0,
+    "type": "ATTACK",
+    "drawCount": 1,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "shadow_strike",
+    "name": "暗影打击",
+    "cost": 2,
+    "damage": 15,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "shadow_strike+",
+    "name": "暗影打击+",
+    "cost": 2,
+    "damage": 20,
+    "block": 0,
+    "type": "ATTACK",
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "escape_plan",
+    "name": "逃脱计划",
+    "cost": 0,
+    "damage": 0,
+    "block": 3,
+    "type": "SKILL",
+    "drawCount": 1,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "escape_plan+",
+    "name": "逃脱计划+",
+    "cost": 0,
+    "damage": 0,
+    "block": 5,
+    "type": "SKILL",
+    "drawCount": 1,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "double_throw",
+    "name": "双重飞刀",
+    "cost": 1,
+    "damage": 4,
+    "block": 0,
+    "type": "ATTACK",
+    "multiHitCount": 2,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "double_throw+",
+    "name": "双重飞刀+",
+    "cost": 1,
+    "damage": 6,
+    "block": 0,
+    "type": "ATTACK",
+    "multiHitCount": 2,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "COMMON"
+  },
+  {
+    "id": "nimble_step",
+    "name": "灵巧闪避",
+    "cost": 1,
+    "damage": 0,
+    "block": 7,
+    "type": "SKILL",
+    "drawCount": 1,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "nimble_step+",
+    "name": "灵巧闪避+",
+    "cost": 1,
+    "damage": 0,
+    "block": 9,
+    "type": "SKILL",
+    "drawCount": 1,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "poison_trap",
+    "name": "毒雾陷阱",
+    "cost": 2,
+    "damage": 0,
+    "block": 8,
+    "type": "SKILL",
+    "effects": [
+      {
+        "type": "POISON",
+        "count": 3,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "poison_trap+",
+    "name": "毒雾陷阱+",
+    "cost": 2,
+    "damage": 0,
+    "block": 10,
+    "type": "SKILL",
+    "effects": [
+      {
+        "type": "POISON",
+        "count": 5,
+        "target": "ENEMY"
+      }
+    ],
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "venom_burst",
+    "name": "毒液爆发",
+    "cost": 1,
+    "damage": 5,
+    "block": 0,
+    "type": "ATTACK",
+    "effects": [
+      {
+        "type": "POISON",
+        "count": 2,
+        "target": "ENEMY"
+      }
+    ],
+    "aoe": true,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "venom_burst+",
+    "name": "毒液爆发+",
+    "cost": 1,
+    "damage": 7,
+    "block": 0,
+    "type": "ATTACK",
+    "effects": [
+      {
+        "type": "POISON",
+        "count": 3,
+        "target": "ENEMY"
+      }
+    ],
+    "aoe": true,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "UNCOMMON"
+  },
+  {
+    "id": "hoard",
+    "name": "囤积",
+    "cost": 2,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "drawCount": 4,
+    "exhaust": true,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "RARE"
+  },
+  {
+    "id": "hoard+",
+    "name": "囤积+",
+    "cost": 2,
+    "damage": 0,
+    "block": 0,
+    "type": "SKILL",
+    "drawCount": 5,
+    "exhaust": true,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "RARE"
+  },
+  {
+    "id": "wraith_form",
+    "name": "幽魂形态",
+    "cost": 3,
+    "damage": 0,
+    "block": 0,
+    "type": "POWER",
+    "effects": [
+      {
+        "type": "INTANGIBLE",
+        "count": 2,
+        "target": "SELF"
+      }
+    ],
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "RARE"
+  },
+  {
+    "id": "wraith_form+",
+    "name": "幽魂形态+",
+    "cost": 3,
+    "damage": 0,
+    "block": 0,
+    "type": "POWER",
+    "effects": [
+      {
+        "type": "INTANGIBLE",
+        "count": 3,
+        "target": "SELF"
+      }
+    ],
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "RARE"
+  },
+  {
+    "id": "grand_finale",
+    "name": "华丽收场",
+    "cost": 0,
+    "damage": 50,
+    "block": 0,
+    "type": "ATTACK",
+    "aoe": true,
+    "requiresEmptyDrawPile": true,
+    "exhaust": true,
+    "upgraded": false,
+    "charId": "2",
+    "rarity": "RARE"
+  },
+  {
+    "id": "grand_finale+",
+    "name": "华丽收场+",
+    "cost": 0,
+    "damage": 60,
+    "block": 0,
+    "type": "ATTACK",
+    "aoe": true,
+    "requiresEmptyDrawPile": true,
+    "exhaust": true,
+    "upgraded": true,
+    "charId": "2",
+    "rarity": "RARE"
+  }
 ]

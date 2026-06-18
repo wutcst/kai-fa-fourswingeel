@@ -28,6 +28,8 @@ public class BattleService {
     private CardTemplate buffedShivTemplate = null;
     private int shivBuffDamage = 0;
     private boolean playerExtraPoisonTick = false;
+    private int poisonAllPerCardThisTurn = 0;
+    private boolean poisonSkipFirstDraw = false;
     private List<String> logList;
     private boolean gameOver;
     private String winner;
@@ -358,14 +360,11 @@ public class BattleService {
             logList.add(String.format("⚡ 隐秘打击！获得 %d 点能量，当前: %d", card.getEnergyGainIfDiscarded(), energy));
         }
 
-        // 🆕 腐蚀波：本回合每抽1张牌，给所有敌人施加毒
-        if (card.getDrawPoisonAll() > 0 && drawCountThisTurn > 0) {
-            int poison = card.getDrawPoisonAll() * drawCountThisTurn;
-            for (Enemy e : aliveEnemies) {
-                StatusEffect ps = StatusFactory.create("POISON", poison, dataRepo);
-                if (ps != null) e.addStatus(ps);
-            }
-            logList.add(String.format("☠️ 腐蚀波！本回合抽了 %d 张，给所有敌人施加 %d 层毒", drawCountThisTurn, poison));
+        // 🆕 腐蚀波：本回合之后每抽1张牌，给所有敌人施加毒
+        if (card.getPoisonAllPerCard() > 0) {
+            poisonAllPerCardThisTurn = card.getPoisonAllPerCard();
+            poisonSkipFirstDraw = true; // 跳过本牌的抽牌
+            logList.add("☠️ 腐蚀波！本回合之后每抽1张牌给所有敌人施加 " + poisonAllPerCardThisTurn + " 层毒");
         }
 
         // ================= 全身撞击：伤害=当前格挡 =================
@@ -932,6 +931,21 @@ public class BattleService {
         if (drawn > 0) {
             logList.add(String.format("抽了 %d 张牌（手牌 %d/%d）", drawn, hand.size(), HAND_LIMIT));
             drawCountThisTurn += drawn;
+            // 🆕 腐蚀波：抽牌时施加毒
+            if (poisonAllPerCardThisTurn > 0) {
+                if (poisonSkipFirstDraw) {
+                    poisonSkipFirstDraw = false;
+                } else {
+                    int totalPoison = poisonAllPerCardThisTurn * drawn;
+                    List<Enemy> alive = getAliveEnemies();
+                    for (Enemy e : alive) {
+                        StatusEffect ps = StatusFactory.create("POISON", totalPoison, dataRepo);
+                        if (ps != null) e.addStatus(ps);
+                    }
+                    logList.add("☠️ 腐蚀波！抽了 " + drawn + " 张，所有敌人 +" + totalPoison + " 毒");
+                    log.debug("Corrosive wave: {} enemies got {} poison from {} draws", alive.size(), totalPoison, drawn);
+                }
+            }
         }
     }
 
@@ -1058,7 +1072,7 @@ public class BattleService {
             if (cardData.containsKey("buffCardName")) card.setBuffCardName((String) cardData.get("buffCardName"));
             if (cardData.containsKey("buffDamageAmount")) card.setBuffDamageAmount(((Number) cardData.get("buffDamageAmount")).intValue());
             if (cardData.containsKey("doublePoison")) card.setDoublePoison((Boolean) cardData.get("doublePoison"));
-            if (cardData.containsKey("drawPoisonAll")) card.setDrawPoisonAll(((Number) cardData.get("drawPoisonAll")).intValue());
+            if (cardData.containsKey("poisonAllPerCard")) card.setPoisonAllPerCard(((Number) cardData.get("poisonAllPerCard")).intValue());
             if (cardData.containsKey("extraPoisonTick")) card.setExtraPoisonTick((Boolean) cardData.get("extraPoisonTick"));
             if (cardData.containsKey("addCardId")) card.setAddCardId((String) cardData.get("addCardId"));
             if (cardData.containsKey("addCardCount")) card.setAddCardCount(((Number) cardData.get("addCardCount")).intValue());
@@ -1173,7 +1187,7 @@ public class BattleService {
             cardInfo.put("buffCardName", c.getBuffCardName());
             cardInfo.put("buffDamageAmount", c.getBuffDamageAmount());
             cardInfo.put("doublePoison", c.isDoublePoison());
-            cardInfo.put("drawPoisonAll", c.getDrawPoisonAll());
+            cardInfo.put("poisonAllPerCard", c.getPoisonAllPerCard());
             cardInfo.put("extraPoisonTick", c.isExtraPoisonTick());
             cardInfo.put("addCardId", c.getAddCardId());
             cardInfo.put("addCardCount", c.getAddCardCount());
@@ -1274,7 +1288,7 @@ public class BattleService {
             info.put("buffCardName", c.getBuffCardName());
             info.put("buffDamageAmount", c.getBuffDamageAmount());
             info.put("doublePoison", c.isDoublePoison());
-            info.put("drawPoisonAll", c.getDrawPoisonAll());
+            info.put("poisonAllPerCard", c.getPoisonAllPerCard());
             info.put("extraPoisonTick", c.isExtraPoisonTick());
             info.put("addCardId", c.getAddCardId());
             info.put("addCardCount", c.getAddCardCount());
