@@ -11,7 +11,7 @@ const CARD_UI = {
     'EXHAUST':      { name: '消耗',     desc: '打出的牌将被消耗，本场战斗无法再次抽到。',                     decay: false },
     'INTANGIBLE':   { name: '无实体',   desc: '持续一回合，受到的所有伤害降低为 1。',                         decay: true }
   },
-  RARITY_COLORS: { 'START': '#888888', 'COMMON': '#95a5a6', 'UNCOMMON': '#2ecc71', 'RARE': '#f39c12', 'LEGENDARY': '#ff6b6b', 'SPECIAL': '#9b59b6' },
+  RARITY_COLORS: { 'START': '#888888', 'COMMON': '#95a5a6', 'UNCOMMON': '#3498db', 'RARE': '#f39c12', 'LEGENDARY': '#ff6b6b', 'SPECIAL': '#9b59b6' },
   
   getStatusName(type) { return this.STATUS_INFO[type]?.name || type; },
 
@@ -143,6 +143,7 @@ const CARD_UI = {
   },
   getCardCharStyle(card) {
     if (!card) return 'linear-gradient(135deg, #667eea, #764ba2)';
+    if (card.type === 'STATUS') return 'linear-gradient(135deg, #4a154b, #2d0a2e)';
     const charId = (card.charId && card.charId !== '') ? card.charId : '1';
     if (charId === '0') return 'linear-gradient(135deg, #808080, #A9A9A9)';
     if (charId === '2') return 'linear-gradient(135deg, #2ecc71, #27ae60)';

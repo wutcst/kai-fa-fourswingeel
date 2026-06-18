@@ -74,4 +74,18 @@ public class Player extends Combatant {
         }
     }
 
+    /** 返回当前所有状态名称列表 */
+    public List<String> getActiveStatusNames() {
+        List<String> names = new ArrayList<>();
+        for (StatusEffect s : statuses) {
+            if (s.getCount() > 0) names.add(s.getName() + " " + s.getCount());
+        }
+        return names;
+    }
+
+    /** 简单概率判断：percent 为 0-100 */
+    public boolean rollChance(int percent) {
+        return new Random().nextInt(100) < percent;
+    }
+
 }
