@@ -61,8 +61,12 @@ public class GameConfigController {
         if (saveData == null) {
             saveData = new SaveData();
         }
-        saveData.setMapNodes((List<Map<String, Object>>) newMap.get("nodes"));
-        saveData.setMapEdges((List<Map<String, String>>) newMap.get("edges"));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> nodes = (List<Map<String, Object>>) newMap.get("nodes");
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> edges = (List<Map<String, String>>) newMap.get("edges");
+        saveData.setMapNodes(nodes);
+        saveData.setMapEdges(edges);
         saveService.saveGame(saveData);
         System.out.println("✅ 生成新地图并保存到全局存档");
 
