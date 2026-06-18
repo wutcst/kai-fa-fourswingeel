@@ -137,7 +137,7 @@ async function saveSaveData(data) {
 
     // 同步到 localStorage，兼容 status_bar.js 等旧组件
 
-    localStorage.setItem('char', data.charId);
+    localStorage.setItem('char', data.charId || localStorage.getItem('char') || '1');
 
     localStorage.setItem('playerHP', data.playerHp);
 

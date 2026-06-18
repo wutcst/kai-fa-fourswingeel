@@ -99,13 +99,15 @@
         '3': 'https://picsum.photos/seed/mystery/1200/800'
       };
 
+      var savedCharId = '1';
       // 检测是否存在存档，并显示继续按钮
       (async function checkSave() {
         try {
-          const resp = await fetch('/api/load?charId=1');
+          const resp = await fetch('/api/load');
           if (resp.ok) {
             const data = await resp.json();
             if (data && data.charId) {
+              savedCharId = data.charId;
               continueBtn.style.display = 'inline-block';
             }
           }
@@ -115,8 +117,8 @@
       })();
 
       continueBtn.addEventListener('click', async () => {
-        localStorage.setItem('char', '1');
-        window.location.href = `map.html?char=1`;
+        localStorage.setItem('char', savedCharId);
+        window.location.href = 'map.html?char=' + savedCharId;
       });
 
       selectBtn.addEventListener('click', () => {
