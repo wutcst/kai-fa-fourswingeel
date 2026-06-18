@@ -27,6 +27,13 @@
     .relic-icon { font-size: 50px; margin-bottom: 10px; }
     .relic-name { font-weight: bold; font-size: 18px; margin: 10px 0; }
     .relic-desc { font-size: 14px; color: #ccc; }
+    /* 🆕 所有调色盘/故事书系列通用深蓝色背景 */
+    .relic-card.palette-boss {
+      background: #0a1a3a;
+      border-color: #2980b9;
+      box-shadow: 0 0 20px rgba(41,128,185,0.5);
+      border-width: 3px;
+    }
   </style>
 </head>
 <body>
@@ -44,7 +51,8 @@
       try {
         const saveData = await loadSaveData(char);
         const owned = (saveData.relics || []).join(',');
-        const resp = await fetch(`/api/bossRelics?charId=${char}&ownedRelics=${owned}`);
+        // 🆕 传递 act 参数，使调色盘在不同阶段返回不同遗物组
+        const resp = await fetch(`/api/bossRelics?charId=${char}&ownedRelics=${owned}&act=${nextAct}`);
         if (resp.ok) {
           const data = await resp.json();
           bossRelicOptions = data.map((r, i) => ({
@@ -54,7 +62,7 @@
             effectType: r.effectType,
             value: r.value || 0,
             rarity: r.rarity || 'BOSS',
-            icon: getIconForBossRelic(i)
+            icon: getIconForBossRelic(r.id, i)
           }));
         }
       } catch (e) {
@@ -70,7 +78,17 @@
         ];
       }
 
-      function getIconForBossRelic(index) {
+      // 🆕 根据遗物 ID 返回专用图标
+      function getIconForBossRelic(id, index) {
+        // 第一阶段调色盘
+        if (id === 'palette_boss_reward_1') return '✨';
+        if (id === 'palette_boss_reward_2') return '👁️';
+        if (id === 'palette_boss_reward_3') return '📘';
+        // 第二阶段故事书
+        if (id === 'palette_boss_reward_stage2_1') return '💙';
+        if (id === 'palette_boss_reward_stage2_2') return '🌊';
+        if (id === 'palette_boss_reward_stage2_3') return '🔮';
+        // 默认
         const icons = ['💎', '🔮', '🪨', '🔥', '🪶', '🌑', '📯', '👁️', '💪', '🌀'];
         return icons[index % icons.length];
       }
@@ -81,6 +99,14 @@
       bossRelicOptions.forEach(option => {
         const div = document.createElement('div');
         div.className = 'relic-card';
+
+        // 🆕 如果是任何调色盘/故事书系列遗物，使用深蓝色背景
+        if (option.id && (
+            option.id.startsWith('palette_boss_reward_') ||
+            option.id.startsWith('palette_boss_reward_stage2_'))) {
+          div.classList.add('palette-boss');
+        }
+
         div.innerHTML = `
           <div class="relic-icon">${option.icon}</div>
           <div class="relic-name">${option.name}</div>
@@ -112,6 +138,41 @@
           if (option.id === 'apple') saveData.playerHp = Math.min((saveData.playerHp || 0) + 5, saveData.maxHp || 70);
           if (option.id === 'pear') saveData.playerHp = Math.min((saveData.playerHp || 0) + 20, saveData.maxHp || 70);
           if (option.id === 'waffle') saveData.playerHp = saveData.maxHp || 80;
+
+          // 🆕 故事书·幽蓝怀想：升级卡组中所有可升级的牌
+          if (option.id === 'palette_boss_reward_stage2_1') {
+            for (let i = 0; i < saveData.deck.length; i++) {
+              const card = saveData.deck[i];
+              if (card.upgraded) continue;
+              const baseId = card.id;
+              if (baseId) {
+                try {
+                  const resp = await fetch(`/api/card/${encodeURIComponent(baseId + '+')}`);
+                  if (resp.ok) {
+                    const upgraded = await resp.json();
+                    saveData.deck[i] = upgraded;
+                    console.log('升级卡牌:', card.name);
+                  }
+                } catch(e) {
+                  console.warn('升级失败', e);
+                }
+              }
+            }
+          }
+
+          // 🆕 故事书·蓝调：从后端获取“河流的尽头”模板加入卡组
+          if (option.id === 'palette_boss_reward_stage2_2') {
+            try {
+              const riverResp = await fetch('/api/card/river_end');
+              if (riverResp.ok) {
+                const riverCard = await riverResp.json();
+                saveData.deck.push(riverCard);
+              }
+            } catch(e) {
+              console.warn('获取河流的尽头卡牌模板失败', e);
+            }
+          }
+
           // 设置阶段信息
           saveData.act = nextAct;
           saveData.currentNode = 'start';

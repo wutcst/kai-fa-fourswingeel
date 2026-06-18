@@ -134,8 +134,44 @@ public class RelicPoolService {
     /**
      * 批量抽取 Boss 遗物（用于三选一展示）
      * 不会重复抽取同一遗物，抽干后用头环补齐数量
+     * @param act 当前阶段（1/2），用于决定调色盘专属遗物组
      */
     public List<RelicTemplate> drawBossRelics(String charId, List<String> ownedRelicIds, int count) {
+        // 🆕 第二阶段：若玩家拥有「调色盘·手绘童话书」，返回第二阶段三个故事书遗物
+        if (ownedRelicIds != null && ownedRelicIds.contains("palette_boss_reward_3")) {
+            return collectPaletteRelics("palette_boss_reward_stage2_1", "palette_boss_reward_stage2_2", "palette_boss_reward_stage2_3", count);
+        }
+        // 🆕 第一阶段：若玩家拥有「诡异的调色盘」，返回第一阶段三个调色盘 Boss 遗物
+        if (ownedRelicIds != null && ownedRelicIds.contains("mysterious_palette")) {
+            return collectPaletteRelics("palette_boss_reward_1", "palette_boss_reward_2", "palette_boss_reward_3", count);
+        }
+
+        
+
+        // 其他情况（包括 act==3 或条件不满足）使用常规 boss 池
+        return drawBossRelicsFallback(charId, ownedRelicIds, count);
+    }
+
+    /** 辅助方法：收集三个指定ID的遗物，不足用头环补齐 */
+    private List<RelicTemplate> collectPaletteRelics(String id1, String id2, String id3, int count) {
+        List<RelicTemplate> fixed = new ArrayList<>();
+        RelicTemplate r1 = dataRepo.getRelicById(id1);
+        RelicTemplate r2 = dataRepo.getRelicById(id2);
+        RelicTemplate r3 = dataRepo.getRelicById(id3);
+        if (r1 != null) fixed.add(r1);
+        if (r2 != null) fixed.add(r2);
+        if (r3 != null) fixed.add(r3);
+        // 若不足三个，用头环补齐
+        while (fixed.size() < count) {
+            RelicTemplate ring = dataRepo.getRelicById("ring");
+            if (ring != null) fixed.add(ring);
+            else break;
+        }
+        return fixed;
+    }
+
+    /** 常规 Boss 三选一逻辑（抽常规池，不混淆调色盘专属） */
+    private List<RelicTemplate> drawBossRelicsFallback(String charId, List<String> ownedRelicIds, int count) {
         List<RelicTemplate> bossPool = buildBossPool(charId, ownedRelicIds);
         List<RelicTemplate> result = new ArrayList<>();
         Set<String> usedIds = new HashSet<>();
@@ -169,6 +205,8 @@ public class RelicPoolService {
 
     /**
      * 构建可用 Boss 遗物池（等概率抽取用）
+     * 排除所有调色盘专属 Boss 遗物（palette_boss_reward_*），
+     * 这些遗物只能通过特殊事件获得。
      */
     private List<RelicTemplate> buildBossPool(String charId, List<String> ownedRelicIds) {
         List<RelicTemplate> allRelics = dataRepo.getAllRelics();
@@ -186,6 +224,8 @@ public class RelicPoolService {
             if ("BOSS".equals(tpl.getRarity())) {
                 if (owned.contains(tpl.getId())) continue;
                 if (tpl.getCharId() != null && !tpl.getCharId().equals(charId)) continue;
+                // 🆕 跳过所有 palette_boss 开头的遗物（只能通过特殊事件获得）
+                if (tpl.getId() != null && tpl.getId().startsWith("palette_boss")) continue;
                 pool.add(tpl);
             }
         }

@@ -1,7 +1,6 @@
 package com.slaythespire.game.model;
 
 import com.slaythespire.repository.CardTemplate;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +42,7 @@ public class Card {
     private boolean drawFirst;
 
     private boolean copyToDiscard;
+    private boolean copyToDraw;
 
     private int strengthMultiplier = 1;
 
@@ -111,6 +111,7 @@ public class Card {
         this.drawFirst = template.isDrawFirst();
 
         this.copyToDiscard = template.isCopyToDiscard();
+        this.copyToDraw = template.isCopyToDraw();
         this.strengthMultiplier = template.getStrengthMultiplier();
         this.randomTarget = template.isRandomTarget();
 
@@ -166,6 +167,7 @@ public class Card {
         this.drawFirst = false;
 
         this.copyToDiscard = false;
+        this.copyToDraw = false;
         this.strengthMultiplier = 1;
         this.randomTarget = false;
 
@@ -227,6 +229,7 @@ public class Card {
         this.drawFirst = original.drawFirst;
 
         this.copyToDiscard = original.copyToDiscard;
+        this.copyToDraw = original.copyToDraw;
         this.strengthMultiplier = original.strengthMultiplier;
         this.randomTarget = original.randomTarget;
 
@@ -286,6 +289,7 @@ public class Card {
     public boolean isAoe() { return aoe; }
     public boolean isDrawFirst() { return drawFirst; }
     public boolean isCopyToDiscard() { return copyToDiscard; }
+    public boolean isCopyToDraw() { return copyToDraw; }
     public int getStrengthMultiplier() { return strengthMultiplier; }
     public boolean isRandomTarget() { return randomTarget; }
 
@@ -336,6 +340,7 @@ public class Card {
     public void setAoe(boolean aoe) { this.aoe = aoe; }
     public void setDrawFirst(boolean drawFirst) { this.drawFirst = drawFirst; }
     public void setCopyToDiscard(boolean copyToDiscard) { this.copyToDiscard = copyToDiscard; }
+    public void setCopyToDraw(boolean copyToDraw) { this.copyToDraw = copyToDraw; }
     public void setStrengthMultiplier(int strengthMultiplier) { this.strengthMultiplier = strengthMultiplier; }
 
     // 🆕 新增 Setter 方法

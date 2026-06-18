@@ -281,22 +281,32 @@ public class BattleService {
         Enemy target = (targetIndex != null && targetIndex >= 0 && targetIndex < aliveEnemies.size()) ? aliveEnemies.get(targetIndex) : aliveEnemies.get(0);
 
         int xValue = 1;
+
+        // ================= 能量扣除（含 X 耗费及视觉陷阱） =================
         if (card.isXCost()) {
             xValue = energy;
             logList.add("⚡ X耗能: 消耗了 " + xValue + " 点能量");
             energy = 0;
         } else {
-            energy -= card.getCost();
+            int cost = card.getCost();
+            // 🆕 调色盘·视觉陷阱：50%概率费用-1（最低0，不会回复费用）
+            if (RelicEffectHandler.hasEffect(player, "HALF_CHANCE_REDUCE_COST") && cost > 0) {
+                if (new Random().nextBoolean()) {
+                    cost--;
+                    logList.add("👁️ 视觉陷阱发动，费用减少1，实际费用: " + cost);
+                }
+            }
+            energy -= cost;
         }
 
-        // 🆕 熔火之怒：每打出一张牌，随机敌人受2点伤害
+        //每打出一张牌，随机敌人受5点伤害
         if (RelicEffectHandler.hasEffect(player, "MOLTEN_FURY")) {
             List<Enemy> alive = getAliveEnemies();
             if (!alive.isEmpty()) {
                 Enemy randomTarget = alive.get(new Random().nextInt(alive.size()));
-                int dmg = randomTarget.takeDamage(2, player);
+                int dmg = randomTarget.takeDamage(5, player);
                 logList.addAll(randomTarget.getLastCombatLogs());
-                logList.add("🔥 熔火之怒对 " + randomTarget.getEnemyName() + " 造成 " + dmg + " 点伤害");
+                logList.add("光影交错对 " + randomTarget.getEnemyName() + " 造成 " + dmg + " 点伤害");
             }
         }
 
@@ -379,6 +389,7 @@ public class BattleService {
         if (card.getPoisonAllPerCard() > 0) {
             poisonAllPerCardThisTurn = card.getPoisonAllPerCard();
             poisonSkipFirstDraw = true; // 跳过本牌的抽牌
+            poisonSkipFirstDraw = true;
             logList.add("☠️ 腐蚀波！本回合之后每抽1张牌给所有敌人施加 " + poisonAllPerCardThisTurn + " 层毒");
         }
 
@@ -707,6 +718,18 @@ public class BattleService {
 
         // 5. 最后移除打出的牌
         Card finalCard = hand.remove(playedCardIndex);
+        // 🆕 必须在决定原卡牌去处之前处理 copyToDiscard / copyToDraw
+        if (finalCard.isCopyToDiscard()) {
+            Card copy = new Card(finalCard);
+            discardPile.add(copy);
+            logList.add("🔥 " + finalCard.getName() + "的复制品加入了弃牌堆");
+        }
+        if (finalCard.isCopyToDraw()) {
+            Card copy = new Card(finalCard);
+            drawPile.add(copy);
+            logList.add("📝 " + finalCard.getName() + "的复制品加入了抽牌堆");
+        }
+
         if (finalCard.getType() == Card.CardType.POWER) {
             logList.add(finalCard.getName() + "被使用（能力牌）");
         } else if (finalCard.isExhaust()) {
@@ -714,11 +737,6 @@ public class BattleService {
             logList.add(finalCard.getName() + "被消耗");
             triggerDrawOnExhaust();
         } else {
-            if (finalCard.isCopyToDiscard()) {
-                Card copy = new Card(finalCard);
-                discardPile.add(copy);
-                logList.add("🔥 " + finalCard.getName() + "的复制品加入了弃牌堆");
-            }
             discardPile.add(finalCard);
         }
 
@@ -752,9 +770,14 @@ public class BattleService {
         logList.add("━━━ 结束回合 ━━━");
         validateBattleActive();
 
+        // ⚠️ 顺序：先处理玩家的回合结束逻辑（包括遗物效果）
         player.onTurnEnd();
         logList.addAll(player.getLastTurnEndLogs());
         logList.addAll(player.getLastCombatLogs());
+
+        // 🆕 修复：调用回合结束遗物处理器，让「光影之触」等遗物生效
+        RelicEffectHandler.onPlayerTurnEnd(player);
+        logList.addAll(player.getLastTurnEndLogs());
 
         for (Enemy e : enemies) {
             decrementIntangible(e);
@@ -847,7 +870,6 @@ public class BattleService {
                             enemy.addStatus(StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo));
                             logList.add("💪 " + enemy.getEnemyName() + "给自己施加了 " + intent.getApplyStatusCount() + " 层" + status.getName());
                         } else {
-                            // PLAYER或其他默认→给玩家施加（debuff）
                             player.addStatus(StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo));
                             logList.add("☠️ " + enemy.getEnemyName() + "对玩家施加了 " + intent.getApplyStatusCount() + " 层" + status.getName());
                         }
@@ -863,7 +885,6 @@ public class BattleService {
         }
         removeDeadEnemies();
 
-        // 🆕 【反甲反死修复】如果所有敌人在敌人回合被反伤/荆棘等击杀，立即结束战斗
         if (getAliveEnemies().isEmpty()) {
             gameOver = true;
             winner = "玩家";
@@ -871,11 +892,8 @@ public class BattleService {
             return getCurrentState();
         }
 
-        // ================= 3. 敌人回合结束 =================
-        // 🆕 【关键修复】所有敌人行动完毕后，衰减玩家身上的无实体（持续了一整回合，现在消失）
         decrementIntangible(player);
 
-        // ================= 4. 玩家新回合开始 =================
         hasDealtDamageThisTurn = false;
         player.onTurnStart();
         logList.addAll(player.getLastTurnStartLogs());
@@ -895,7 +913,6 @@ public class BattleService {
         if (RelicEffectHandler.hasEffect(player, "DRAW_PER_TURN")) turnDrawCount++;
         drawCards(Math.max(0, turnDrawCount));
 
-        // 🆕 触媒：回合结束时中毒额外结算一次
         if (playerExtraPoisonTick) {
             for (Enemy e : enemies) {
                 if (!e.isAlive()) continue;
@@ -913,7 +930,6 @@ public class BattleService {
 
         for (Enemy enemy : enemies) enemy.advanceIntent();
 
-        // 🆕 战斗关键事件日志
         if (gameOver) log.info("战斗结束，胜利者: {}", winner);
         return getCurrentState();
     }
@@ -956,17 +972,15 @@ public class BattleService {
             hand.add(drawnCard); 
             drawn++;
             
-            // 🆕 【新增逻辑】处理“虚空”等抽牌时失去能量的效果
             int energyLoss = drawnCard.getEnergyLossOnDraw();
             if (energyLoss > 0) {
-                energy = Math.max(0, energy - energyLoss); // 扣除能量，最低为0
+                energy = Math.max(0, energy - energyLoss);
                 logList.add(String.format("🌑 抽到了【%s】，失去了 %d 点能量，当前能量: %d", drawnCard.getName(), energyLoss, energy));
             }
         }
         if (drawn > 0) {
             logList.add(String.format("抽了 %d 张牌（手牌 %d/%d）", drawn, hand.size(), HAND_LIMIT));
             drawCountThisTurn += drawn;
-            // 🆕 腐蚀波：抽牌时施加毒
             if (poisonAllPerCardThisTurn > 0) {
                 if (poisonSkipFirstDraw) {
                     poisonSkipFirstDraw = false;
@@ -1077,12 +1091,14 @@ public class BattleService {
             if (cardData.containsKey("copyToDiscard")) {
                 card.setCopyToDiscard((Boolean) cardData.get("copyToDiscard"));
             }
+            if (cardData.containsKey("copyToDraw")) {
+                card.setCopyToDraw((Boolean) cardData.get("copyToDraw"));
+            }
 
             if (cardData.containsKey("randomTarget")) {
                 card.setRandomTarget((Boolean) cardData.get("randomTarget"));
             }
 
-            // 🆕 【新增】读取特殊状态牌字段
             if (cardData.containsKey("endOfTurnDamage") && cardData.get("endOfTurnDamage") != null) {
                 card.setEndOfTurnDamage(((Number) cardData.get("endOfTurnDamage")).intValue());
             }
@@ -1208,10 +1224,10 @@ public class BattleService {
             cardInfo.put("upgraded", c.isUpgraded());
 
             cardInfo.put("copyToDiscard", c.isCopyToDiscard());
+            cardInfo.put("copyToDraw", c.isCopyToDraw());
             cardInfo.put("strengthMultiplier", c.getStrengthMultiplier());
             cardInfo.put("randomTarget", c.isRandomTarget());
 
-            // 🆕 传递特殊状态牌数值给前端
             cardInfo.put("endOfTurnDamage", c.getEndOfTurnDamage());
             cardInfo.put("energyLossOnDraw", c.getEnergyLossOnDraw());
             cardInfo.put("exhaustNonAttackBlock", c.getExhaustNonAttackBlock());
@@ -1239,12 +1255,11 @@ public class BattleService {
         state.put("drawPile", cardsToStateList(drawPile));
         state.put("discardPile", cardsToStateList(discardPile));
         state.put("exhaustPile", cardsToStateList(exhaustPile));
-        state.put("exhaustHappened", exhaustedThisAction); // 🆕 安东尼之怒
+        state.put("exhaustHappened", exhaustedThisAction);
         state.put("log", new ArrayList<>(logList)); state.put("gameOver", gameOver); state.put("winner", winner);
         return state;
     }
 
-    /** 🆕 魔力花：每回合首次造成伤害时获得能量 */
     private void triggerManaFlower() {
         if (!hasDealtDamageThisTurn && RelicEffectHandler.hasEffect(player, "FIRST_HIT_ENERGY")) {
             hasDealtDamageThisTurn = true;
@@ -1254,7 +1269,6 @@ public class BattleService {
         }
     }
 
-    /** 🆕 地精之角：击杀敌人时获得能量+抽牌+力量+敏捷 */
     private void triggerGoblinHorn() {
         if (!RelicEffectHandler.hasEffect(player, "GOBLIN_HORN")) return;
         energy += 1;
@@ -1267,7 +1281,7 @@ public class BattleService {
     }
 
     private void triggerDrawOnExhaust() {
-        exhaustedThisAction = true; // 🆕 安东尼之怒标记
+        exhaustedThisAction = true;
         if (RelicEffectHandler.hasEffect(player, "DRAW_ON_EXHAUST")) {
             drawCards(1);
             logList.add("📄 金纸触发，抽了一张牌");
@@ -1308,6 +1322,7 @@ public class BattleService {
             info.put("drawFirst", c.isDrawFirst());
             info.put("upgraded", c.isUpgraded());
             info.put("copyToDiscard", c.isCopyToDiscard());
+            info.put("copyToDraw", c.isCopyToDraw());
             info.put("strengthMultiplier", c.getStrengthMultiplier());
             info.put("randomTarget", c.isRandomTarget());
             info.put("endOfTurnDamage", c.getEndOfTurnDamage());

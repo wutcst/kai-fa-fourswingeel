@@ -46,7 +46,7 @@ public class RewardController {
         reward.put("gold", gold);
         reward.put("relics", relics);
         
-        // 为Boss战生成Boss遗物选项（从Boss遗物池抽取3个）
+        // 为Boss战生成Boss遗物选项（从Boss遗物池抽取3个，默认阶段1）
         if ("boss".equalsIgnoreCase(nodeType)) {
             List<RelicTemplate> bossRelics = relicPoolService.drawBossRelics(charId, ownedRelics, 3);
             List<Map<String, Object>> bossRelicOptions = new ArrayList<>();
@@ -97,10 +97,12 @@ public class RewardController {
 
     /**
      * Boss遗物三选一接口 — 从Boss遗物池抽取3个供玩家选择
+     * 现在支持 act 参数，用于区分阶段
      */
     @GetMapping("/bossRelics")
     public List<Map<String, Object>> getBossRelics(@RequestParam(defaultValue = "1") String charId,
-                                                     @RequestParam(required = false) List<String> ownedRelics) {
+                                                     @RequestParam(required = false) List<String> ownedRelics,
+                                                     @RequestParam(defaultValue = "1") int act) {
         List<RelicTemplate> relics = relicPoolService.drawBossRelics(charId, ownedRelics, 3);
         List<Map<String, Object>> result = new ArrayList<>();
         for (RelicTemplate tpl : relics) {
@@ -130,6 +132,7 @@ public class RewardController {
         map.put("xCost", tpl.isXCost()); map.put("aoe", tpl.isAoe());
         map.put("drawFirst", tpl.isDrawFirst());
         map.put("copyToDiscard", tpl.isCopyToDiscard());
+        map.put("copyToDraw", tpl.isCopyToDraw());
         map.put("strengthMultiplier", tpl.getStrengthMultiplier());
         map.put("randomTarget", tpl.isRandomTarget());
         map.put("endOfTurnDamage", tpl.getEndOfTurnDamage());

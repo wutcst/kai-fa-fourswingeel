@@ -21,7 +21,6 @@
   { "id": "rune_pyramid", "name": "符文金字塔", "description": "回合结束时，手牌不会洗入弃牌堆。", "effectType": "RUNE_PYRAMID", "value": 0, "rarity": "LEGENDARY", "charId": null },
   { "id": "goblin_horn", "name": "地精之角", "description": "每当你击杀一个敌人时，获得 1 点能量并抽 2 张牌，同时获得 1 层力量和敏捷。", "effectType": "GOBLIN_HORN", "value": 1, "rarity": "LEGENDARY", "charId": null },
   { "id": "asgard_protection", "name": "阿斯加德之庇护", "description": "每回合开始时，不再清除格挡。", "effectType": "ASGARD_PROTECTION", "value": 0, "rarity": "LEGENDARY", "charId": null },
-  { "id": "molten_fury", "name": "熔火之怒", "description": "每当你打出一张牌，随机敌人受到 2 点伤害。", "effectType": "MOLTEN_FURY", "value": 2, "rarity": "LEGENDARY", "charId": null },
   { "id": "ring", "name": "头环", "description": "无效果。当你拥有所有遗物时，它将作为替代奖励出现。", "effectType": "NO_EFFECT", "value": 0, "rarity": "SPECIAL", "charId": null },
   { "id": "neow_remove", "name": "净化卷轴", "description": "初始恩惠：从卡组中删除一张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },
   { "id": "neow_blood", "name": "血之契约", "description": "初始恩惠：失去10点生命，从卡组中删除两张牌。", "effectType": "NO_EFFECT", "value": 0, "rarity": "EVENT", "charId": null },
@@ -49,5 +48,13 @@
   { "id": "shadow_cloak", "name": "暗影斗篷", "description": "战斗开始时获得 2 层无实体。", "effectType": "INTANGIBLE_START", "value": 2, "rarity": "BOSS", "charId": null },
   { "id": "battle_horn", "name": "战场号角", "description": "每场战斗的第一回合获得 2 点能量。", "effectType": "ENERGY_FIRST_TURN", "value": 2, "rarity": "RARE", "charId": null },
   { "id": "prophet_eye", "name": "先知之眼", "description": "每回合第一次抽牌多抽 3 张。", "effectType": "FIRST_DRAW_BONUS", "value": 3, "rarity": "BOSS", "charId": null },
-  { "id": "giant_power", "name": "巨人之力", "description": "最大生命值 +25。", "effectType": "MAX_HP", "value": 25, "rarity": "RARE", "charId": null }
+  { "id": "giant_power", "name": "巨人之力", "description": "最大生命值 +25。", "effectType": "MAX_HP", "value": 25, "rarity": "RARE", "charId": null },
+
+  { "id": "mysterious_palette", "name": "诡异的调色盘", "description": "失去6点最大生命值，使探索发生奇妙的变化。", "effectType": "PALETTE_SPECIAL", "value": 0, "rarity": "SPECIAL", "charId": null },
+  { "id": "palette_boss_reward_1", "name": "调色盘·光影之触", "description": "每回合结束时，获得2层再生。", "effectType": "TURN_END_REGENERATION", "value": 2, "rarity": "BOSS", "charId": null },
+  { "id": "palette_boss_reward_2", "name": "调色盘·视觉陷阱", "description": "每当你打出一张牌时，有50%概率使能量消耗-1。", "effectType": "HALF_CHANCE_REDUCE_COST", "value": 0, "rarity": "BOSS", "charId": null },
+  { "id": "palette_boss_reward_3", "name": "调色盘·手绘童话书", "description": "每回合获得 1 点额外能量，你逐渐沉溺其中。", "effectType": "ENERGY_PER_TURN", "value": 1, "rarity": "BOSS", "charId": null },
+  { "id": "palette_boss_reward_stage2_1", "name": "故事书·幽蓝怀想", "description": "那是她自己的蓝色。", "effectType": "NO_EFFECT", "value": 0, "rarity": "BOSS", "charId": null },
+  { "id": "palette_boss_reward_stage2_2", "name": "故事书·蓝调", "description": "顺着河流一直走，一直走，到溪流的尽头。", "effectType": "NO_EFFECT", "value": 0, "rarity": "BOSS", "charId": null },
+  { "id": "palette_boss_reward_stage2_3", "name": "故事书·光影交错", "description": "交错的光与影，重叠的生与死。", "effectType": "MOLTEN_FURY", "value": 5, "rarity": "BOSS", "charId": null }
 ]

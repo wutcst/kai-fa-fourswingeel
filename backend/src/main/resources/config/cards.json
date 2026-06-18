@@ -1883,5 +1883,39 @@
     "upgraded": true,
     "charId": "2",
     "rarity": "RARE"
+  },
+  {
+    "id": "river_end",
+    "name": "河流的尽头",
+    "cost": 0,
+    "damage": 15,
+    "block": 15,
+    "type": "ATTACK",
+    "effects": [],
+    "drawCount": 1,
+    "exhaust": true,
+    "innate": true,
+    "copyToDiscard": true,
+    "copyToDraw": true,
+    "charId": "10",
+    "rarity": "RARE",
+    "upgraded": false
+  },
+  {
+    "id": "river_end+",
+    "name": "河流的尽头+",
+    "cost": 0,
+    "damage": 22,
+    "block": 22,
+    "type": "ATTACK",
+    "effects": [],
+    "drawCount": 1,
+    "exhaust": true,
+    "innate": true,
+    "copyToDiscard": true,
+    "copyToDraw": true,
+    "charId": "10",
+    "rarity": "RARE",
+    "upgraded": true
   }
 ]
