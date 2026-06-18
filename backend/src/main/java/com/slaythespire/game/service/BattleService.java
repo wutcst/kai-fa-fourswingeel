@@ -515,6 +515,7 @@ public class BattleService {
             for (int i = 0; i < card.getAddWoundCount(); i++) {
                 Card wound = new Card("伤口", 1, 0, 0, Card.CardType.STATUS);
                 wound.setUnplayable(true);
+                wound.setEthereal(true);
                 wound.setRarity("COMMON");
                 hand.add(playedCardIndex + 1 + i, wound);
             }
