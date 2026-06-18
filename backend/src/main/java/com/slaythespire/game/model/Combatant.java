@@ -24,13 +24,33 @@ public abstract class Combatant {
     }
 
     public void addStatus(StatusEffect status) {
+        // 🆕 人工制品免疫检查：如果是负面状态，消耗人工制品
+        if (status.getId() != null && status.getCount() > 0) {
+            boolean isDebuff = isDebuffStatus(status.getId());
+            if (isDebuff) {
+                for (StatusEffect s : new ArrayList<>(statuses)) {
+                    if (s.isImmuneToDebuff()) {
+                        s.onDebuffBlocked();
+                        if (s.getCount() <= 0) statuses.remove(s);
+                        lastCombatLogs.add("🛡️ 人工制品抵挡了【" + status.getName() + "】！");
+                        return;
+                    }
+                }
+            }
+        }
         for (StatusEffect s : statuses) {
-            if (s.getId().equals(status.getId())) { 
-                s.setCount(s.getCount() + status.getCount()); 
-                return; 
+            if (s.getId().equals(status.getId())) {
+                s.setCount(s.getCount() + status.getCount());
+                return;
             }
         }
         statuses.add(status);
+    }
+
+    /** 判断某个状态ID是否是负面状态 */
+    private boolean isDebuffStatus(String id) {
+        return "WEAK".equals(id) || "VULNERABLE".equals(id) || "FRAIL".equals(id)
+            || "POISON".equals(id) || "CONSTRICTED".equals(id);
     }
     
     public void addRelic(Relic relic) { relics.add(relic); }

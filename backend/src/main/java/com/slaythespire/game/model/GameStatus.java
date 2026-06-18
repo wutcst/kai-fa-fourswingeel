@@ -96,4 +96,17 @@ public class GameStatus implements StatusEffect {
         }
         return null;
     }
+// 🆕 人工制品：免疫下一次负面状态
+    @Override
+    public boolean isImmuneToDebuff() {
+        return "ARTIFACT".equals(id) && count > 0;
+    }
+
+    // 🆕 人工制品消耗
+    @Override
+    public void onDebuffBlocked() {
+        if ("ARTIFACT".equals(id) && count > 0) {
+            count--;
+        }
+    }
 }
