@@ -303,11 +303,11 @@ public class BattleService {
         // 🆕 地精大块头被动：玩家打出技能牌时，激怒敌人
         if (card.getType() == Card.CardType.SKILL) {
             for (Enemy e : enemies) {
-                for (StatusEffect s : e.getStatuses()) {
+                for (StatusEffect s : new ArrayList<>(e.getStatuses())) {
                     if ("ANGRY".equals(s.getId())) {
-                        // 激怒层数 = 每次获得的力量值（咆哮给了2层→每次打技能+2力量）
+                        // 每次打技能牌获得ANGRY层数等额的力量（咆哮给了2层→每次+2力量）
                         int angryValue = s.getCount();
-                        StatusEffect strength = com.slaythespire.game.model.factory.StatusFactory.create("STRENGTH", angryValue, dataRepo);
+                        StatusEffect strength = StatusFactory.create("STRENGTH", angryValue, dataRepo);
                         if (strength != null) {
                             e.addStatus(strength);
                             logList.add("🔥 " + e.getEnemyName() + "因【激怒】获得 " + angryValue + " 点力量！");
