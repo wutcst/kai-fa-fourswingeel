@@ -45,16 +45,17 @@ public class BattleService {
         boolean ethereal;
         boolean unplayable;
         boolean exhaust;
-        StatusCardTemplate(String name, int cost, boolean ethereal, boolean unplayable, boolean exhaust) {
-            this.name = name; this.cost = cost; this.ethereal = ethereal; this.unplayable = unplayable; this.exhaust = exhaust;
+        int endOfTurnDamage;
+        StatusCardTemplate(String name, int cost, boolean ethereal, boolean unplayable, boolean exhaust, int endOfTurnDamage) {
+            this.name = name; this.cost = cost; this.ethereal = ethereal; this.unplayable = unplayable; this.exhaust = exhaust; this.endOfTurnDamage = endOfTurnDamage;
         }
     }
     private static final Map<String, StatusCardTemplate> STATUS_CARD_TEMPLATES = new HashMap<>();
     static {
-        STATUS_CARD_TEMPLATES.put("burn",  new StatusCardTemplate("灼伤", 1, false, false, true));
-        STATUS_CARD_TEMPLATES.put("dazed", new StatusCardTemplate("晕眩", 0, true,  true,  false));
-        STATUS_CARD_TEMPLATES.put("wound", new StatusCardTemplate("伤口", 1, false, true,  false));
-        STATUS_CARD_TEMPLATES.put("slime", new StatusCardTemplate("黏液", 1, false, false, true));
+        STATUS_CARD_TEMPLATES.put("burn",  new StatusCardTemplate("灼伤", 1, true,  true,  true,  2));
+        STATUS_CARD_TEMPLATES.put("dazed", new StatusCardTemplate("晕眩", 0, true,  true,  false, 0));
+        STATUS_CARD_TEMPLATES.put("wound", new StatusCardTemplate("伤口", 1, false, true,  false, 0));
+        STATUS_CARD_TEMPLATES.put("slime", new StatusCardTemplate("黏液", 1, false, false, true,  0));
     }
 
     /** 向抽牌堆中塞入一张状态牌 */
@@ -66,6 +67,7 @@ public class BattleService {
         if (tpl.ethereal) card.setEthereal(true);
         if (tpl.unplayable) card.setUnplayable(true);
         if (tpl.exhaust) card.setExhaust(true);
+        if (tpl.endOfTurnDamage > 0) card.setEndOfTurnDamage(tpl.endOfTurnDamage);
         drawPile.add(new Random().nextInt(drawPile.size() + 1), card); // 随机位置洗入
         logList.add("🃏 一张【" + tpl.name + "】被洗入抽牌堆");
     }
@@ -149,6 +151,14 @@ public class BattleService {
         this.skillCountCombat = 0;
         this.hasDealtDamageThisTurn = false;
         this.exhaustedThisAction = false;
+        this.blockPerAttackThisTurn = 0;
+        this.hasDiscardedThisTurn = false;
+        this.drawCountThisTurn = 0;
+        this.buffedShivTemplate = null;
+        this.shivBuffDamage = 0;
+        this.playerExtraPoisonTick = false;
+        this.poisonAllPerCardThisTurn = 0;
+        this.poisonSkipFirstDraw = false;
 
         List<Card> innateCards = new ArrayList<>();
         Iterator<Card> iterator = drawPile.iterator();
@@ -503,9 +513,8 @@ public class BattleService {
         // ================= 硬撑：增加伤口到手牌 =================
         if (card.getAddWoundCount() > 0) {
             for (int i = 0; i < card.getAddWoundCount(); i++) {
-                Card wound = new Card("伤口", -1, 0, 0, Card.CardType.STATUS);
+                Card wound = new Card("伤口", 1, 0, 0, Card.CardType.STATUS);
                 wound.setUnplayable(true);
-                wound.setEthereal(true);
                 wound.setRarity("COMMON");
                 hand.add(playedCardIndex + 1 + i, wound);
             }
@@ -635,15 +644,19 @@ public class BattleService {
 
         // 🆕 钢铁风暴：丢弃所有手牌，获得对应数量的小刀
         if (card.getDiscardAllForCards() != null && !card.getDiscardAllForCards().isEmpty()) {
+            int discarded = 0;
             while (hand.size() > 1) {
                 for (int i = 0; i < hand.size(); i++) {
-                    if (i != playedCardIndex) { discardPile.add(hand.remove(i)); break; }
+                    if (i != playedCardIndex) {
+                        discardPile.add(hand.remove(i));
+                        if (i < playedCardIndex) playedCardIndex--;
+                        discarded++;
+                        break;
+                    }
                 }
             }
-            int shivCount = discardPile.size(); // Approximate count of discarded this action
-            // Actually count what we just discarded — simpler: count from log
             int created = 0;
-            for (int i = 0; i < shivCount; i++) {
+            for (int i = 0; i < discarded; i++) {
                 Card shiv = createCardFromId(card.getDiscardAllForCards());
                 if (shiv != null) { hand.add(playedCardIndex + 1 + i, shiv); created++; }
             }
@@ -656,7 +669,12 @@ public class BattleService {
             int discarded = 0;
             while (hand.size() > 1) {
                 for (int i = 0; i < hand.size(); i++) {
-                    if (i != playedCardIndex) { discardPile.add(hand.remove(i)); discarded++; break; }
+                    if (i != playedCardIndex) {
+                        discardPile.add(hand.remove(i));
+                        if (i < playedCardIndex) playedCardIndex--;
+                        discarded++;
+                        break;
+                    }
                 }
             }
             if (discarded > 0) {

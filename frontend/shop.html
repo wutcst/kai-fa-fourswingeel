@@ -102,25 +102,7 @@
             if (div.classList.contains('sold')) return;
             if (await spendGold(card.price)) {
               saveData = await loadSaveData(char);
-              saveData.deck.push({
-                id: card.id, name: card.name, cost: card.cost,
-                damage: card.damage, block: card.block, type: card.type,
-                effects: card.effects || [],
-                drawCount: card.drawCount || 0, selfDamage: card.selfDamage || 0,
-                energyGain: card.energyGain || 0, multiHitCount: card.multiHitCount || 1,
-                exhaust: card.exhaust || false, retain: card.retain || false,
-                ethereal: card.ethereal || false, innate: card.innate || false,
-                unplayable: card.unplayable || false, xCost: card.xCost || false,
-                aoe: card.aoe || false, drawFirst: card.drawFirst || false,
-                exhaustHandCount: card.exhaustHandCount || 0,
-                exhaustHandMode: card.exhaustHandMode || 'RANDOM',
-                discardCount: card.discardCount || 0,
-                charId: card.charId || '1', rarity: card.rarity || 'COMMON',
-                upgraded: card.upgraded || false,
-                // 🆕 力量倍率
-                strengthMultiplier: card.strengthMultiplier || 1,
-                copyToDiscard: card.copyToDiscard || false
-              });
+              saveData.deck.push({ ...card, effects: card.effects || [] });
               await saveSaveData(saveData);
               alert(`购买成功：${card.name}`);
               div.classList.add('sold');
