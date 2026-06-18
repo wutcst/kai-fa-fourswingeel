@@ -455,6 +455,7 @@ public class GameConfigController {
                 cardMap.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
                 cardMap.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
                 cardMap.put("copyToDiscard", tpl.isCopyToDiscard());
+                cardMap.put("copyToDraw", tpl.isCopyToDraw());
                 cardMap.put("strengthMultiplier", tpl.getStrengthMultiplier());
                 cardMap.put("randomTarget", tpl.isRandomTarget());
                 cardMap.put("xCost", tpl.isXCost());
@@ -573,6 +574,7 @@ public class GameConfigController {
                     cardMap.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
                     cardMap.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
                     cardMap.put("copyToDiscard", tpl.isCopyToDiscard());
+                    cardMap.put("copyToDraw", tpl.isCopyToDraw());
                     cardMap.put("strengthMultiplier", tpl.getStrengthMultiplier());
                     cardMap.put("randomTarget", tpl.isRandomTarget());
                     cardMap.put("xCost", tpl.isXCost());
@@ -690,6 +692,7 @@ public class GameConfigController {
         map.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
         map.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
         map.put("copyToDiscard", tpl.isCopyToDiscard());
+        map.put("copyToDraw", tpl.isCopyToDraw());
         map.put("strengthMultiplier", tpl.getStrengthMultiplier());
         map.put("randomTarget", tpl.isRandomTarget());
         map.put("exhaustNonAttackBlock", tpl.getExhaustNonAttackBlock());

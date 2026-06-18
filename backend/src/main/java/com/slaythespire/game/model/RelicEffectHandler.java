@@ -52,6 +52,16 @@ public class RelicEffectHandler {
             switch (gr.getEffectType()) {
                 case "HEAL_END_TURN" -> player.heal(gr.getValue());
                 case "BLOCK_END_TURN" -> player.gainBlock(gr.getValue());
+                // 🆕 调色盘·光影之触：每回合结束时获得2层再生
+                case "TURN_END_REGENERATION" -> {
+                    int regenCount = gr.getValue();
+                    if (regenCount > 0) {
+                        StatusEffect regen = StatusFactory.create("REGENERATION", regenCount, player.getDataRepo());
+                        if (regen != null) {
+                            player.addStatus(regen);
+                        }
+                    }
+                }
             }
         }
     }

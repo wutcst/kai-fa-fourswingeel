@@ -39,6 +39,7 @@ public class CardTemplate {
     private final boolean aoe;
     private final boolean drawFirst;
     private final boolean copyToDiscard;
+    private final boolean copyToDraw;
     private final int strengthMultiplier;
     private final boolean randomTarget;
     
@@ -95,6 +96,7 @@ public class CardTemplate {
             @JsonProperty("aoe") Boolean aoe,
             @JsonProperty("drawFirst") Boolean drawFirst,
             @JsonProperty("copyToDiscard") Boolean copyToDiscard,
+            @JsonProperty("copyToDraw") Boolean copyToDraw,
             @JsonProperty("strengthMultiplier") Integer strengthMultiplier,
             @JsonProperty("randomTarget") Boolean randomTarget,
             // === 新增构造函数参数 ===
@@ -146,6 +148,7 @@ public class CardTemplate {
         this.aoe = aoe != null ? aoe : false;
         this.drawFirst = drawFirst != null ? drawFirst : false;
         this.copyToDiscard = copyToDiscard != null ? copyToDiscard : false;
+        this.copyToDraw = copyToDraw != null ? copyToDraw : false;
         this.strengthMultiplier = strengthMultiplier != null ? strengthMultiplier : 1;
         this.randomTarget = randomTarget != null ? randomTarget : false;
         
@@ -205,6 +208,7 @@ public class CardTemplate {
     public boolean isAoe() { return aoe; }
     public boolean isDrawFirst() { return drawFirst; }
     public boolean isCopyToDiscard() { return copyToDiscard; }
+    public boolean isCopyToDraw() { return copyToDraw; }
     public int getStrengthMultiplier() { return strengthMultiplier; }
     public boolean isRandomTarget() { return randomTarget; }
 

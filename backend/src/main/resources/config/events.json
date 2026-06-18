@@ -718,5 +718,32 @@
       2,
       3
     ]
+  },
+  {
+    "id": "mysterious_palette_event",
+    "title": "诡异调色盘",
+    "description": "你进入一间画室，墙上挂着一幅幅扭曲的画作。中央的调色盘散发着诡异的光芒。",
+    "background": "linear-gradient(135deg, #1a2a4a, #0e1a3e)",
+    "icon": "🎨",
+    "options": [
+      {
+        "text": "献出生命（-12❤️，获得'诡异的调色盘'）",
+        "effects": [
+          {
+            "type": "HP_CHANGE",
+            "value": -12
+          },
+          {
+            "type": "ADD_RELIC",
+            "tier": "special_palette"
+          }
+        ]
+      },
+      {
+        "text": "离开",
+        "effects": []
+      }
+    ],
+    "acts": [1]
   }
 ]

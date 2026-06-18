@@ -123,6 +123,9 @@ const CARD_UI = {
     if (card.copyToDiscard) {
       parts.push('弃牌堆增加一张复制品');
     }
+    if (card.copyToDraw) {
+      parts.push('抽牌堆增加一张复制品');
+    }
 
     return parts.join('，') || '无效果';
   },
@@ -147,6 +150,8 @@ const CARD_UI = {
     const charId = (card.charId && card.charId !== '') ? card.charId : '1';
     if (charId === '0') return 'linear-gradient(135deg, #808080, #A9A9A9)';
     if (charId === '2') return 'linear-gradient(135deg, #2ecc71, #27ae60)';
+    // 🆕 为河流的尽头等 charId=10 的卡牌使用深蓝色背景
+    if (charId === '10') return 'linear-gradient(135deg, #0a3d6b, #1f5a8a)';
     return 'linear-gradient(135deg, #8B0000, #B22222)';
   },
   getRarityBorderColor(card) {

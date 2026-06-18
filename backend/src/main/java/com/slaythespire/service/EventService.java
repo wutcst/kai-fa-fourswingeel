@@ -159,7 +159,10 @@ public class EventService {
                     String tier = (String) effect.get("tier");
                     // 从对应稀有度池中抽取一个遗物
                     com.slaythespire.repository.RelicTemplate relic = null;
-                    if (tier != null) {
+                    // 🆕 特殊 tier "special_palette" 直接获取固定的调色盘遗物
+                    if ("special_palette".equals(tier)) {
+                        relic = dataRepo.getRelicById("mysterious_palette");
+                    } else if (tier != null) {
                         relic = relicPoolService.drawRelic(charId, saveData.getRelics(), tier);
                     }
                     if (relic == null || "ring".equals(relic.getId())) {
@@ -173,6 +176,14 @@ public class EventService {
                         if ("waffle".equals(rid)) {
                             saveData.setMaxHp(saveData.getMaxHp() + relic.getValue());
                             saveData.setPlayerHp(saveData.getMaxHp());
+                        }
+                        // 🆕 诡异的调色盘：最大生命值-6
+                        else if ("mysterious_palette".equals(rid)) {
+                            saveData.setMaxHp(Math.max(1, saveData.getMaxHp() - 6));
+                            if (saveData.getPlayerHp() > saveData.getMaxHp()) {
+                                saveData.setPlayerHp(saveData.getMaxHp());
+                            }
+                            logs.add("🎨 诡异的调色盘生效，最大生命值降低6点");
                         }
                         // 处理 MAX_HP 类遗物（除华夫饼外的通用逻辑）
                         else if ("MAX_HP".equals(relic.getEffectType()) && relic.getValue() > 0) {
@@ -279,6 +290,7 @@ public class EventService {
                         cardMap.put("aoe", chosen.isAoe());
                         cardMap.put("drawFirst", chosen.isDrawFirst());
                         cardMap.put("copyToDiscard", chosen.isCopyToDiscard());
+                        cardMap.put("copyToDraw", chosen.isCopyToDraw());
                         cardMap.put("strengthMultiplier", chosen.getStrengthMultiplier());
                         cardMap.put("randomTarget", chosen.isRandomTarget());
                         cardMap.put("endOfTurnDamage", chosen.getEndOfTurnDamage());
