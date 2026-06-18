@@ -91,16 +91,7 @@ public class Enemy extends Combatant {
             return 0;
         }
         if (type == IntentType.BUFF) {
-            // 🆕 如果目标是全局ENEMY，由BattleService统一处理群体强化
-            if ("ENEMY".equals(currentIntent.getApplyStatusTarget())) {
-                return 0;
-            }
-            if (currentIntent.getApplyStatusType() != null) {
-                StatusEffect status = StatusFactory.create(currentIntent.getApplyStatusType(), currentIntent.getApplyStatusCount(), dataRepo);
-                if (status != null) {
-                    this.addStatus(status);
-                }
-            }
+            // 所有Buff由BattleService统一处理
             if (currentIntent.getValue() > 0) {
                 this.gainBlock(currentIntent.getValue());
             }
