@@ -356,6 +356,14 @@
         const BGM_KEY_TIME  = 'bgmTime';
         const BGM_KEY_PLAY  = 'bgmPlaying';
 
+        function getCurrentAct() {
+            try {
+                const act = parseInt(localStorage.getItem('act'), 10);
+                if (act >= 1 && act <= 3) return act;
+            } catch (e) {}
+            return 1;
+        }
+
         function getCurrentPageTrack() {
             const path = window.location.pathname;
             const params = new URLSearchParams(location.search);
@@ -364,10 +372,12 @@
             // fight 页面（区分 boss）
             if (path.endsWith('fight.html')) {
                 const nodeType = params.get('nodeType');
-                if (nodeType === 'boss') return 'music/Boss.mp3';
+                const act = getCurrentAct();
+                if (nodeType === 'boss') return 'music/Boss-' + act + '.mp3';
+                return 'music/main-' + act + '.mp3';
             }
-            // 其余全部使用 main.mp3
-            return 'music/main.mp3';
+            // 其余页面默认使用第一幕
+            return 'music/main-'+getCurrentAct()+'.mp3';
         }
 
         // 工具函数：尝试播放音频，如果被浏览器阻止则绑定用户交互
