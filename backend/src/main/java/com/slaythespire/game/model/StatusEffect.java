@@ -16,7 +16,10 @@ public interface StatusEffect {
     default String onTurnEnd(Combatant owner) { return null; }
     default String onTurnStart(Combatant owner) { return null; }
 
-    // 🆕 受到生命伤害时回调（多层护甲减少层数等）
+    // 受到生命伤害时回调（多层护甲减少层数等）
     default String onHpLost(Combatant owner) { return null; }
-    
+
+    // 🆕 是否免疫负面状态（ARTIFACT）
+    default boolean isImmuneToDebuff() { return false; }
+    default void onDebuffBlocked() { }
 }

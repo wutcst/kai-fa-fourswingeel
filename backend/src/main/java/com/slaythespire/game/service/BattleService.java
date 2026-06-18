@@ -372,51 +372,57 @@ public class BattleService {
             logList.add(String.format("💥 全身撞击！当前格挡 %d 转化为伤害", actualCardDamage));
         }
 
-        // ================= 伤害计算（包含力量倍率和随机目标） =================
+        // ================= 伤害计算 =================
         if (actualCardDamage > 0) {
+            // 🆕 X耗费卡牌：每点能量算一段，与 multiHitCount 叠加
+            int hitCount = Math.max(1, card.getMultiHitCount()) * xValue;
+            String hitDesc = xValue > 1 ? ("X耗费×" + xValue + "段") : "";
+
+            // 力量加成（每次命中都会加成，在循环内处理）
             int strengthMultiplier = card.getStrengthMultiplier();
             int strengthCount = 0;
             StatusEffect savedStrength = null;
             if (strengthMultiplier > 1) {
-                Iterator<StatusEffect> iter = player.getStatuses().iterator();
-                while (iter.hasNext()) {
-                    StatusEffect s = iter.next();
+                for (StatusEffect s : player.getStatuses()) {
                     if ("STRENGTH".equals(s.getId())) {
                         strengthCount = s.getCount();
                         savedStrength = s;
-                        iter.remove();
                         break;
                     }
                 }
-                logList.add("💪 力量发挥 " + strengthMultiplier + " 倍效果，临时锁定力量值: " + strengthCount);
+                if (strengthCount > 0) {
+                    player.getStatuses().remove(savedStrength);
+                    logList.add("💪 力量发挥 " + strengthMultiplier + " 倍效果，锁定力量值: " + strengthCount);
+                }
             }
-
-            int baseDamage = actualCardDamage * xValue;
-            // 全身撞击：基础伤害=格挡，也享受力量加成
+            // 全身撞击的力量加成（每段1x）
+            int blockDamageStrength = 0;
             if (card.isBlockToDamage()) {
                 for (StatusEffect s : player.getStatuses()) {
                     if ("STRENGTH".equals(s.getId()) && s.getCount() > 0) {
-                        baseDamage += s.getCount();
-                        logList.add("💪 全身撞击获得力量加成 +" + s.getCount() + " 伤害");
+                        blockDamageStrength = s.getCount();
                         break;
                     }
                 }
-            }
-            if (strengthMultiplier > 1) {
-                baseDamage += strengthCount * strengthMultiplier;
-                logList.add("💪 额外增加 " + (strengthCount * strengthMultiplier) + " 伤害");
             }
 
             if (card.isAoe()) {
                 for (Enemy e : aliveEnemies) {
-                    int actualDmg = e.takeDamage(baseDamage, player);
-                    logList.addAll(e.getLastCombatLogs());
-                    logList.add(String.format("💥 AOE对 %s 造成 %d 点伤害，HP: %d", e.getEnemyName(), actualDmg, e.getHp()));
-                    if (actualDmg > 0) triggerManaFlower();
-                    if (!e.isAlive()) triggerGoblinHorn();
+                    for (int seg = 0; seg < hitCount; seg++) {
+                        int hitDmg = actualCardDamage + blockDamageStrength;
+                        if (seg == 0 && strengthMultiplier > 1) hitDmg += strengthCount * strengthMultiplier;
+                        int actualDmg = e.takeDamage(hitDmg, player);
+                        logList.addAll(e.getLastCombatLogs());
+                        if (hitCount > 1) {
+                            logList.add(String.format("💥 AOE第%d段对 %s 造成 %d 点伤害，HP: %d", seg + 1, e.getEnemyName(), actualDmg, e.getHp()));
+                        } else {
+                            logList.add(String.format("💥 AOE对 %s 造成 %d 点伤害，HP: %d", e.getEnemyName(), actualDmg, e.getHp()));
+                        }
+                        if (actualDmg > 0) triggerManaFlower();
+                        if (!e.isAlive()) { triggerGoblinHorn(); break; }
+                    }
                 }
             } else {
-                int hitCount = Math.max(1, card.getMultiHitCount());
                 Random random = new Random();
                 List<Enemy> currentAlive = new ArrayList<>(aliveEnemies);
                 for (int i = 0; i < hitCount; i++) {
@@ -435,10 +441,12 @@ public class BattleService {
                         }
                         currentTarget = target;
                     }
-                    int actualDmg = currentTarget.takeDamage(baseDamage, player);
+                    int hitDmg = actualCardDamage + blockDamageStrength;
+                    if (strengthMultiplier > 1) hitDmg += strengthCount * strengthMultiplier;
+                    int actualDmg = currentTarget.takeDamage(hitDmg, player);
                     logList.addAll(currentTarget.getLastCombatLogs());
                     if (hitCount > 1) {
-                        logList.add(String.format("对 %s 造成 %d 点伤害 (%d/%d段)，HP: %d", currentTarget.getEnemyName(), actualDmg, i + 1, hitCount, currentTarget.getHp()));
+                        logList.add(String.format("对 %s 造成 %d 点伤害 (%d/%d段)%s，HP: %d", currentTarget.getEnemyName(), actualDmg, i + 1, hitCount, hitDesc, currentTarget.getHp()));
                     } else {
                         logList.add(String.format("对 %s 造成 %d 点伤害，HP: %d", currentTarget.getEnemyName(), actualDmg, currentTarget.getHp()));
                     }

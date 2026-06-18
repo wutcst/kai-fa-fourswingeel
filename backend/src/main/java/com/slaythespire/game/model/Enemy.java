@@ -67,7 +67,6 @@ public class Enemy extends Combatant {
                 this.heal(currentIntent.getHealAmount());
             }
             if (target instanceof Player) {
-                Player p = (Player) target;
                 // 🆕 通用塞牌逻辑：burn/stun
                 if (!currentIntent.isSkipBurnCards() && currentIntent.getBurnCards() > 0) {
                     for (int i = 0; i < currentIntent.getBurnCards(); i++) {
@@ -79,7 +78,6 @@ public class Enemy extends Combatant {
                         if (drawer != null) drawer.accept("dazed");
                     }
                 }
-                // 🆕 通用塞牌逻辑：自定义状态牌（黏液等）
                 if (currentIntent.getStatusCards() != null && currentIntent.getStatusCardCount() > 0) {
                     for (int i = 0; i < currentIntent.getStatusCardCount(); i++) {
                         if (drawer != null) drawer.accept(currentIntent.getStatusCards());
@@ -120,7 +118,6 @@ public class Enemy extends Combatant {
             }
             // 🆕 塞牌逻辑
             if (target instanceof Player) {
-                Player p = (Player) target;
                 if (!currentIntent.isSkipBurnCards() && currentIntent.getBurnCards() > 0) {
                     for (int i = 0; i < currentIntent.getBurnCards(); i++) {
                         if (drawer != null) drawer.accept("burn");
@@ -143,7 +140,6 @@ public class Enemy extends Combatant {
             int stunCards = currentIntent.getStunCards();
             int burnCards = currentIntent.getBurnCards();
             if (target instanceof Player) {
-                Player p = (Player) target;
                 if (burnCards > 0) {
                     for (int i = 0; i < burnCards; i++) {
                         if (drawer != null) drawer.accept("burn");

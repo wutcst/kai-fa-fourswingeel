@@ -454,6 +454,24 @@ public class GameConfigController {
                 cardMap.put("strengthMultiplier", tpl.getStrengthMultiplier());
                 cardMap.put("randomTarget", tpl.isRandomTarget());
                 cardMap.put("xCost", tpl.isXCost());
+                cardMap.put("exhaustNonAttackBlock", tpl.getExhaustNonAttackBlock());
+                cardMap.put("addWoundCount", tpl.getAddWoundCount());
+                cardMap.put("blockToDamage", tpl.isBlockToDamage());
+                cardMap.put("blockPerAttack", tpl.getBlockPerAttack());
+                cardMap.put("energyGainIfDiscarded", tpl.getEnergyGainIfDiscarded());
+                cardMap.put("discardAllForCards", tpl.getDiscardAllForCards());
+                cardMap.put("discardAllForDraw", tpl.isDiscardAllForDraw());
+                cardMap.put("buffCardName", tpl.getBuffCardName());
+                cardMap.put("buffDamageAmount", tpl.getBuffDamageAmount());
+                cardMap.put("doublePoison", tpl.isDoublePoison());
+                cardMap.put("drawPoisonAll", tpl.getDrawPoisonAll());
+                cardMap.put("extraPoisonTick", tpl.isExtraPoisonTick());
+                cardMap.put("addCardId", tpl.getAddCardId());
+                cardMap.put("addCardCount", tpl.getAddCardCount());
+                cardMap.put("upgradeHandCount", tpl.getUpgradeHandCount());
+                cardMap.put("upgradeHandMode", tpl.getUpgradeHandMode());
+                cardMap.put("upgradeAllInHand", tpl.isUpgradeAllInHand());
+                cardMap.put("requiresEmptyDrawPile", tpl.isRequiresEmptyDrawPile());
 
                 int price = 50 + (tpl.getCost() * 25);
                 if (tpl.getDamage() > 10 || tpl.getBlock() > 10) price += 20;

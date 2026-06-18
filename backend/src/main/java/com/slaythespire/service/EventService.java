@@ -63,7 +63,7 @@ public class EventService {
         // 加载存档获取已见事件
         SaveData saveData = saveService.loadGame();
         List<String> seen = (saveData != null && saveData.getSeenEvents() != null)
-            ? saveData.getSeenEvents() : new ArrayList<>();
+            ? saveData.getSeenEvents() : new ArrayList<String>();
 
         // 按阶段过滤
         List<EventTemplate> pool = new ArrayList<>();
@@ -118,8 +118,23 @@ public class EventService {
         }
 
         EventTemplate.EventOption option = event.getOptions().get(optionIndex);
-        boolean valid = true;
         List<String> logs = new ArrayList<>();
+
+        // 🆕 前置校验：检查玩家是否满足选项条件
+        for (Map<String, Object> effect : option.getEffects()) {
+            String type = (String) effect.get("type");
+            if (type == null) continue;
+            if ("GOLD".equals(type)) {
+                int value = ((Number) effect.get("value")).intValue();
+                if (value < 0 && saveData.getGold() + value < 0) {
+                    return "金币不足，无法执行此选项";
+                }
+            } else if ("REMOVE_CARD".equals(type)) {
+                if (saveData.getDeck().isEmpty()) {
+                    return "卡组为空，没有可删除的卡牌";
+                }
+            }
+        }
 
         for (Map<String, Object> effect : option.getEffects()) {
             String type = (String) effect.get("type");
@@ -203,10 +218,14 @@ public class EventService {
                     int removed = 0;
                     List<String> removedNames = new ArrayList<>();
                     if (cardIndices != null && !cardIndices.isEmpty()) {
+                        if (cardIndices.size() > count) {
+                            logs.add("警告：选择了 " + cardIndices.size() + " 张，超出上限 " + count + "，仅删除前 " + count + " 张");
+                        }
                         // 按索引降序排列，从后往前删避免下标偏移
                         List<Integer> sorted = new ArrayList<>(cardIndices);
                         sorted.sort(Collections.reverseOrder());
                         for (int idx : sorted) {
+                            if (removed >= count) break;
                             if (idx >= 0 && idx < deck.size()) {
                                 Map<String, Object> card = deck.remove(idx);
                                 String name = (String) card.getOrDefault("name", "未知卡牌");
@@ -264,6 +283,24 @@ public class EventService {
                         cardMap.put("randomTarget", chosen.isRandomTarget());
                         cardMap.put("endOfTurnDamage", chosen.getEndOfTurnDamage());
                         cardMap.put("energyLossOnDraw", chosen.getEnergyLossOnDraw());
+                        cardMap.put("exhaustNonAttackBlock", chosen.getExhaustNonAttackBlock());
+                        cardMap.put("addWoundCount", chosen.getAddWoundCount());
+                        cardMap.put("blockToDamage", chosen.isBlockToDamage());
+                        cardMap.put("blockPerAttack", chosen.getBlockPerAttack());
+                        cardMap.put("energyGainIfDiscarded", chosen.getEnergyGainIfDiscarded());
+                        cardMap.put("discardAllForCards", chosen.getDiscardAllForCards());
+                        cardMap.put("discardAllForDraw", chosen.isDiscardAllForDraw());
+                        cardMap.put("buffCardName", chosen.getBuffCardName());
+                        cardMap.put("buffDamageAmount", chosen.getBuffDamageAmount());
+                        cardMap.put("doublePoison", chosen.isDoublePoison());
+                        cardMap.put("drawPoisonAll", chosen.getDrawPoisonAll());
+                        cardMap.put("extraPoisonTick", chosen.isExtraPoisonTick());
+                        cardMap.put("addCardId", chosen.getAddCardId());
+                        cardMap.put("addCardCount", chosen.getAddCardCount());
+                        cardMap.put("upgradeHandCount", chosen.getUpgradeHandCount());
+                        cardMap.put("upgradeHandMode", chosen.getUpgradeHandMode());
+                        cardMap.put("upgradeAllInHand", chosen.isUpgradeAllInHand());
+                        cardMap.put("requiresEmptyDrawPile", chosen.isRequiresEmptyDrawPile());
                         cardMap.put("charId", chosen.getCharId());
                         cardMap.put("drawCount", chosen.getDrawCount());
                         cardMap.put("upgraded", chosen.isUpgraded());
