@@ -78,7 +78,7 @@ public class RewardController {
         List<CardTemplate> validCards = new ArrayList<>();
         for (CardTemplate tpl : allCards) {
             if (!allowUpgraded && tpl.isUpgraded()) continue;
-            if ("START".equals(tpl.getRarity())) continue;
+            if ("START".equals(tpl.getRarity()) || "SPECIAL".equals(tpl.getRarity())) continue;
             if (charId != null && tpl.getCharId() != null && !tpl.getCharId().equals(charId)) continue;
             validCards.add(tpl);
         }
