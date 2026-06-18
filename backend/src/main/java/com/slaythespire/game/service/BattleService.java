@@ -870,6 +870,8 @@ public class BattleService {
         blockPerAttackThisTurn = 0;
         hasDiscardedThisTurn = false;
         drawCountThisTurn = 0;
+        poisonAllPerCardThisTurn = 0;
+        poisonSkipFirstDraw = false;
         if (RelicEffectHandler.hasEffect(player, "ENERGY_PER_TURN")) {
             energy += RelicEffectHandler.getEffectValue(player, "ENERGY_PER_TURN");
         }
