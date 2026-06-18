@@ -462,8 +462,12 @@
           🎲 打出后将 <b>随机消耗</b> {{ selectedCard.exhaustHandCount }} 张手牌。
         </div>
 
-        <!-- 3️⃣ 丢弃手牌选择 (仅当当前手中有其他牌时才能选) -->
-        <div v-if="selectedCard && selectedCard.discardCount > 0 && (hand.length - 1) > 0" style="margin-top: 15px; text-align: left;">
+        <!-- 3️⃣ 随机丢弃提示 -->
+        <div v-if="selectedCard && selectedCard.discardCount > 0 && selectedCard.discardMode !== 'SELECT' && (hand.length - 1) > 0" style="margin-top: 10px; color: #3498db; font-size: 14px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+          🎲 将随机丢弃 {{ selectedCard.discardCount }} 张手牌。
+        </div>
+        <!-- 3️⃣ 丢弃手牌选择 (仅SELECT模式) -->
+        <div v-if="selectedCard && selectedCard.discardCount > 0 && selectedCard.discardMode === 'SELECT' && (hand.length - 1) > 0" style="margin-top: 15px; text-align: left;">
           <label style="display: block; margin-bottom: 8px; color: #3498db; font-weight: bold;">🗑️ 请选择要丢弃的手牌 (最多 {{ selectedCard.discardCount }}张，已选 {{ selectedDiscardHandIndices.length }}):</label>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px;">
             <template v-for="(card, idx) in hand" :key="idx">
@@ -553,7 +557,7 @@
             }
             
             // 丢弃手牌检查
-            if (this.selectedCard.discardCount > 0 && this.availableCardsAfterPlay > 0) {
+            if (this.selectedCard.discardCount > 0 && this.selectedCard.discardMode === 'SELECT' && this.availableCardsAfterPlay > 0) {
                 if (!this.isDrawFirstWithNoCurrentHand) {
                     if (this.selectedDiscardHandIndices.length === 0) return true;
                 }
