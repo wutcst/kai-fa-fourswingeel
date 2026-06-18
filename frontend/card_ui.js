@@ -11,7 +11,7 @@ const CARD_UI = {
     'EXHAUST':      { name: '消耗',     desc: '打出的牌将被消耗，本场战斗无法再次抽到。',                     decay: false },
     'INTANGIBLE':   { name: '无实体',   desc: '持续一回合，受到的所有伤害降低为 1。',                         decay: true }
   },
-  RARITY_COLORS: { 'START': '#999999', 'COMMON': '#bdc3c7', 'UNCOMMON': '#5dade2', 'RARE': '#3498db', 'LEGENDARY': '#ffd700', 'SPECIAL': '#8e44ad' },
+  RARITY_COLORS: { 'START': '#888888', 'COMMON': '#95a5a6', 'UNCOMMON': '#2ecc71', 'RARE': '#f39c12', 'LEGENDARY': '#ff6b6b', 'SPECIAL': '#9b59b6' },
   
   getStatusName(type) { return this.STATUS_INFO[type]?.name || type; },
 
@@ -71,7 +71,7 @@ const CARD_UI = {
     if (card.energyGainIfDiscarded > 0) parts.push(`本回合丢弃过牌获得 ${card.energyGainIfDiscarded} 能量`);
     if (card.discardAllForCards) parts.push(`丢弃所有手牌，获得对应数量的小刀`);
     if (card.discardAllForDraw) parts.push(`丢弃所有手牌，抽对应数量的牌`);
-    if (card.buffCardName && card.buffDamageAmount > 0) parts.push(`本场战斗${card.buffCardName}伤害 +${card.buffDamageAmount}`);
+    if (card.buffCardName && card.buffDamageAmount > 0) parts.push(`本场战斗${card.buffCardName === 'shiv' ? '小刀' : card.buffCardName}伤害 +${card.buffDamageAmount}`);
     if (card.doublePoison) parts.push(`将目标敌人的中毒翻倍`);
     if (card.drawPoisonAll > 0) parts.push(`本回合每抽1张牌，所有敌人获 ${card.drawPoisonAll} 层毒`);
     if (card.extraPoisonTick) parts.push(`回合结束时中毒额外结算1次`);
@@ -131,12 +131,14 @@ const CARD_UI = {
     if (card.type === 'ATTACK') return '攻击';
     if (card.type === 'SKILL')  return '技能';
     if (card.type === 'POWER')  return '能力';
+    if (card.type === 'STATUS') return '状态';
     return '未知';
   },
   getCardTypeClass(card) {
     if (card.type === 'ATTACK') return 'attack';
     if (card.type === 'SKILL')  return 'skill';
     if (card.type === 'POWER')  return 'power';
+    if (card.type === 'STATUS') return 'status';
     return '';
   },
   getCardCharStyle(card) {

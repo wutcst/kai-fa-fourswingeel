@@ -409,7 +409,7 @@ public class GameConfigController {
         List<CardTemplate> normalCards = new ArrayList<>();
         for (CardTemplate tpl : allCards) {
             if (tpl.isUpgraded()) continue;
-            if ("START".equals(tpl.getRarity())) continue;
+            if ("START".equals(tpl.getRarity()) || "SPECIAL".equals(tpl.getRarity())) continue;
             if (tpl.getCharId() != null && !tpl.getCharId().equals(charParam)) continue;
             normalCards.add(tpl);
         }

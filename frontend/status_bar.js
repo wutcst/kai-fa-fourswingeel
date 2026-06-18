@@ -146,7 +146,7 @@
     }
 
     function rarityColor(rarity) {
-        const colors = { 'COMMON': '#95a5a6', 'UNCOMMON': '#5dade2', 'RARE': '#3498db', 'LEGENDARY': '#ffd700', 'STARTER': '#999999', 'SPECIAL': '#9b59b6', 'BOSS': '#ff4757' };
+        const colors = { 'COMMON': '#95a5a6', 'UNCOMMON': '#2ecc71', 'RARE': '#f39c12', 'LEGENDARY': '#ff6b6b', 'STARTER': '#888888', 'SPECIAL': '#9b59b6', 'BOSS': '#ff4757' };
         return colors[rarity] || '#95a5a6';
     }
 
