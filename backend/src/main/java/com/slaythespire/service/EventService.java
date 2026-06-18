@@ -247,7 +247,7 @@ public class EventService {
                     List<com.slaythespire.repository.CardTemplate> validCards = new ArrayList<>();
                     for (com.slaythespire.repository.CardTemplate tpl : allCards) {
                         if (tpl.isUpgraded()) continue;
-                        if ("START".equals(tpl.getRarity())) continue;
+                        if ("START".equals(tpl.getRarity()) || "SPECIAL".equals(tpl.getRarity())) continue;
                         // 按角色过滤
                         if (tpl.getCharId() != null && !tpl.getCharId().equals(charId)) continue;
                         validCards.add(tpl);
