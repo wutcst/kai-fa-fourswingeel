@@ -392,19 +392,38 @@ public class BattleService {
             }
 
             int baseDamage = actualCardDamage * xValue;
-            // 全身撞击：基础伤害=格挡，也享受力量加成
-            if (card.isBlockToDamage()) {
-                for (StatusEffect s : player.getStatuses()) {
-                    if ("STRENGTH".equals(s.getId()) && s.getCount() > 0) {
-                        baseDamage += s.getCount();
-                        logList.add("💪 全身撞击获得力量加成 +" + s.getCount() + " 伤害");
-                        break;
+
+            // 🆕 X耗费：力量加成按能量次数叠加
+            if (xValue > 1) {
+                // 先计算全身撞击的单次力量加成
+                if (card.isBlockToDamage()) {
+                    for (StatusEffect s : player.getStatuses()) {
+                        if ("STRENGTH".equals(s.getId()) && s.getCount() > 0) {
+                            baseDamage += s.getCount() * xValue;
+                            logList.add("💪 全身撞击获得力量加成 +" + s.getCount() + " ×" + xValue + " = +" + (s.getCount() * xValue) + " 伤害");
+                            break;
+                        }
                     }
                 }
-            }
-            if (strengthMultiplier > 1) {
-                baseDamage += strengthCount * strengthMultiplier;
-                logList.add("💪 额外增加 " + (strengthCount * strengthMultiplier) + " 伤害");
+                if (strengthMultiplier > 1) {
+                    baseDamage += strengthCount * strengthMultiplier * xValue;
+                    logList.add("💪 额外增加 " + (strengthCount * strengthMultiplier) + " ×" + xValue + " 伤害");
+                }
+            } else {
+                // 普通卡牌：力量加成一次
+                if (card.isBlockToDamage()) {
+                    for (StatusEffect s : player.getStatuses()) {
+                        if ("STRENGTH".equals(s.getId()) && s.getCount() > 0) {
+                            baseDamage += s.getCount();
+                            logList.add("💪 全身撞击获得力量加成 +" + s.getCount() + " 伤害");
+                            break;
+                        }
+                    }
+                }
+                if (strengthMultiplier > 1) {
+                    baseDamage += strengthCount * strengthMultiplier;
+                    logList.add("💪 额外增加 " + (strengthCount * strengthMultiplier) + " 伤害");
+                }
             }
 
             if (card.isAoe()) {
