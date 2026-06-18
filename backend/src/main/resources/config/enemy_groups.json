@@ -64,6 +64,14 @@
     "enemies": ["hexaghost"]
   },
   {
+    "id": "boss_slime",
+    "name": "史莱姆老大",
+    "type": "BOSS",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["slime_boss"]
+  },
+  {
     "id": "jaw_worm",
     "name": "巨口",
     "type": "NORMAL",
