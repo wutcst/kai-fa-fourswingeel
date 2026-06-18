@@ -464,13 +464,13 @@
 
         <!-- 3️⃣ 丢弃手牌选择 (仅当当前手中有其他牌时才能选) -->
         <div v-if="selectedCard && selectedCard.discardCount > 0 && (hand.length - 1) > 0" style="margin-top: 15px; text-align: left;">
-          <label style="display: block; margin-bottom: 8px; color: #3498db; font-weight: bold;">🗑️ 请选择要丢弃的手牌 ({{ selectedCard.discardCount }}张):</label>
+          <label style="display: block; margin-bottom: 8px; color: #3498db; font-weight: bold;">🗑️ 请选择要丢弃的手牌 (最多 {{ selectedCard.discardCount }}张，已选 {{ selectedDiscardHandIndices.length }}):</label>
           <div style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px;">
             <template v-for="(card, idx) in hand" :key="idx">
-              <div v-if="idx !== selectedIndex" @click="selectDiscardHand(idx)" :style="{ padding: '6px 10px', background: selectedDiscardHandIndex === idx ? '#3498db' : '#34495e', color: 'white', borderRadius: '4px', cursor: 'pointer', border: selectedDiscardHandIndex === idx ? '2px solid #f1c40f' : '1px solid #2c3e50', fontSize: '12px' }">{{ card.name }} ({{ card.cost }}费)</div>
+              <div v-if="idx !== selectedIndex" @click="selectDiscardHand(idx)" :style="{ padding: '6px 10px', background: selectedDiscardHandIndices.includes(idx) ? '#3498db' : '#34495e', color: 'white', borderRadius: '4px', cursor: 'pointer', border: selectedDiscardHandIndices.includes(idx) ? '2px solid #f1c40f' : '1px solid #2c3e50', fontSize: '12px' }">{{ card.name }} ({{ card.cost }}费)</div>
             </template>
           </div>
-          <p v-if="selectedDiscardHandIndex === -1" style="color: #e74c3c; font-size: 12px; margin-top: 6px;">* 必须选择一张牌才能打出</p>
+          <p v-if="selectedDiscardHandIndices.length > selectedCard.discardCount" style="color: #f39c12; font-size: 12px; margin-top: 6px;">⚠️ 已选超出上限，将自动截取</p>
         </div>
 
         <!-- 🔨 升级手牌选择 (武装) -->
@@ -508,7 +508,7 @@
       data() { 
         return { 
           state: null, loading: false, error: null, showCardConfirm: false, selectedCard: null, selectedIndex: -1,
-          selectedEnemyIndex: 0, selectedExhaustHandIndex: -1, selectedDiscardHandIndex: -1, selectedUpgradeHandIndex: -1,
+          selectedEnemyIndex: 0, selectedExhaustHandIndex: -1, selectedDiscardHandIndices: [], selectedUpgradeHandIndex: -1,
           isFromMap: false, prevNodeId: null, nextNodeId: null, tooltipCard: null, tooltipX: 0, tooltipY: 0, logVisible: true, pilePopupVisible: false, pilePopupTitle: '', pilePopupCards: [],
           playerRelics: [] 
         }; 
@@ -555,7 +555,7 @@
             // 丢弃手牌检查
             if (this.selectedCard.discardCount > 0 && this.availableCardsAfterPlay > 0) {
                 if (!this.isDrawFirstWithNoCurrentHand) {
-                    if (this.selectedDiscardHandIndex === -1) return true;
+                    if (this.selectedDiscardHandIndices.length === 0) return true;
                 }
             }
 
@@ -576,7 +576,11 @@
         getRarityBorderColor(card) { return CARD_UI.getRarityBorderColor(card); },
         selectEnemy(index) { this.selectedEnemyIndex = index; },
         selectExhaustHand(idx) { this.selectedExhaustHandIndex = idx; },
-        selectDiscardHand(idx) { this.selectedDiscardHandIndex = idx; },
+        selectDiscardHand(idx) {
+          var arr = this.selectedDiscardHandIndices;
+          var pos = arr.indexOf(idx);
+          if (pos >= 0) { arr.splice(pos, 1); } else { arr.push(idx); }
+        },
         selectUpgradeHand(idx) { this.selectedUpgradeHandIndex = idx; },
         
         async newGame() {
@@ -605,7 +609,7 @@
           this.selectedCard = card; 
           this.selectedIndex = index; 
           this.selectedExhaustHandIndex = -1;
-          this.selectedDiscardHandIndex = -1;
+          this.selectedDiscardHandIndices = [];
           this.selectedUpgradeHandIndex = -1;
           this.showCardConfirm = true;
         },
@@ -621,8 +625,8 @@
             if (card && card.exhaustHandCount > 0 && this.selectedExhaustHandIndex !== -1) {
               url += `&exhaustHandIndex=${this.selectedExhaustHandIndex}`;
             }
-            if (card && card.discardCount > 0 && this.selectedDiscardHandIndex !== -1) {
-              url += `&discardHandIndex=${this.selectedDiscardHandIndex}`;
+            if (card && card.discardCount > 0 && this.selectedDiscardHandIndices.length > 0) {
+              this.selectedDiscardHandIndices.forEach(function(di) { url += '&discardHandIndices=' + di; });
             }
             if (card && card.upgradeHandCount > 0 && this.selectedUpgradeHandIndex !== -1) {
               url += `&upgradeHandIndex=${this.selectedUpgradeHandIndex}`;

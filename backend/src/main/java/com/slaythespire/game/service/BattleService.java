@@ -253,9 +253,12 @@ public class BattleService {
     }
 
     public synchronized Map<String, Object> playCard(int index, Integer targetIndex, Integer exhaustHandIndex, Integer discardHandIndex) {
-        return playCard(index, targetIndex, exhaustHandIndex, discardHandIndex, null);
+        return playCard(index, targetIndex, exhaustHandIndex, discardHandIndex, null, null);
     }
     public synchronized Map<String, Object> playCard(int index, Integer targetIndex, Integer exhaustHandIndex, Integer discardHandIndex, Integer upgradeHandIndex) {
+        return playCard(index, targetIndex, exhaustHandIndex, discardHandIndex, upgradeHandIndex, null);
+    }
+    public synchronized Map<String, Object> playCard(int index, Integer targetIndex, Integer exhaustHandIndex, Integer discardHandIndex, Integer upgradeHandIndex, List<Integer> discardHandIndices) {
         validateBattleActive();
         validateCardIndex(index);
 
@@ -633,9 +636,19 @@ public class BattleService {
 
         if (card.getDiscardCount() > 0) {
             int count = Math.min(card.getDiscardCount(), hand.size() - 1);
+            List<Integer> usedIndices = new ArrayList<>();
             for (int i = 0; i < count; i++) {
-                int targetIdx = resolveHandInteractionIndex(i, discardHandIndex, playedCardIndex, hand.size(), "丢弃");
-                hand.remove(targetIdx);
+                // 支持多选：传入的 discardHandIndex 是一个索引，后续用列表跟踪已用过的索引
+                Integer requestedIdx = null;
+                if (discardHandIndices != null && i < discardHandIndices.size()) {
+                    requestedIdx = discardHandIndices.get(i);
+                } else if (i == 0 && discardHandIndex != null) {
+                    requestedIdx = discardHandIndex;
+                }
+                int targetIdx = resolveHandInteractionIndex(i, requestedIdx, playedCardIndex, hand.size(), "丢弃");
+                usedIndices.add(targetIdx);
+                Card discarded = hand.remove(targetIdx);
+                discardPile.add(discarded);
                 if (targetIdx < playedCardIndex) {
                     playedCardIndex--;
                 }

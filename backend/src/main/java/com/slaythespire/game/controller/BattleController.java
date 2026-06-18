@@ -74,8 +74,9 @@ public class BattleController {
                                         @RequestParam(required = false) Integer targetIndex,
                                         @RequestParam(required = false) Integer exhaustHandIndex,
                                         @RequestParam(required = false) Integer discardHandIndex,
-                                        @RequestParam(required = false) Integer upgradeHandIndex) {
-        return battleService.playCard(index, targetIndex, exhaustHandIndex, discardHandIndex, upgradeHandIndex);
+                                        @RequestParam(required = false) Integer upgradeHandIndex,
+                                        @RequestParam(required = false) List<Integer> discardHandIndices) {
+        return battleService.playCard(index, targetIndex, exhaustHandIndex, discardHandIndex, upgradeHandIndex, discardHandIndices);
     }
 
     /**
