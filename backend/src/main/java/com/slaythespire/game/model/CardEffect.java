@@ -27,6 +27,12 @@ public class CardEffect {
     public int getCount() { return count; }
     public String getTarget() { return target; }
 
+    /**
+     * 获取该效果的复制次数（默认1次）
+     * 后期可由卡牌模板中配置多段效果
+     */
+    public int getCopyCount() { return 1; }
+
     /** 转为前端可用的 Map */
     public java.util.Map<String, Object> toMap() {
         java.util.LinkedHashMap<String, Object> m = new java.util.LinkedHashMap<>();
