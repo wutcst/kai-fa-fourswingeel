@@ -34,7 +34,7 @@
       // 加载事件
       async function loadEvent() {
         try {
-          const resp = await fetch('/api/event/roll');
+          const resp = await fetch('/api/event/roll?act=' + encodeURIComponent(act));
           if (resp.ok) {
             eventData = await resp.json();
             renderEvent(eventData);

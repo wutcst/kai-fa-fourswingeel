@@ -9,16 +9,30 @@
       {
         "text": "小心收集金币 (+50💰)",
         "effects": [
-          { "type": "GOLD", "value": 50 }
+          {
+            "type": "GOLD",
+            "value": 50
+          }
         ]
       },
       {
         "text": "冒险深入探寻 (-10❤️，获得遗物)",
         "effects": [
-          { "type": "HP_CHANGE", "value": -10 },
-          { "type": "ADD_RELIC", "tier": "common" }
+          {
+            "type": "HP_CHANGE",
+            "value": -10
+          },
+          {
+            "type": "ADD_RELIC",
+            "tier": "common"
+          }
         ]
       }
+    ],
+    "acts": [
+      1,
+      2,
+      3
     ]
   },
   {
@@ -31,14 +45,25 @@
       {
         "text": "购买生命精华（-30💰，+15❤️）",
         "effects": [
-          { "type": "GOLD", "value": -30 },
-          { "type": "HP_CHANGE", "value": 15 }
+          {
+            "type": "GOLD",
+            "value": -30
+          },
+          {
+            "type": "HP_CHANGE",
+            "value": 15
+          }
         ]
       },
       {
         "text": "拒绝交易",
         "effects": []
       }
+    ],
+    "acts": [
+      1,
+      2,
+      3
     ]
   },
   {
@@ -51,14 +76,24 @@
       {
         "text": "阅读卷轴（-5❤️，获得随机卡牌）",
         "effects": [
-          { "type": "HP_CHANGE", "value": -5 },
-          { "type": "ADD_RANDOM_CARD" }
+          {
+            "type": "HP_CHANGE",
+            "value": -5
+          },
+          {
+            "type": "ADD_RANDOM_CARD"
+          }
         ]
       },
       {
         "text": "转身离开",
         "effects": []
       }
+    ],
+    "acts": [
+      1,
+      2,
+      3
     ]
   },
   {
@@ -71,15 +106,24 @@
       {
         "text": "饮用泉水（+20❤️）",
         "effects": [
-          { "type": "HP_CHANGE", "value": 20 }
+          {
+            "type": "HP_CHANGE",
+            "value": 20
+          }
         ]
       },
       {
         "text": "装瓶带走（获得随机卡牌）",
         "effects": [
-          { "type": "ADD_RANDOM_CARD" }
+          {
+            "type": "ADD_RANDOM_CARD"
+          }
         ]
       }
+    ],
+    "acts": [
+      1,
+      2
     ]
   },
   {
@@ -92,20 +136,33 @@
       {
         "text": "下注赌博（50%概率+80💰/50%概率-40💰）",
         "effects": [
-          { "type": "GOLD", "value": 80 }
+          {
+            "type": "GOLD",
+            "value": 80
+          }
         ]
       },
       {
         "text": "小赌怡情（-5💰，+5❤️）",
         "effects": [
-          { "type": "GOLD", "value": -5 },
-          { "type": "HP_CHANGE", "value": 5 }
+          {
+            "type": "GOLD",
+            "value": -5
+          },
+          {
+            "type": "HP_CHANGE",
+            "value": 5
+          }
         ]
       },
       {
         "text": "拒绝掺和",
         "effects": []
       }
+    ],
+    "acts": [
+      1,
+      2
     ]
   },
   {
@@ -118,19 +175,29 @@
       {
         "text": "打开宝箱（获得稀有遗物）",
         "effects": [
-          { "type": "ADD_RELIC", "tier": "rare" }
+          {
+            "type": "ADD_RELIC",
+            "tier": "rare"
+          }
         ]
       },
       {
         "text": "撬锁搜刮（+40💰）",
         "effects": [
-          { "type": "GOLD", "value": 40 }
+          {
+            "type": "GOLD",
+            "value": 40
+          }
         ]
       },
       {
         "text": "安全起见，离开",
         "effects": []
       }
+    ],
+    "acts": [
+      1,
+      2
     ]
   },
   {
@@ -143,14 +210,24 @@
       {
         "text": "交易生命（-15❤️，+60💰）",
         "effects": [
-          { "type": "HP_CHANGE", "value": -15 },
-          { "type": "GOLD", "value": 60 }
+          {
+            "type": "HP_CHANGE",
+            "value": -15
+          },
+          {
+            "type": "GOLD",
+            "value": 60
+          }
         ]
       },
       {
         "text": "拒绝交易",
         "effects": []
       }
+    ],
+    "acts": [
+      2,
+      3
     ]
   },
   {
@@ -163,21 +240,37 @@
       {
         "text": "支付金币换取遗物（-40💰，获得稀有遗物）",
         "effects": [
-          { "type": "GOLD", "value": -40 },
-          { "type": "ADD_RELIC", "tier": "rare" }
+          {
+            "type": "GOLD",
+            "value": -40
+          },
+          {
+            "type": "ADD_RELIC",
+            "tier": "rare"
+          }
         ]
       },
       {
         "text": "帮他一把（-10💰，+10❤️）",
         "effects": [
-          { "type": "GOLD", "value": -10 },
-          { "type": "HP_CHANGE", "value": 10 }
+          {
+            "type": "GOLD",
+            "value": -10
+          },
+          {
+            "type": "HP_CHANGE",
+            "value": 10
+          }
         ]
       },
       {
         "text": "冷漠离开",
         "effects": []
       }
+    ],
+    "acts": [
+      2,
+      3
     ]
   },
   {
@@ -190,20 +283,31 @@
       {
         "text": "加入仪式（-10❤️，获得传奇遗物）",
         "effects": [
-          { "type": "HP_CHANGE", "value": -10 },
-          { "type": "ADD_RELIC", "tier": "legendary" }
+          {
+            "type": "HP_CHANGE",
+            "value": -10
+          },
+          {
+            "type": "ADD_RELIC",
+            "tier": "legendary"
+          }
         ]
       },
       {
         "text": "偷听秘法（获得随机卡牌）",
         "effects": [
-          { "type": "ADD_RANDOM_CARD" }
+          {
+            "type": "ADD_RANDOM_CARD"
+          }
         ]
       },
       {
         "text": "悄悄离开",
         "effects": []
       }
+    ],
+    "acts": [
+      3
     ]
   },
   {
@@ -216,22 +320,37 @@
       {
         "text": "摘取生命果实（+25❤️）",
         "effects": [
-          { "type": "HP_CHANGE", "value": 25 }
+          {
+            "type": "HP_CHANGE",
+            "value": 25
+          }
         ]
       },
       {
         "text": "拾取掉落的果实（+15❤️，+15💰）",
         "effects": [
-          { "type": "HP_CHANGE", "value": 15 },
-          { "type": "GOLD", "value": 15 }
+          {
+            "type": "HP_CHANGE",
+            "value": 15
+          },
+          {
+            "type": "GOLD",
+            "value": 15
+          }
         ]
       },
       {
         "text": "摘一片树叶留念（获得随机卡牌）",
         "effects": [
-          { "type": "ADD_RANDOM_CARD" }
+          {
+            "type": "ADD_RANDOM_CARD"
+          }
         ]
       }
+    ],
+    "acts": [
+      1,
+      2
     ]
   },
   {
@@ -244,14 +363,23 @@
       {
         "text": "签下契约（-20❤️，获得传奇遗物）",
         "effects": [
-          { "type": "HP_CHANGE", "value": -20 },
-          { "type": "ADD_RELIC", "tier": "legendary" }
+          {
+            "type": "HP_CHANGE",
+            "value": -20
+          },
+          {
+            "type": "ADD_RELIC",
+            "tier": "legendary"
+          }
         ]
       },
       {
         "text": "撕毁契约",
         "effects": []
       }
+    ],
+    "acts": [
+      3
     ]
   },
   {
@@ -264,21 +392,36 @@
       {
         "text": "攀爬到塔顶（-5❤️，获得随机卡牌+普通遗物）",
         "effects": [
-          { "type": "HP_CHANGE", "value": -5 },
-          { "type": "ADD_RANDOM_CARD" },
-          { "type": "ADD_RELIC", "tier": "common" }
+          {
+            "type": "HP_CHANGE",
+            "value": -5
+          },
+          {
+            "type": "ADD_RANDOM_CARD"
+          },
+          {
+            "type": "ADD_RELIC",
+            "tier": "common"
+          }
         ]
       },
       {
         "text": "搜索塔底（+30💰）",
         "effects": [
-          { "type": "GOLD", "value": 30 }
+          {
+            "type": "GOLD",
+            "value": 30
+          }
         ]
       },
       {
         "text": "绕过此塔",
         "effects": []
       }
+    ],
+    "acts": [
+      2,
+      3
     ]
   },
   {
@@ -291,26 +434,41 @@
       {
         "text": "喝下绿色药剂（+15❤️）",
         "effects": [
-          { "type": "HP_CHANGE", "value": 15 }
+          {
+            "type": "HP_CHANGE",
+            "value": 15
+          }
         ]
       },
       {
         "text": "喝下金色药剂（+40💰）",
         "effects": [
-          { "type": "GOLD", "value": 40 }
+          {
+            "type": "GOLD",
+            "value": 40
+          }
         ]
       },
       {
         "text": "喝下紫色药剂（-8❤️，获得随机卡牌）",
         "effects": [
-          { "type": "HP_CHANGE", "value": -8 },
-          { "type": "ADD_RANDOM_CARD" }
+          {
+            "type": "HP_CHANGE",
+            "value": -8
+          },
+          {
+            "type": "ADD_RANDOM_CARD"
+          }
         ]
       },
       {
         "text": "不碰这些药水",
         "effects": []
       }
+    ],
+    "acts": [
+      2,
+      3
     ]
   },
   {
@@ -323,20 +481,32 @@
       {
         "text": "接受祝福（+15❤️）",
         "effects": [
-          { "type": "HP_CHANGE", "value": 15 }
+          {
+            "type": "HP_CHANGE",
+            "value": 15
+          }
         ]
       },
       {
         "text": "捐赠金币（-30💰，获得稀有遗物）",
         "effects": [
-          { "type": "GOLD", "value": -30 },
-          { "type": "ADD_RELIC", "tier": "rare" }
+          {
+            "type": "GOLD",
+            "value": -30
+          },
+          {
+            "type": "ADD_RELIC",
+            "tier": "rare"
+          }
         ]
       },
       {
         "text": "婉拒好意",
         "effects": []
       }
+    ],
+    "acts": [
+      1
     ]
   },
   {
@@ -349,21 +519,36 @@
       {
         "text": "偷袭营地（-12❤️，+50💰+普通遗物）",
         "effects": [
-          { "type": "HP_CHANGE", "value": -12 },
-          { "type": "GOLD", "value": 50 },
-          { "type": "ADD_RELIC", "tier": "common" }
+          {
+            "type": "HP_CHANGE",
+            "value": -12
+          },
+          {
+            "type": "GOLD",
+            "value": 50
+          },
+          {
+            "type": "ADD_RELIC",
+            "tier": "common"
+          }
         ]
       },
       {
         "text": "偷溜进去搜刮（+35💰）",
         "effects": [
-          { "type": "GOLD", "value": 35 }
+          {
+            "type": "GOLD",
+            "value": 35
+          }
         ]
       },
       {
         "text": "绕路避开",
         "effects": []
       }
+    ],
+    "acts": [
+      2
     ]
   },
   {
@@ -376,14 +561,25 @@
       {
         "text": "投入金币，献祭一张卡牌（-15💰，随机删除1张）",
         "effects": [
-          { "type": "GOLD", "value": -15 },
-          { "type": "REMOVE_CARD", "count": 1 }
+          {
+            "type": "GOLD",
+            "value": -15
+          },
+          {
+            "type": "REMOVE_CARD",
+            "count": 1
+          }
         ]
       },
       {
         "text": "转身离开",
         "effects": []
       }
+    ],
+    "acts": [
+      1,
+      2,
+      3
     ]
   },
   {
@@ -396,14 +592,24 @@
       {
         "text": "投入熔炉（-12❤️，随机删除2张）",
         "effects": [
-          { "type": "HP_CHANGE", "value": -12 },
-          { "type": "REMOVE_CARD", "count": 2 }
+          {
+            "type": "HP_CHANGE",
+            "value": -12
+          },
+          {
+            "type": "REMOVE_CARD",
+            "count": 2
+          }
         ]
       },
       {
         "text": "太危险了，离开",
         "effects": []
       }
+    ],
+    "acts": [
+      2,
+      3
     ]
   },
   {
@@ -416,21 +622,35 @@
       {
         "text": "跳入裂隙（-25❤️，随机删除5张）",
         "effects": [
-          { "type": "HP_CHANGE", "value": -25 },
-          { "type": "REMOVE_CARD", "count": 5 }
+          {
+            "type": "HP_CHANGE",
+            "value": -25
+          },
+          {
+            "type": "REMOVE_CARD",
+            "count": 5
+          }
         ]
       },
       {
         "text": "触摸裂隙边缘（-5❤️，获得1张随机卡牌）",
         "effects": [
-          { "type": "HP_CHANGE", "value": -5 },
-          { "type": "ADD_RANDOM_CARD" }
+          {
+            "type": "HP_CHANGE",
+            "value": -5
+          },
+          {
+            "type": "ADD_RANDOM_CARD"
+          }
         ]
       },
       {
         "text": "远离裂隙",
         "effects": []
       }
+    ],
+    "acts": [
+      3
     ]
   },
   {
@@ -443,14 +663,25 @@
       {
         "text": "卖一张牌给他（-25💰，选择删除1张）",
         "effects": [
-          { "type": "GOLD", "value": -25 },
-          { "type": "CHOOSE_REMOVE_CARD", "count": 1 }
+          {
+            "type": "GOLD",
+            "value": -25
+          },
+          {
+            "type": "CHOOSE_REMOVE_CARD",
+            "count": 1
+          }
         ]
       },
       {
         "text": "不卖，离开",
         "effects": []
       }
+    ],
+    "acts": [
+      1,
+      2,
+      3
     ]
   },
   {
@@ -463,16 +694,29 @@
       {
         "text": "忏悔并舍弃（-20❤️，选择删除2张）",
         "effects": [
-          { "type": "HP_CHANGE", "value": -20 },
-          { "type": "CHOOSE_REMOVE_CARD", "count": 2 }
+          {
+            "type": "HP_CHANGE",
+            "value": -20
+          },
+          {
+            "type": "CHOOSE_REMOVE_CARD",
+            "count": 2
+          }
         ]
       },
       {
         "text": "默祷后离开（-5❤️）",
         "effects": [
-          { "type": "HP_CHANGE", "value": -5 }
+          {
+            "type": "HP_CHANGE",
+            "value": -5
+          }
         ]
       }
+    ],
+    "acts": [
+      2,
+      3
     ]
   }
 ]

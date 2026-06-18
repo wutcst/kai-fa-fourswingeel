@@ -47,11 +47,48 @@ public class EventService {
     }
 
     /**
-     * 随机选择一个事件
+     * 随机选择一个事件（不限制阶段）
      */
     public EventTemplate rollEvent() {
+        return rollEvent(1);
+    }
+
+    /**
+     * 随机选择一个事件（按阶段过滤）
+     * @param act 当前阶段 (1/2/3)，事件无 acts 字段则在所有阶段出现
+     */
+    public EventTemplate rollEvent(int act) {
         if (events.isEmpty()) return null;
-        return events.get(random.nextInt(events.size()));
+
+        // 加载存档获取已见事件
+        SaveData saveData = saveService.loadGame();
+        List<String> seen = (saveData != null && saveData.getSeenEvents() != null)
+            ? saveData.getSeenEvents() : new ArrayList<>();
+
+        // 按阶段过滤
+        List<EventTemplate> pool = new ArrayList<>();
+        for (EventTemplate e : events) {
+            if (e.getActs() == null || e.getActs().isEmpty() || e.getActs().contains(act)) {
+                pool.add(e);
+            }
+        }
+        if (pool.isEmpty()) return events.get(random.nextInt(events.size()));
+
+        // 排除已见过的事件
+        List<EventTemplate> fresh = new ArrayList<>();
+        for (EventTemplate e : pool) {
+            if (!seen.contains(e.getId())) {
+                fresh.add(e);
+            }
+        }
+
+        // 如果所有事件都见过了，重置
+        if (fresh.isEmpty()) {
+            seen.clear();
+            fresh.addAll(pool);
+        }
+
+        return fresh.get(random.nextInt(fresh.size()));
     }
 
     /**
@@ -241,6 +278,14 @@ public class EventService {
                 default:
                     logs.add("未知效果: " + type);
             }
+        }
+
+        // 🆕 标记事件为已见，防止重复
+        if (saveData.getSeenEvents() == null) {
+            saveData.setSeenEvents(new ArrayList<>());
+        }
+        if (!saveData.getSeenEvents().contains(eventId)) {
+            saveData.getSeenEvents().add(eventId);
         }
 
         // 🆕 移除 charId 参数，直接保存全局存档

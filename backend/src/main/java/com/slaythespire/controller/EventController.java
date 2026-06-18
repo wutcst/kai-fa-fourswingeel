@@ -22,8 +22,8 @@ public class EventController {
      * 前端仅用于展示
      */
     @GetMapping("/roll")
-    public ResponseEntity<EventTemplate> rollEvent() {
-        EventTemplate event = eventService.rollEvent();
+    public ResponseEntity<EventTemplate> rollEvent(@RequestParam(defaultValue = "1") int act) {
+        EventTemplate event = eventService.rollEvent(act);
         if (event == null) {
             return ResponseEntity.internalServerError().build();
         }
