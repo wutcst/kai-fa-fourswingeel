@@ -1,0 +1,218 @@
+[
+  {
+    "id": "single_cultist",
+    "name": "单个邪教徒",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["cultist"]
+  },
+  {
+    "id": "single_acid_slime",
+    "name": "单个酸液史莱姆",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["acid_slime_large"]
+  },
+  {
+    "id": "single_spike_slime",
+    "name": "单个尖刺史莱姆",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["spike_slime_medium"]
+  },
+  {
+    "id": "elite_gremlin_nob",
+    "name": "地精大块头",
+    "type": "ELITE",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["gremlin_nob"]
+  },
+  {
+    "id": "cultist_acid",
+    "name": "邪教徒+酸液史莱姆",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["cultist", "acid_slime_large"]
+  },
+  {
+    "id": "elite_sentry",
+    "name": "三哨卫",
+    "type": "ELITE",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["sentry_a", "sentry_b", "sentry_a"]
+  },
+  {
+    "id": "elite_sentry_single",
+    "name": "单个哨卫",
+    "type": "ELITE",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["sentry_a"]
+  },
+  {
+    "id": "boss_hexaghost",
+    "name": "六火亡魂",
+    "type": "BOSS",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["hexaghost"]
+  },
+  {
+    "id": "boss_slime",
+    "name": "史莱姆老大",
+    "type": "BOSS",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["slime_boss"]
+  },
+  {
+    "id": "jaw_worm",
+    "name": "巨口",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["jaw_worm"]
+  },
+  {
+    "id": "big_jaw_worm",
+    "name": "大颚虫",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["big_jaw_worm"]
+  },
+  {
+    "id": "jaw_worm_cultist_1",
+    "name": "巨口+邪教徒",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["jaw_worm", "cultist"]
+  },
+  {
+    "id": "single_louse",
+    "name": "单个虱虫",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["red_louse"]
+  },
+  {
+    "id": "double_louse",
+    "name": "两只虱虫",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["red_louse", "red_louse"]
+  },
+  {
+    "id": "jaw_worm_cultist_2",
+    "name": "巨口+邪教徒（二层）",
+    "type": "NORMAL",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["cultist", "jaw_worm"]
+  },
+  {
+    "id": "triple_cultist",
+    "name": "三邪教徒",
+    "type": "NORMAL",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["cultist", "cultist", "cultist"]
+  },
+  {
+    "id": "elite_taskmaster",
+    "name": "奴隶头子+红蓝奴隶",
+    "type": "ELITE",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["taskmaster", "red_slaver", "blue_slaver"]
+  },
+  {
+    "id": "boss_champ",
+    "name": "第一勇士",
+    "type": "BOSS",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["champ"]
+  },
+  {
+    "id": "spheric_guardian",
+    "name": "圆球守护者",
+    "type": "NORMAL",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["spheric_guardian"]
+  },
+  {
+    "id": "centurion_mystic",
+    "name": "百夫长+神秘术士",
+    "type": "NORMAL",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["centurion", "mystic"]
+  },
+  {
+    "id": "mystic_centurion",
+    "name": "神秘术士+百夫长（二层）",
+    "type": "NORMAL",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["mystic", "centurion"]
+  },
+  {
+    "id": "shelled_parasite",
+    "name": "带壳寄生怪",
+    "type": "NORMAL",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["shelled_parasite"]
+  },
+  {
+    "id": "shelled_parasite_fungal",
+    "name": "带壳寄生怪+真菌兽",
+    "type": "NORMAL",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["shelled_parasite"]
+  },
+  {
+    "id": "elite_reptomancer",
+    "name": "拜蛇术士+匕首×2",
+    "type": "ELITE",
+    "minAct": 3,
+    "maxAct": 3,
+    "enemies": ["reptomancer", "dagger", "dagger"]
+  },
+  {
+    "id": "boss_donu_deca",
+    "name": "八体＆甜圈",
+    "type": "BOSS",
+    "minAct": 3,
+    "maxAct": 3,
+    "enemies": ["donu", "deca"]
+  },
+  {
+    "id": "orb_walker",
+    "name": "圆球行者",
+    "type": "NORMAL",
+    "minAct": 3,
+    "maxAct": 3,
+    "enemies": ["orb_walker"]
+  },
+  {
+    "id": "spire_growth",
+    "name": "塔内增生组织",
+    "type": "NORMAL",
+    "minAct": 3,
+    "maxAct": 3,
+    "enemies": ["spire_growth"]
+  }
+]

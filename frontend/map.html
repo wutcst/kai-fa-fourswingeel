@@ -1,153 +1,529 @@
 <!DOCTYPE html>
+
 <html lang="zh-CN">
+
 <head>
+
   <meta charset="UTF-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>杀戮尖塔 - 地图</title>
+
+  <script src="save_helper.js"></script>
+
+  <script src="card_ui.js"></script>
+
   <style>
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a1a; color: #e0e0e0; overflow: hidden; height: 100vh; width: 100vw; padding-top: 40px; }
-    #map-container { position: relative; width: 100%; height: calc(100% - 40px); display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; }
+
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a1a; color: #e0e0e0;
+overflow-y: auto; height: 100vh; width: 100vw; padding-top: 40px; }
+
+    #map-container { position: relative; width: 100%; height: 2500px; }
+
     svg#lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-    .node { position: absolute; width: 60px; height: 60px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; font-size: 12px; font-weight: bold; text-transform: uppercase; color: white; border: 3px solid #444; background: rgba(20, 20, 40, 0.9); backdrop-filter: blur(4px); z-index: 2; }
-    .node.current { border-color: #f1c40f; box-shadow: 0 0 20px #f1c40f; background: rgba(241, 196, 15, 0.3); color: #fff; }
-    .node.clickable { border-color: #e74c3c; animation: pulse 1.5s infinite; }
+
+    .node {
+
+      position: absolute;
+
+      width: 60px; height: 60px;
+
+      border-radius: 50%;
+
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+
+      cursor: pointer; transition: all 0.3s;
+
+      font-size: 12px; font-weight: bold; text-transform: uppercase;
+
+      color: white; border: 3px solid #444;
+
+      background: rgba(20, 20, 40, 0.9); backdrop-filter: blur(4px); z-index: 2;
+
+      /* ✅ 使用transform使中心对准百分占比坐标 */
+
+      transform: translate(-50%, -50%);
+
+    }
+
+    .node.current { border-color: #f1c40f; box-shadow: 0 0 20px #f1c40f; background: rgba(241, 196, 15, 0.3); color:
+#fff; }
+
+    .node.clickable { border-color: #e74c3c; animation: pulse 1.5s infinite; cursor: pointer; }
+
     .node.visited { opacity: 0.5; cursor: default; border-color: #555; background: rgba(20, 20, 40, 0.4); }
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
+
+    .node.nonclickable { cursor: default; border-color: #555; opacity: 0.5; }
+
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(231, 76, 60,
+0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
+
     .node .icon { font-size: 28px; }
+
     .node .label { font-size: 10px; margin-top: 2px; }
+
     line { stroke: #555; stroke-width: 3; stroke-linecap: round; transition: stroke 0.3s; }
-    .info-bar { position: fixed; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px; font-size: 14px; z-index: 10; }
-    .btn-return { position: fixed; top: 50px; right: 20px; background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; z-index: 10; }
+
+    .info-bar { position: fixed; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 10px 20px;
+border-radius: 8px; font-size: 14px; z-index: 10; }
+
+    .btn-return { position: fixed; top: 50px; right: 20px; background: #e74c3c; color: white; border: none; padding:
+10px 20px; border-radius: 6px; cursor: pointer; z-index: 10; }
+
+    /* 阶段指示器 - 位于状态栏下方，左上角，z-index 高于状态栏 */
+
+    .act-indicator {
+
+      position: fixed;
+
+      top: 42px; /* 状态栏高度约40px + 2px border */
+
+      left: 12px;
+
+      z-index: 10000;
+
+      background: rgba(0,0,0,0.6);
+
+      color: #f1c40f;
+
+      padding: 4px 14px;
+
+      border-radius: 6px;
+
+      font-size: 14px;
+
+      font-weight: bold;
+
+      border: 1px solid #f1c40f;
+
+      pointer-events: none; /* 点击穿透，不会干扰地图交互 */
+
+    }
+
   </style>
+
 </head>
+
 <body>
-  <script src="status_bar.js"></script>
+
+  <!-- 阶段指示器 - 默认文字为第 1 阶段，脚本会动态更新 -->
+
+  <div class="act-indicator" id="act-indicator">第 1 阶段</div>
+
+
+
   <div id="map-container">
+
     <svg id="lines"></svg>
+
   </div>
+
   <div class="info-bar">
+
     <span>当前位置：<strong id="current-node-label">起点</strong></span>
+
   </div>
+
+
 
   <script>
-    (function() {
+
+    (async function() {
+
       const params = new URLSearchParams(window.location.search);
-      let currentNodeId = params.get('currentNode') || 'start';
+
       const charParam = params.get('char') || '1';
 
-      let visitedNodes = JSON.parse(localStorage.getItem('visitedNodes') || '["start"]');
-      if (!visitedNodes.includes(currentNodeId)) {
-        visitedNodes.push(currentNodeId);
-        localStorage.setItem('visitedNodes', JSON.stringify(visitedNodes));
+
+
+      // 从 URL 或存档中读取 act
+
+      let act = parseInt(params.get('act'));
+
+      if (isNaN(act)) {
+
+        const saveDataForAct = await loadSaveData(charParam);
+
+        // 🆕 优先从存档中读取 act
+
+        act = saveDataForAct.act || 1;
+
       }
+
+
+
+      // 更新阶段指示器
+
+      const actIndicator = document.getElementById('act-indicator');
+
+      if (actIndicator) {
+
+        actIndicator.textContent = `第 ${act} 阶段`;
+
+      }
+
+
+
+      const saveData = await loadSaveData(charParam);
+
+
+
+      // 🆕 确保存档中的 act 与当前一致（如果还没有 act，则设置）
+
+      if (saveData.act === undefined || saveData.act !== act) {
+
+        saveData.act = act;
+
+        await saveSaveData(saveData);
+
+      }
+
+
+
+      let currentNodeId = params.get('currentNode') || saveData.currentNode || 'start';
+
+      let visitedNodes = saveData.visitedNodes || ['start'];
+
+
+
+      if (!visitedNodes.includes(currentNodeId)) {
+
+        visitedNodes.push(currentNodeId);
+
+        saveData.visitedNodes = visitedNodes;
+
+        saveData.currentNode = currentNodeId;
+
+        saveData.act = act;
+
+        await saveSaveData(saveData);
+
+      }
+
+
 
       const container = document.getElementById('map-container');
+
       const svg = document.getElementById('lines');
+
       const currentLabel = document.getElementById('current-node-label');
 
-      // ✅ 修复：使用全局变量，在数据加载后重新计算
-      let defaultMap = { nodes: [], edges: [] };
+
+
+      let mapData = { nodes: [], edges: [] };
+
       let nextNodeIds = [];
-      let currentNode = null;
 
-      function getNodeById(id) { return defaultMap.nodes.find(n => n.id === id); }
-      function getNextNodes(fromId) { return defaultMap.edges.filter(e => e.from === fromId).map(e => e.to); }
 
-      // ✅ 核心修复：异步加载数据，成功后再计算状态并渲染
-      async function loadMapData() {
+
+      function getNodeById(id) { return mapData.nodes.find(n => n.id === id); }
+
+      function getNextNodes(fromId) { return mapData.edges.filter(e => e.from === fromId).map(e => e.to); }
+
+
+
+      const mapStorageKey = `mapData_act${act}`;
+
+      const storedData = sessionStorage.getItem(mapStorageKey);
+
+      if (storedData) {
+
         try {
-          const resp = await fetch('/api/map');
-          if (resp.ok) {
-            defaultMap = await resp.json();
-            
-            // 数据拿到后，重新计算当前节点和可点击节点
-            nextNodeIds = getNextNodes(currentNodeId).filter(id => !visitedNodes.includes(id));
-            currentNode = getNodeById(currentNodeId);
-            if (currentNode) currentLabel.textContent = currentNode.label || currentNode.id;
-            
-            // 最后渲染地图
-            draw();
-          } else {
-            console.error('获取地图数据失败');
-          }
+
+          mapData = JSON.parse(storedData);
+
         } catch (e) {
-          console.error('后端地图接口不可用', e);
+
+          console.warn('解析已保存地图失败，重新加载');
+
         }
+
       }
 
-      function draw() {
-        container.querySelectorAll('.node').forEach(n => n.remove());
-        svg.innerHTML = '';
 
-        // 1. 绘制连线
-        defaultMap.edges.forEach(edge => {
-          const fromNode = getNodeById(edge.from);
-          const toNode = getNodeById(edge.to);
-          if (fromNode && toNode) {
-            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            line.setAttribute("x1", `${fromNode.x}%`); line.setAttribute("y1", `${fromNode.y}%`);
-            line.setAttribute("x2", `${toNode.x}%`); line.setAttribute("y2", `${toNode.y}%`);
-            
-            // 如果当前节点指向可点击节点，高亮连线
-            if (edge.from === currentNodeId && nextNodeIds.includes(edge.to)) {
-              line.setAttribute("stroke", "#e74c3c"); 
-              line.setAttribute("stroke-width", "4");
-            } else {
-              line.setAttribute("stroke", "#555"); 
-              line.setAttribute("stroke-width", "2");
+
+      if (!mapData.nodes || mapData.nodes.length === 0) {
+
+        try {
+
+          const resp = await fetch(`/api/map?act=${act}`);
+
+          if (resp.ok) {
+
+            const data = await resp.json();
+
+            if (data && Array.isArray(data.nodes) && data.nodes.length > 0) {
+
+              mapData = data;
+
+              sessionStorage.setItem(mapStorageKey, JSON.stringify(data));
+
             }
-            svg.appendChild(line);
-          }
-        });
 
-        // 2. 绘制节点
-        defaultMap.nodes.forEach(node => {
-          const div = document.createElement('div');
-          div.className = 'node';
-          div.style.left = `${node.x - 3}%`; 
-          div.style.top = `${node.y - 3}%`;
-          
-          // 处理图标为空的情况
-          const iconHtml = node.icon ? `<span class="icon">${node.icon}</span>` : '';
-          div.innerHTML = `${iconHtml}<span class="label">${node.label}</span>`;
-
-          if (node.id === currentNodeId) {
-            div.classList.add('current');
-          } else if (nextNodeIds.includes(node.id)) {
-            div.classList.add('clickable');
-            div.addEventListener('click', () => handleNodeClick(node));
-          } else if (visitedNodes.includes(node.id)) {
-            div.classList.add('visited');
-          } else {
-            div.classList.add('disabled');
           }
 
-          container.appendChild(div);
-        });
-      }
+        } catch (e) {
 
-      function handleNodeClick(node) {
-        if (node.type === 'monster' || node.type === 'elite' || node.type === 'boss') {
-          window.location.href = `fight.html?from=map&prevNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}&nodeType=${node.type}&char=${charParam}`;
-        } else if (node.type === 'chest') {
-          window.location.href = `chest.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
-        } else if (node.type === 'shop') {
-          window.location.href = `merchant.html?char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}`;
-        } else if (node.type === 'question') {
-          alert('问号事件尚未开放，敬请期待！');
+          console.warn('后端地图接口不可用');
+
         }
+
       }
 
-      // ✅ 启动加载
-      loadMapData();
+
+
+      nextNodeIds = getNextNodes(currentNodeId).filter(id => !visitedNodes.includes(id));
+
+      const currentNode = getNodeById(currentNodeId);
+
+      if (currentNode) currentLabel.textContent = currentNode.label || currentNode.id;
+
+      // 🆕 滚动到当前节点
+      setTimeout(function() {
+        if (!currentNode) return;
+        var cy = (currentNode.y / 100) * 2500 - window.innerHeight / 3;
+        window.scrollTo(0, Math.max(0, cy));
+      }, 100);
+
+
+      // 阶段1需要完成起点（选择初始遗物），阶段2、3视为已完成
+
+      const startDone = act === 1 ? localStorage.getItem('startRelicDone') === 'true' : true;
+
+
+
+      container.querySelectorAll('.node').forEach(n => n.remove());
+
+      svg.innerHTML = '';
+
+
+
+      mapData.edges.forEach(edge => {
+
+        const fromNode = getNodeById(edge.from);
+
+        const toNode = getNodeById(edge.to);
+
+        if (fromNode && toNode) {
+
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+
+          line.setAttribute("x1", `${fromNode.x}%`);
+
+          line.setAttribute("y1", `${fromNode.y}%`);
+
+          line.setAttribute("x2", `${toNode.x}%`);
+
+          line.setAttribute("y2", `${toNode.y}%`);
+
+
+
+          const isHighlight = edge.from === currentNodeId && nextNodeIds.includes(edge.to) && startDone;
+
+          line.setAttribute("stroke", isHighlight ? "#e74c3c" : "#555");
+
+          line.setAttribute("stroke-width", isHighlight ? "4" : "2");
+
+          svg.appendChild(line);
+
+        }
+
+      });
+
+
+
+      mapData.nodes.forEach(node => {
+
+        const div = document.createElement('div');
+
+        div.className = 'node';
+
+        div.style.left = `${node.x}%`;
+
+        div.style.top = `${node.y}%`;
+
+        const iconHtml = node.icon ? `<span class="icon">${node.icon}</span>` : '';
+
+        div.innerHTML = `${iconHtml}<span class="label">${node.label}</span>`;
+
+
+
+        if (node.id === currentNodeId) {
+
+          div.classList.add('current');
+
+          if (node.type === 'start' && act === 1) {
+
+            div.classList.add('clickable');
+
+            div.addEventListener('click', () => handleNodeClick(node));
+
+          }
+
+        } else if (nextNodeIds.includes(node.id)) {
+
+          if (startDone) {
+
+            div.classList.add('clickable');
+
+            div.addEventListener('click', () => handleNodeClick(node));
+
+          } else {
+
+            div.classList.add('nonclickable');
+
+          }
+
+        } else if (visitedNodes.includes(node.id)) {
+
+          div.classList.add('visited');
+
+        }
+
+
+
+        container.appendChild(div);
+
+      });
+
+
+
+      async function handleNodeClick(node) {
+
+        // 🆕 在基础参数中加入 act
+
+        const baseParams =
+`char=${charParam}&currentNode=${encodeURIComponent(currentNodeId)}&nextNode=${encodeURIComponent(node.id)}&act=${act}`;
+
+
+
+        if (node.type === 'monster' || node.type === 'elite' || node.type === 'boss') {
+
+          window.location.href = `fight.html?from=map&${baseParams}&nodeType=${node.type}`;
+
+        } else if (node.type === 'start') {
+
+          if (act === 1) {
+
+            if (localStorage.getItem('startRelicDone') === 'true') {
+
+              alert('你已经选择过初始遗物了！');
+
+              return;
+
+            }
+
+            window.location.href = `start.html?${baseParams}`;
+
+          }
+
+        } else if (node.type === 'chest') {
+
+          window.location.href = `chest.html?${baseParams}`;
+
+        } else if (node.type === 'shop') {
+
+          window.location.href = `shop.html?${baseParams}`;
+
+        } else if (node.type === 'campfire') {
+
+          window.location.href = `campfire.html?${baseParams}`;
+
+        } else if (node.type === 'question') {
+
+          try {
+
+            const resp = await fetch(`/api/question/roll?charId=${charParam}`);
+
+            if (resp.ok) {
+
+              const resultType = await resp.text();
+
+              if (resultType === 'enemy') {
+
+                window.location.href = `fight.html?from=map&${baseParams}&nodeType=monster`;
+
+              } else if (resultType === 'chest') {
+
+                window.location.href = `chest.html?${baseParams}`;
+
+              } else if (resultType === 'shop') {
+
+                window.location.href = `shop.html?${baseParams}`;
+
+              } else if (resultType === 'event') {
+
+                window.location.href = `question.html?${baseParams}`;
+
+              } else {
+
+                window.location.href = `question.html?${baseParams}`;
+
+              }
+
+            } else {
+
+              window.location.href = `question.html?${baseParams}`;
+
+            }
+
+          } catch (e) {
+
+            console.error('调用未知房间API失败', e);
+
+            window.location.href = `question.html?${baseParams}`;
+
+          }
+
+        }
+
+      }
+
+
+
+      // 返回封面按钮
 
       const returnBtn = document.createElement('button');
+
       returnBtn.className = 'btn-return';
+
       returnBtn.textContent = '返回封面';
-      returnBtn.onclick = () => { window.location.href = `cover.html?char=${charParam}`; };
+
+      returnBtn.onclick = async () => {
+
+        const currentSave = await loadSaveData(charParam);
+
+        currentSave.currentNode = currentNodeId;
+
+        currentSave.act = act;
+
+        if (currentSave.visitedNodes && !currentSave.visitedNodes.includes(currentNodeId)) {
+
+          currentSave.visitedNodes.push(currentNodeId);
+
+        }
+
+        await saveSaveData(currentSave);
+
+        window.location.href = `cover.html?char=${charParam}`;
+
+      };
+
       document.body.appendChild(returnBtn);
+
+
+
     })();
+
   </script>
+
+
+
+  <script src="status_bar.js"></script>
+
 </body>
+
 </html>

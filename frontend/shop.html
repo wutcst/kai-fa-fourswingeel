@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>商店</title>
+  <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
   <style>
     body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
     h2 { color: #f1c40f; margin: 20px 0; }
@@ -11,10 +13,14 @@
     .section { width: 500px; max-width: 95%; background: #16213e; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
     .section h3 { margin-top: 0; color: #e67e22; }
     .item-list { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
-    .shop-item { border: 2px solid #34495e; border-radius: 8px; padding: 15px; width: 120px; text-align: center; cursor: pointer; transition: all 0.3s; background: linear-gradient(135deg, #2c3e50, #34495e); }
+    .shop-item { border: 3px solid #34495e; border-radius: 8px; padding: 15px; width: 120px; text-align: center; cursor: pointer; transition: all 0.3s; background: linear-gradient(135deg, #2c3e50, #34495e); color: white; }
     .shop-item:hover:not(.sold) { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
     .shop-item.sold { opacity: 0.4; cursor: not-allowed; }
     .shop-item .price { color: #f1c40f; font-weight: bold; margin-top: 8px; }
+    .shop-item.attack { border-left: 5px solid #e74c3c; }
+    .shop-item.skill  { border-left: 5px solid #3498db; }
+    .shop-item.power  { border-left: 5px solid #2ecc71; }
+    .shop-item .card-type-label { font-size: 10px; color: #ccc; margin-top: 2px; }
     .delete-list { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-height: 200px; overflow-y: auto; }
     .delete-item { border: 1px solid #e74c3c; border-radius: 6px; padding: 8px 12px; cursor: pointer; background: rgba(231,76,60,0.1); transition: all 0.2s; }
     .delete-item:hover { background: rgba(231,76,60,0.3); }
@@ -24,46 +30,53 @@
   </style>
 </head>
 <body>
-  <script src="status_bar.js"></script>
   <h2>🛒 商 店</h2>
   <div class="gold-display">💰 金币：<span id="gold-amount">0</span></div>
 
   <div class="section"><h3>购买卡牌</h3><div class="item-list" id="buy-cards"></div></div>
   <div class="section"><h3>购买遗物</h3><div class="item-list" id="buy-relics"></div></div>
-  <div class="section"><h3 id="delete-title">删除卡牌 (75 金币)</h3><div class="delete-list" id="delete-cards"></div></div>
+  <div class="section"><h3 id="delete-title">删除卡牌</h3><div class="delete-list" id="delete-cards"></div></div>
 
   <button class="skip-btn" id="skip-btn">跳过 →</button>
 
   <script>
-    (function() {
+    (async function() {
       const params = new URLSearchParams(window.location.search);
       const char = params.get('char') || '1';
       const currentNode = params.get('currentNode') || 'start';
       const nextNode = params.get('nextNode') || currentNode;
+      const act = params.get('act') || '1';
 
-      let gold = parseInt(localStorage.getItem('gold') || '0');
+      let saveData = await loadSaveData(char);
+      let gold = saveData.gold;
+      
+      // 删除计数器（全局累计，每次商人访问时读取）
+      let deleteCount = parseInt(localStorage.getItem('shopDeleteCount')) || 0;
+      // 本次商人页面是否已删除过
+      const alreadyDeletedThisShop = sessionStorage.getItem('shopDeleted') === 'true';
+      
       const updateGoldDisplay = () => document.getElementById('gold-amount').textContent = gold;
       updateGoldDisplay();
 
-      const syncGold = () => {
-        gold = parseInt(localStorage.getItem('gold') || '0');
-        updateGoldDisplay();
-        if (window.updateStatusBar) window.updateStatusBar();
-      };
-
-      const spendGold = (amount) => {
+      const spendGold = async (amount) => {
         if (gold >= amount) {
           gold -= amount;
-          localStorage.setItem('gold', gold);
-          syncGold();
+          saveData.gold = gold;
+          await saveSaveData(saveData);
+          updateGoldDisplay();
+          if (window.updateStatusBar) window.updateStatusBar();
           return true;
-        } else { alert('金币不足！'); return false; }
+        } else { 
+          alert('金币不足！'); 
+          return false; 
+        }
       };
 
-      // ✅ 从后端获取商店数据
       async function loadShopData() {
         try {
-          const resp = await fetch(`/api/shop?char=${encodeURIComponent(char)}`);
+          const shopSaveData = await loadSaveData(char);
+          const owned = (shopSaveData.relics || []).join(',');
+          const resp = await fetch(`/api/shop?char=${char}&ownedRelics=${owned}`);
           if (resp.ok) {
             const shopData = await resp.json();
             renderShop(shopData);
@@ -76,14 +89,21 @@
         buyCardsDiv.innerHTML = '';
         shopData.cards.forEach(card => {
           const div = document.createElement('div');
-          div.className = 'shop-item';
-          div.innerHTML = `<div><strong>${card.name}</strong></div><div>🗡️ ${card.damage} ️ ${card.block}</div><div> ${card.cost}</div><div class="price">${card.price} 💰</div>`;
-          div.addEventListener('click', () => {
+          div.className = `shop-item ${CARD_UI.getCardTypeClass(card)}`;
+          div.style.background = CARD_UI.getCardCharStyle(card);
+          div.style.borderColor = CARD_UI.getRarityBorderColor(card);
+          div.style.borderWidth = '3px';
+          const effText = CARD_UI.getCardEffectText(card);
+          const typeLabel = CARD_UI.getCardTypeLabel(card);
+          div.innerHTML = `<div><strong>${card.name}</strong></div><div class="card-type-label">${typeLabel}</div><div style="font-size:12px;color:#ecf0f1;margin:4px 0;">${effText}</div><div> ⚡${card.cost}</div><div class="price">${card.price} 💰</div>`;
+          var firstEff = CARD_UI.getCardEffects(card); CARD_UI.bindTooltip(div, firstEff.length > 0 ? firstEff[0].type : null);
+          
+          div.addEventListener('click', async () => {
             if (div.classList.contains('sold')) return;
-            if (spendGold(card.price)) {
-              const deck = JSON.parse(localStorage.getItem('deck') || '[]');
-              deck.push({ name: card.name, cost: card.cost, damage: card.damage, block: card.block, type: card.type });
-              localStorage.setItem('deck', JSON.stringify(deck));
+            if (await spendGold(card.price)) {
+              saveData = await loadSaveData(char);
+              saveData.deck.push({ ...card, effects: card.effects || [] });
+              await saveSaveData(saveData);
               alert(`购买成功：${card.name}`);
               div.classList.add('sold');
             }
@@ -97,52 +117,86 @@
           const relicDiv = document.createElement('div');
           relicDiv.className = 'shop-item';
           relicDiv.innerHTML = `<div>📿 ${relic.name}</div><div class="price">${relic.price} 💰</div>`;
-          relicDiv.addEventListener('click', () => {
+          
+          relicDiv.addEventListener('click', async () => {
             if (relicDiv.classList.contains('sold')) return;
-            if (spendGold(relic.price)) {
-              const relics = JSON.parse(localStorage.getItem('relics') || '[]');
-              relics.push(relic.name);
-              localStorage.setItem('relics', JSON.stringify(relics));
-              alert(`购买成功：${relic.name}`);
+            if (await spendGold(relic.price)) {
+              saveData = await loadSaveData(char);
+              const relicId = relic.id || relic.name;
+              if (!saveData.relics.includes(relicId)) saveData.relics.push(relicId);
+              if (relic.effectType === 'MAX_HP' && relic.value > 0) {
+                saveData.maxHp = (saveData.maxHp || 70) + relic.value;
+                saveData.playerHp = Math.min((saveData.playerHp || saveData.maxHp) + relic.value, saveData.maxHp);
+              }
+              // 拾起回血遗物
+              // 拾起金币遗物
+              if (relic.id === 'small_gold_bag') saveData.gold = (saveData.gold || 0) + 50;
+              if (relic.id === 'treasure_bag') saveData.gold = (saveData.gold || 0) + 150;
+              if (relic.id === 'ancient_coin') saveData.gold = (saveData.gold || 0) + 500;
+              if (relic.id === 'small_blood') saveData.playerHp = Math.min((saveData.playerHp || 0) + 10, saveData.maxHp || 70);
+              if (relic.id === 'apple') saveData.playerHp = Math.min((saveData.playerHp || 0) + 5, saveData.maxHp || 70);
+              if (relic.id === 'pear') saveData.playerHp = Math.min((saveData.playerHp || 0) + 20, saveData.maxHp || 70);
+              if (relic.id === 'waffle') saveData.playerHp = saveData.maxHp || 80;
+              await saveSaveData(saveData);
+              window.showRelicPickupPopup(relic.id, relic.name);
               relicDiv.classList.add('sold');
             }
           });
           buyRelicsDiv.appendChild(relicDiv);
         });
 
+        // 删除卡牌区域
         const deleteDiv = document.getElementById('delete-cards');
         deleteDiv.innerHTML = '';
-        const deleteCost = shopData.deleteCost || 75;
-        document.getElementById('delete-title').textContent = `删除卡牌 (${deleteCost} 金币)`;
+        const currentDeleteCost = 75 + deleteCount * 25;
+        document.getElementById('delete-title').textContent = `删除卡牌 (${currentDeleteCost} 金币)`;
         
-        const deck = JSON.parse(localStorage.getItem('deck') || '[]');
-        if (deck.length === 0) {
-          deleteDiv.innerHTML = '<p style="color:#aaa;">卡组为空</p>';
+        if (alreadyDeletedThisShop) {
+          deleteDiv.innerHTML = '<p style="color:#aaa;">你已经在本商人处删除过卡牌了。</p>';
         } else {
-          deck.forEach((card, index) => {
-            const span = document.createElement('span');
-            span.className = 'delete-item';
-            span.innerHTML = `${card.name} <span class="delete-cost">-${deleteCost}💰</span>`;
-            span.addEventListener('click', () => {
-              if (spendGold(deleteCost)) {
-                const currentDeck = JSON.parse(localStorage.getItem('deck') || '[]');
-                currentDeck.splice(index, 1);
-                localStorage.setItem('deck', JSON.stringify(currentDeck));
-                alert(`删除了 ${card.name}`);
-                location.reload();
-              }
+          if (saveData.deck.length === 0) {
+            deleteDiv.innerHTML = '<p style="color:#aaa;">卡组为空</p>';
+          } else {
+            saveData.deck.forEach((card, index) => {
+              const span = document.createElement('span');
+              span.className = 'delete-item';
+              span.innerHTML = `${card.name} <span class="delete-cost">-${currentDeleteCost}💰</span>`;
+              
+              let deleting = false;
+              span.addEventListener('click', async () => {
+                if (alreadyDeletedThisShop || deleting) return;
+                deleting = true;
+                if (await spendGold(currentDeleteCost)) {
+                  saveData.deck.splice(index, 1);
+                  deleteCount++;
+                  localStorage.setItem('shopDeleteCount', deleteCount);
+                  sessionStorage.setItem('shopDeleted', 'true');
+                  await saveSaveData(saveData);
+                  window.showModal(`删除了 ${card.name}`, { title: '🗑️ 删除卡牌', icon: '🗑️', borderColor: '#e74c3c' });
+                  refreshDeleteSection();
+                }
+              });
+              deleteDiv.appendChild(span);
             });
-            deleteDiv.appendChild(span);
-          });
+          }
         }
+      }
+
+      function refreshDeleteSection() {
+        document.getElementById('delete-cards').innerHTML = '<p style="color:#aaa;">你已经在本商人处删除过卡牌了。</p>';
+        document.getElementById('delete-title').textContent = '删除卡牌（已完成）';
       }
 
       loadShopData();
 
       document.getElementById('skip-btn').addEventListener('click', () => {
-        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}`;
+        // 清除本次商人标记（不影响下次）
+        sessionStorage.removeItem('shopDeleted');
+        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
       });
     })();
   </script>
+
+  <script src="status_bar.js"></script>
 </body>
 </html>

@@ -3,133 +3,503 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>杀戮尖塔 - 战斗</title>
+  <title>战斗</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #e0e0e0; margin: 0; padding: 20px; }
-    #app { max-width: 900px; margin: 0 auto; margin-top: 40px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    h1 { margin: 0; font-size: 24px; }
-    button { padding: 10px 20px; font-size: 16px; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
-    .btn-end { background: #f39c12; color: white; } .btn-end:hover { opacity: 0.9; transform: translateY(-2px); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .error-box { background: #c0392b; color: white; padding: 12px; border-radius: 6px; margin-bottom: 16px; }
-    
-    .status-panel { display: flex; justify-content: space-between; background: #16213e; padding: 16px; border-radius: 10px; margin-bottom: 16px; }
-    .player-info, .enemy-info { flex: 1; } .enemy-info { text-align: right; }
-    .player-info p, .enemy-info p { margin: 5px 0; }
-    
-    .energy { text-align: center; font-size: 20px; margin: 10px 0; color: #f1c40f; }
-    .warning { background: #2c1b3d; color: #e67e22; padding: 10px; border-radius: 6px; margin-bottom: 12px; text-align: center; font-weight: bold; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 50%, #0d1117 100%);
+      color: #e0e0e0; margin: 0; padding: 0; height: 100vh; overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    #app { flex: 1; display: flex; flex-direction: column; max-width: 1100px; margin: 0 auto; width: 100%; padding: 50px 16px 8px; overflow: hidden; }
 
-    .status-effects { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; justify-content: inherit; }
-    .player-info .status-effects { justify-content: flex-start; }
-    .enemy-info .status-effects { justify-content: flex-end; }
-    .status-effects span { padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    /* ===== 顶栏 ===== */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-shrink: 0; }
+    button { padding: 10px 22px; font-size: 15px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-weight: 600; letter-spacing: 0.5px; }
+    .btn-end {
+      background: linear-gradient(135deg, #f39c12, #e67e22); color: #fff;
+      box-shadow: 0 4px 12px rgba(243,156,18,0.3);
+    }
+    .btn-end:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(243,156,18,0.5); }
+    .btn-end:disabled { background: #555; box-shadow: none; opacity: 0.6; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+    .log-toggle {
+      padding: 6px 14px; background: rgba(52,152,219,0.15); border: 1px solid rgba(52,152,219,0.3);
+      border-radius: 6px; color: #5dade2; cursor: pointer; font-size: 13px; font-weight: bold;
+      transition: all 0.2s; user-select: none;
+    }
+    .log-toggle:hover { background: rgba(52,152,219,0.25); }
 
-    .hand { display: flex; flex-wrap: wrap; justify-content: center; margin: 16px 0; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 12px; min-height: 150px; }
-    .card-btn { padding: 12px 16px; margin: 8px; border: 2px solid #34495e; border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; cursor: pointer; transition: all 0.3s ease; display: inline-flex; flex-direction: column; align-items: center; min-width: 120px; position: relative; }
-    .card-btn.disabled { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); transform: scale(0.95); }
-    .card-btn.attack { border-left: 5px solid #e74c3c; } .card-btn.skill { border-left: 5px solid #3498db; }
-    .card-btn:not(.disabled):hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 12px 24px rgba(0,0,0,0.4); z-index: 10; }
-    .cost { position: absolute; top: -10px; left: -10px; background: #e74c3c; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
-    .name { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
-    .effect { font-size: 12px; opacity: 0.9; margin: 2px 0; }
-    .status-effect-text { color: #f1c40f; font-weight: bold; font-size: 11px; margin-top: 4px; }
-    
-    .deck-info { text-align: center; color: #bdc3c7; margin-bottom: 12px; }
-    .log { background: #0f3460; padding: 12px; border-radius: 8px; max-height: 200px; overflow-y: auto; }
-    .log-title { font-weight: bold; margin-bottom: 8px; color: #3498db; }
-    .log-entry { margin: 4px 0; line-height: 1.5; }
-    
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 100; }
-    .modal { background: #16213e; padding: 24px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center; }
-    .modal-actions { margin-top: 16px; display: flex; gap: 10px; justify-content: center; }
-    .btn-confirm { background: #2ecc71; color: white; } .btn-cancel { background: #95a5a6; color: white; }
+    .error-box { background: #c0392b; color: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; flex-shrink: 0; animation: shake 0.4s; }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-4px); } }
+
+    /* ===== 战斗日志（玩家正左方） ===== */
+    .log {
+      background: linear-gradient(180deg, #0d1525, #0a0f1a);
+      padding: 10px 12px; border-radius: 8px; overflow-y: auto;
+      border: 1px solid rgba(255,255,255,0.06); max-height: 100%;
+      font-family: 'Consolas', 'Courier New', monospace; font-size: 11px;
+      min-height: 0;
+    }
+    .log::-webkit-scrollbar { width: 6px; }
+    .log::-webkit-scrollbar-track { background: transparent; }
+    .log::-webkit-scrollbar-thumb { background: #34495e; border-radius: 3px; }
+    .log-title { font-weight: bold; margin-bottom: 6px; color: #5dade2; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
+    .log-entry { margin: 2px 0; line-height: 1.5; color: #bdc3c7; border-left: 2px solid transparent; padding-left: 6px; font-size: 12px; }
+
+    /* ===== 战斗区域（中间主区域） ===== */
+    .battlefield {
+      display: grid; grid-template-columns: 250px 1fr; gap: 14px; flex: 1;
+      min-height: 0; overflow: hidden; align-items: start;
+    }
+    .player-column {
+      display: flex; flex-direction: column; gap: 8px; min-height: 0;
+      max-height: 100%; overflow: hidden;
+    }
+
+    /* ===== 玩家面板 ===== */
+    .player-panel {
+      background: linear-gradient(135deg, #16213e, #1a2745);
+      border-radius: 14px; padding: 20px; border: 2px solid #2c3e70;
+      display: flex; flex-direction: column; gap: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .player-name { font-size: 20px; font-weight: bold; color: #f1c40f; margin: 0; }
+    .hp-bar-wrap { position: relative; }
+    .hp-label { display: flex; justify-content: space-between; font-size: 13px; color: #bdc3c7; margin-bottom: 4px; }
+    .hp-bar {
+      height: 22px; background: #2c3e50; border-radius: 11px; overflow: hidden;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .hp-fill {
+      height: 100%; background: linear-gradient(90deg, #e74c3c, #ff6b6b);
+      border-radius: 11px; transition: width 0.5s ease;
+      box-shadow: 0 0 12px rgba(231,76,60,0.4);
+    }
+    .hp-fill.danger { background: linear-gradient(90deg, #c0392b, #e74c3c); animation: pulse-hp 0.8s infinite; }
+    @keyframes pulse-hp { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+    .block-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(52,152,219,0.2); border: 1px solid #3498db;
+      border-radius: 6px; padding: 4px 10px; font-size: 13px; color: #5dade2;
+    }
+    .player-statuses { display: flex; gap: 6px; flex-wrap: wrap; }
+    .status-tag {
+      padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;
+      color: white; white-space: nowrap;
+    }
+
+    /* ===== 敌人区域 ===== */
+    .enemy-area { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; justify-content: flex-end; }
+    .enemy-panel {
+      background: linear-gradient(135deg, #1a1a3a, #0f3460);
+      border-radius: 12px; padding: 16px; width: 175px; cursor: pointer;
+      transition: all 0.3s; position: relative;
+      border: 2px solid transparent;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .enemy-panel:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    .enemy-panel.selected {
+      border-color: #f1c40f;
+      box-shadow: 0 0 24px rgba(241,196,15,0.35);
+      background: linear-gradient(135deg, #1a1a3a, #1a3050);
+    }
+    .enemy-hp-bar {
+      height: 8px; background: #2c3e50; border-radius: 4px; margin: 6px 0; overflow: hidden;
+    }
+    .enemy-hp-fill {
+      height: 100%; background: linear-gradient(90deg, #e74c3c, #c0392b);
+      border-radius: 4px; transition: width 0.4s ease;
+    }
+    .enemy-name { font-weight: bold; font-size: 15px; margin: 0 0 4px; display: flex; align-items: center; gap: 6px; }
+    .enemy-name .icon { font-size: 20px; }
+    .enemy-stats { font-size: 12px; color: #bdc3c7; margin: 3px 0; }
+    .enemy-intent {
+      display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 10px;
+      background: rgba(0,0,0,0.3); border-radius: 6px; font-size: 13px; font-weight: bold;
+    }
+    .intent-attack { color: #e74c3c; }
+    .intent-block { color: #3498db; }
+    .intent-buff { color: #2ecc71; }
+    .intent-debuff { color: #9b59b6; }
+    .enemy-statuses { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+    .enemy-statuses .status-tag { font-size: 10px; padding: 2px 8px; }
+    /* boss 边框 */
+    .enemy-panel.boss { border-color: #e67e22; background: linear-gradient(135deg, #2a1a0a, #1a3050); }
+
+    /* ===== 底部区域 ===== */
+    .bottom-zone {
+      display: flex; align-items: stretch; gap: 12px; flex-shrink: 0;
+      margin-top: 8px; height: 180px;
+    }
+    /* 左右牌堆角 */
+    .pile-corner {
+      display: flex; flex-direction: column; gap: 6px; width: 150px; flex-shrink: 0;
+    }
+    .pile-corner.right-corner { align-items: flex-end; }
+    /* 能量数字 */
+    .energy-mini {
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 2px 0;
+    }
+    .energy-num {
+      font-size: 20px; font-weight: bold; color: #f1c40f;
+      text-shadow: 0 0 10px rgba(241,196,15,0.4);
+    }
+
+    /* 侧面牌堆（放大显示） */
+    .side-pile {
+      flex: 1; background: rgba(0,0,0,0.35); border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06); overflow-y: auto;
+      padding: 8px; min-height: 0; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .side-pile:hover { border-color: rgba(241,196,15,0.3); background: rgba(0,0,0,0.45); }
+    .side-pile .pile-title {
+      font-size: 11px; font-weight: bold; margin-bottom: 4px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .side-pile .pile-title.draw-title { color: #5dade2; }
+    .side-pile .pile-title.discard-title { color: #2ecc71; }
+    .side-pile .pile-title.exhaust-title { color: #e74c3c; }
+    .side-pile .pile-card {
+      font-size: 11px; padding: 2px 6px; margin: 2px 0;
+      border-radius: 4px; background: rgba(255,255,255,0.05);
+      display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden;
+    }
+    .side-pile .pile-card .sc-cost {
+      background: #e74c3c; border-radius: 50%; min-width: 16px; height: 16px;
+      line-height: 16px; text-align: center; font-size: 10px; font-weight: bold; flex-shrink: 0;
+    }
+    .side-pile-empty { color: #555; font-size: 11px; text-align: center; padding: 10px 0; }
+
+    /* ===== 手牌 ===== */
+    .hand {
+      flex: 1; display: flex; flex-wrap: nowrap; justify-content: flex-start; align-items: center;
+      gap: 8px; padding: 8px 12px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.2));
+      border-radius: 14px; min-height: 0; overflow-x: auto; overflow-y: hidden;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .hand::-webkit-scrollbar { height: 6px; }
+    .hand::-webkit-scrollbar-track { background: transparent; }
+    .hand::-webkit-scrollbar-thumb { background: #34495e; border-radius: 3px; }
+    .card-btn {
+      padding: 10px 10px 8px; border: 2px solid #34495e; border-radius: 10px; color: white; cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      display: inline-flex; flex-direction: column; align-items: center;
+      width: 130px; min-height: 115px; position: relative; flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .card-btn.attack { border-bottom: 4px solid #e74c3c; }
+    .card-btn.skill  { border-bottom: 4px solid #3498db; }
+    .card-btn.power  { border-bottom: 4px solid #2ecc71; }
+    .card-btn.disabled {
+      background: linear-gradient(135deg, #555 0%, #444 100%) !important;
+      opacity: 0.45; cursor: not-allowed; filter: grayscale(60%);
+      transform: scale(0.94); box-shadow: none;
+    }
+    .card-btn:not(.disabled):hover {
+      transform: translateY(-14px) scale(1.08);
+      box-shadow: 0 18px 36px rgba(0,0,0,0.6); z-index: 10;
+      border-color: #f1c40f;
+    }
+    /* 稀有度标签颜色 */
+    .rarity-common { box-shadow: 0 0 6px rgba(149,165,166,0.2); }
+    .rarity-uncommon { box-shadow: 0 0 8px rgba(52,152,219,0.3); }
+    .rarity-rare { box-shadow: 0 0 10px rgba(243,156,18,0.35); }
+    .rarity-legendary { box-shadow: 0 0 14px rgba(255,107,107,0.4); }
+    .card-btn.rarity-legendary { animation: legendary-glow 2s infinite alternate; }
+    @keyframes legendary-glow { from { box-shadow: 0 0 8px rgba(255,107,107,0.3); } to { box-shadow: 0 0 20px rgba(255,107,107,0.6); } }
+    .cost {
+      position: absolute; top: -12px; left: -10px;
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      border-radius: 50%; width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 14px; border: 2px solid #fff3;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .name { font-size: 15px; font-weight: bold; margin: 4px 0; text-align: center; width: 100%; }
+    .card-effect-text { font-size: 11px; opacity: 0.9; margin: 2px 0; line-height: 1.35; color: #ecf0f1; text-align: center; width: 100%; word-break: break-word; }
+    .card-type-label { font-size: 10px; color: #aaa; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 1px; }
+    .card-badge { position: absolute; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 3px; top: -8px; right: -6px; z-index: 5; }
+    .badge-exhaust { background: #e74c3c; color: white; }
+    .badge-ethereal { background: #8e44ad; color: white; }
+    .badge-retain { background: #2ecc71; color: #1a1a2e; }
+    .badge-unplayable { background: #7f8c8d; color: white; top: 6px; right: 6px; font-size: 11px; }
+
+    /* tooltip */
+    .tooltip-overlay { position: fixed; z-index: 9999; pointer-events: none; max-width: 260px; background: #0d1b2a; border: 1px solid #34495e; border-radius: 8px; padding: 12px 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+    .tooltip-title { font-weight: bold; font-size: 14px; color: #f1c40f; margin-bottom: 6px; }
+    .tooltip-desc { font-size: 12px; color: #bdc3c7; line-height: 1.5; margin-bottom: 4px; }
+    .tooltip-decay { font-size: 11px; color: #e67e22; }
+
+    /* pile popup modal */
+    .pile-popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index: 200; backdrop-filter: blur(2px); }
+    .pile-popup { background: #16213e; border: 2px solid #f1c40f; border-radius: 16px; max-width: 620px; width: 90%; max-height: 80vh; display: flex; flex-direction: column; animation: modal-in 0.25s ease-out; }
+    @keyframes modal-in { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+    .pile-popup-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid #34495e; }
+    .pile-popup-header h3 { margin: 0; color: #f1c40f; }
+    .pile-popup-close { background: #e74c3c; color: white; border: none; border-radius: 6px; padding: 6px 16px; cursor: pointer; font-weight: bold; }
+    .pile-popup-body { padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; }
+    .pile-popup-card { width: 130px; padding: 10px; border-radius: 8px; text-align: center; color: white; border: 2px solid #34495e; font-size: 12px; flex-shrink: 0; }
+    .pile-popup-card .pp-name { font-weight: bold; font-size: 13px; margin-bottom: 4px; }
+    .pile-popup-card .pp-cost { display: inline-block; background: #e74c3c; border-radius: 50%; width: 22px; height: 22px; line-height: 22px; font-weight: bold; margin-bottom: 4px; }
+    .pile-popup-card .pp-effect { font-size: 11px; color: #ecf0f1; line-height: 1.3; }
+    .pile-popup-empty { color: #95a5a6; font-size: 14px; padding: 30px; text-align: center; width: 100%; }
+
+    /* game over */
+    .warning {
+      background: linear-gradient(135deg, #2c1b3d, #1a0a2e); color: #e67e22;
+      padding: 16px; border-radius: 10px; margin-top: 16px; text-align: center;
+      font-weight: bold; font-size: 18px; border: 1px solid #e67e2233;
+    }
+
+    /* modal */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 200; backdrop-filter: blur(2px); }
+    .modal {
+      background: #16213e; padding: 28px 24px; border-radius: 14px; max-width: 440px;
+      width: 90%; text-align: center; max-height: 85vh; overflow-y: auto;
+      border: 1px solid #34495e; box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+      animation: modal-in 0.25s ease-out;
+    }
+    .modal h3 { margin: 0 0 12px; color: #f1c40f; }
+    .modal-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: center; }
+    .btn-confirm { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; box-shadow: 0 4px 12px rgba(52,152,219,0.3); }
+    .btn-cancel { background: #7f8c8d; color: white; }
+
+    @media (max-width: 768px) {
+      .battlefield { grid-template-columns: 1fr; }
+      .enemy-panel { width: 140px; }
+      .card-btn { width: 110px; min-height: 100px; }
+      .pile-corner { width: 120px; }
+      .log { max-height: 120px; font-size: 10px; }
+    }
   </style>
 </head>
 <body>
-  <script src="status_bar.js"></script>
   <div id="app">
-    <div class="header">
-      <h1>⚔️ 杀戮尖塔 - 战斗</h1>
-      <div>
-        <button class="btn-end" @click="endTurn" :disabled="!state || state.gameOver || loading">结束回合</button>
-      </div>
+    <!-- 顶栏 -->
+    <div class="top-bar">
+      <div class="log-toggle" @click="logVisible = !logVisible">📜 {{ logVisible ? '收起日志 ▲' : '战斗日志 ▼' }}</div>
+      <button class="btn-end" @click="endTurn" :disabled="!state || state.gameOver || loading">⚡ 结束回合</button>
     </div>
+
     <div v-if="error" class="error-box">{{ error }}</div>
-    
-    <div v-if="state" class="game-area">
-      <div class="warning" v-if="state.enemyNextDamage > 0 || state.enemyNextBlock > 0 || state.enemyIntentStatusType">
-        ⚠️ 敌人即将行动：{{ state.enemyIntentDesc }} 
-        <span v-if="state.enemyNextDamage > 0">(造成 {{ state.enemyNextDamage }} 点伤害)</span>
-        <span v-if="state.enemyNextBlock > 0">(获得 {{ state.enemyNextBlock }} 点格挡)</span>
-        <span v-if="state.enemyIntentStatusType" style="color: #f1c40f; margin-left: 8px;">
-          并施加 {{ getStatusName(state.enemyIntentStatusType) }} {{ state.enemyIntentStatusCount }} 层
-        </span>
-      </div>
 
-      <div class="status-panel">
-        <div class="player-info">
-          <h3>❤️ 玩家 {{ state.playerHp }} / {{ state.playerMaxHp }}</h3>
-          <p v-if="state.playerBlock > 0">🛡️ 格挡: {{ state.playerBlock }}</p>
-          <div class="status-effects">
-            <span v-for="status in state.playerStatuses" :key="status.id" 
-                  :style="{ background: status.color || '#666', border: '1px solid ' + (status.color || '#666') }">
-              {{ status.name }}: {{ status.count }}
-            </span>
+    <div v-if="state" style="flex:1;display:flex;flex-direction:column;min-height:0;position:relative;">
+      <!-- 战斗区域：玩家+日志 | 敌人 -->
+      <div class="battlefield">
+        <div class="player-column">
+          <!-- 战斗日志（玩家正上方） -->
+          <div v-if="logVisible" class="log">
+            <div class="log-title">📜 战斗日志</div>
+            <div class="log-entry" v-for="(entry, i) in state.log" :key="i">{{ entry }}</div>
+          </div>
+          <div class="player-panel">
+          <div class="player-name">🦾 玩家</div>
+          <div class="hp-bar-wrap">
+            <div class="hp-label"><span>❤️ 生命</span><span>{{ state.playerHp }} / {{ state.playerMaxHp }}</span></div>
+            <div class="hp-bar">
+              <div class="hp-fill" :class="{ danger: state.playerHp / state.playerMaxHp < 0.3 }" :style="{ width: Math.max(0, Math.round(state.playerHp / state.playerMaxHp * 100)) + '%' }"></div>
+            </div>
+          </div>
+          <div v-if="state.playerBlock > 0" class="block-badge">🛡️ 格挡 {{ state.playerBlock }}</div>
+          <div class="player-statuses">
+            <span v-for="status in state.playerStatuses" :key="status.id" class="status-tag" :style="{ background: status.color || '#555' }">{{ status.name }} {{ status.count }}</span>
           </div>
         </div>
-        <div class="enemy-info">
-          <h3>👹 {{ state.enemyName }}: {{ state.enemyHp }} / {{ state.enemyMaxHp }}</h3>
-          <p v-if="state.enemyBlock > 0">🛡️ 格挡: {{ state.enemyBlock }}</p>
-          <div class="status-effects">
-            <span v-for="status in state.enemyStatuses" :key="status.id" 
-                  :style="{ background: status.color || '#666', border: '1px solid ' + (status.color || '#666') }">
-              {{ status.name }}: {{ status.count }}
-            </span>
+        </div>
+        <div class="enemy-area">
+          <div v-for="enemy in state.enemies" :key="enemy.index"
+               class="enemy-panel"
+               :class="{ selected: selectedEnemyIndex === enemy.index, boss: enemy.name && enemy.name.includes('Boss') }"
+               @click="selectEnemy(enemy.index)">
+            <div class="enemy-name"><span class="icon">👹</span>{{ enemy.name }}</div>
+            <div class="enemy-stats">❤️ {{ enemy.hp }}/{{ enemy.maxHp }}</div>
+            <div class="enemy-hp-bar">
+              <div class="enemy-hp-fill" :style="{ width: Math.max(0, Math.round(enemy.hp / enemy.maxHp * 100)) + '%' }"></div>
+            </div>
+            <div v-if="enemy.block > 0" class="enemy-stats">🛡️ 格挡 {{ enemy.block }}</div>
+            <div class="enemy-intent" v-if="enemy.intentDesc">
+              <span v-if="enemy.nextDamage > 0" class="intent-attack">⚔️</span>
+              <span v-else-if="enemy.nextBlock > 0" class="intent-block">🛡️</span>
+              <span v-else-if="enemy.intentStatusType" class="intent-debuff">🔮</span>
+              <span v-else class="intent-buff">✨</span>
+              <span>{{ enemy.intentDesc }}</span>
+              <span v-if="enemy.nextDamage > 0" style="color:#e74c3c; font-size:12px;">({{ enemy.nextDamage }})</span>
+              <span v-if="enemy.nextBlock > 0" style="color:#3498db; font-size:12px;">({{ enemy.nextBlock }})</span>
+            </div>
+            <div v-if="enemy.intentStatusType" style="color:#f1c40f; font-size:11px; margin-top:4px;">
+              ➕ {{ enemy.intentStatusName || getStatusName(enemy.intentStatusType) }} {{ enemy.intentStatusCount }}层
+            </div>
+            <div class="enemy-statuses">
+              <span v-for="status in enemy.statuses" :key="status.id" class="status-tag" :style="{ background: status.color || '#555' }">{{ status.name }} {{ status.count }}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="energy">⚡ 能量: {{ state.energy }}</div>
-
-      <div class="hand">
-        <button v-for="(card, index) in hand" :key="index" @click="previewCard(index)" :disabled="!canPlayCard(card) || state.gameOver" :class="['card-btn', { 'disabled': !canPlayCard(card), 'attack': card.type === 'ATTACK', 'skill': card.type === 'SKILL' }]">
-          <span class="cost">{{ card.cost }}</span>
-          <span class="name">{{ card.name }}</span>
-          <span class="effect" v-if="card.damage > 0">伤害: {{ card.damage }}</span>
-          <span class="effect" v-if="card.block > 0">格挡: {{ card.block }}</span>
-          <span class="effect status-effect-text" v-if="card.applyStatusType">{{ getStatusName(card.applyStatusType) }}: {{ card.applyStatusCount }}</span>
-        </button>
-      </div>
-
-      <div class="deck-info">抽牌堆: {{ state.drawPileSize }} | 弃牌堆: {{ state.discardPileSize }}</div>
-
-      <div class="log">
-        <div class="log-title">📜 战斗日志:</div>
-        <div class="log-entry" v-for="(entry, i) in state.log" :key="i">{{ entry }}</div>
-      </div>
-
-      <div v-if="state.gameOver" class="warning" style="margin-top: 16px; font-size: 18px;">
-        🏁 战斗结束! 胜利者: {{ state.winner }}
+      <!-- 游戏结束 -->
+      <div v-if="state.gameOver" class="warning">
+        战斗结束! 胜利者: {{ state.winner }}
         <br>
-        <button v-if="isFromMap" @click="goAfterFight" style="margin-top:10px; background:#e67e22; color:white; border:none; padding:8px 20px; border-radius:6px; cursor:pointer;">继续</button>
+        <button v-if="isFromMap" @click="goAfterFight" style="margin-top:10px; background:linear-gradient(135deg,#e67e22,#d35400); color:white; border:none; padding:12px 32px; border-radius:8px; cursor:pointer; font-size:16px; font-weight:bold; box-shadow:0 4px 12px rgba(230,126,34,0.3);">继续</button>
+      </div>
+
+      <!-- 底部区域：左侧能量+抽牌堆 / 中间手牌 / 右侧消耗堆+弃牌堆 -->
+      <div class="bottom-zone" v-if="!state.gameOver">
+        <!-- 左下：能量 + 抽牌堆 -->
+        <div class="pile-corner left-corner">
+          <div class="energy-mini">
+            <span class="energy-num">⚡ {{ state.energy }}/{{ state.maxEnergy || 3 }}</span>
+          </div>
+          <div class="side-pile" @click="showPilePopup('drawPile')" :title="'点击查看全部抽牌堆(' + state.drawPileSize + '张)'">
+            <div class="pile-title draw-title">📚 抽牌堆 ({{ state.drawPileSize }})</div>
+            <div v-if="!state.drawPile || state.drawPile.length === 0" class="side-pile-empty">空</div>
+            <div v-for="(card, idx) in (state.drawPile || []).slice(-6).reverse()" :key="'d'+idx" class="pile-card" :style="{ background: getCardCharStyle(card) }">
+              <span class="sc-cost">{{ card.cost }}</span><span>{{ card.name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 中间：手牌 -->
+        <div class="hand">
+          <button v-for="(card, index) in hand" :key="index" @click="previewCard(index)" :disabled="!canPlayCard(card) || state.gameOver" :class="['card-btn', 'rarity-' + (card.rarity || 'COMMON').toLowerCase(), { 'disabled': !canPlayCard(card), 'attack': card.type === 'ATTACK', 'skill': card.type === 'SKILL', 'power': card.type === 'POWER' }]" :style="{ background: getCardCharStyle(card), borderColor: getRarityBorderColor(card), borderWidth: '3px', opacity: card.unplayable ? 0.6 : 1 }" @mouseenter="showTooltip(index, $event)" @mouseleave="hideTooltip">
+            <span class="cost">{{ card.xCost ? 'X' : card.cost }}</span>
+            <span class="name">{{ card.name }}</span>
+            <span class="card-type-label">{{ getCardTypeLabel(card) }}</span>
+            <span class="card-effect-text">{{ getCardEffectText(card) }}</span>
+            <span v-if="card.unplayable" class="card-badge badge-unplayable">🚫</span>
+            <span v-else>
+              <span v-if="card.exhaust" class="card-badge badge-exhaust">消耗</span>
+              <span v-if="card.ethereal" class="card-badge badge-ethereal">虚无</span>
+              <span v-if="card.retain" class="card-badge badge-retain">保留</span>
+            </span>
+          </button>
+          <span v-if="hand.length === 0" style="color:#555;align-self:center;">🃏 手牌为空</span>
+        </div>
+
+        <!-- 右下：消耗堆 + 弃牌堆 -->
+        <div class="pile-corner right-corner">
+          <div class="side-pile" @click="showPilePopup('exhaustPile')" :title="'点击查看全部消耗堆(' + (state.exhaustPileSize || 0) + '张)'">
+            <div class="pile-title exhaust-title">🔥 消耗堆 ({{ state.exhaustPileSize || 0 }})</div>
+            <div v-if="!state.exhaustPile || state.exhaustPile.length === 0" class="side-pile-empty">空</div>
+            <div v-for="(card, idx) in (state.exhaustPile || []).slice(-4).reverse()" :key="'e'+idx" class="pile-card" :style="{ background: getCardCharStyle(card) }">
+              <span class="sc-cost">{{ card.cost }}</span><span>{{ card.name }}</span>
+            </div>
+          </div>
+          <div class="side-pile" @click="showPilePopup('discardPile')" :title="'点击查看全部弃牌堆(' + state.discardPileSize + '张)'">
+            <div class="pile-title discard-title">♻️ 弃牌堆 ({{ state.discardPileSize }})</div>
+            <div v-if="!state.discardPile || state.discardPile.length === 0" class="side-pile-empty">空</div>
+            <div v-for="(card, idx) in (state.discardPile || []).slice(-6).reverse()" :key="'c'+idx" class="pile-card" :style="{ background: getCardCharStyle(card) }">
+              <span class="sc-cost">{{ card.cost }}</span><span>{{ card.name }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- tooltip -->
+      <div v-if="tooltipCard && tooltipInfo" class="tooltip-overlay" :style="{ left: tooltipX + 'px', top: tooltipY + 'px' }">
+        <div class="tooltip-title">{{ tooltipInfo.name }}</div>
+        <div class="tooltip-desc">{{ tooltipInfo.desc }}</div>
+        <div class="tooltip-decay" v-if="tooltipInfo.decay">每回合结束层数减一</div>
       </div>
     </div>
 
+    <!-- 牌堆弹窗 -->
+    <div v-if="pilePopupVisible" class="pile-popup-overlay" @click.self="pilePopupVisible = false">
+      <div class="pile-popup">
+        <div class="pile-popup-header">
+          <h3>{{ pilePopupTitle }}</h3>
+          <button class="pile-popup-close" @click="pilePopupVisible = false">关闭</button>
+        </div>
+        <div class="pile-popup-body">
+          <div v-if="pilePopupCards.length === 0" class="pile-popup-empty">该牌堆为空</div>
+          <div v-for="(card, idx) in pilePopupCards" :key="idx" class="pile-popup-card"
+               :style="{ background: getCardCharStyle(card), borderColor: getRarityBorderColor(card) }">
+            <div class="pp-name">{{ card.name }}</div>
+            <div class="pp-cost">{{ card.cost }}</div>
+            <div class="pp-effect">{{ getCardEffectText(card) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 确认打出弹窗 -->
     <div v-if="showCardConfirm" class="modal-overlay" @click.self="cancelPlay">
       <div class="modal">
         <h3>确认打出卡牌?</h3>
         <p v-if="selectedCard">
           <strong>{{ selectedCard.name }}</strong><br>
-          消耗能量: {{ selectedCard.cost }}<br>
-          <span v-if="selectedCard.damage > 0">造成 {{ selectedCard.damage }} 点伤害</span>
-          <span v-if="selectedCard.block > 0">获得 {{ selectedCard.block }} 点格挡</span>
-          <span v-if="selectedCard.applyStatusType" style="color: #f1c40f; display: block; margin-top: 5px;">附带效果: {{ getStatusName(selectedCard.applyStatusType) }} {{ selectedCard.applyStatusCount }} 层</span>
+          <span style="color: #ecf0f1; font-size: 14px;">{{ getCardEffectText(selectedCard) }}</span>
         </p>
+        
+        <!-- 目标选择 (仅多敌人且攻击牌且非随机目标) -->
+        <div v-if="state && state.enemies && state.enemies.length > 1 && selectedCard.type === 'ATTACK' && !selectedCard.randomTarget" style="margin-top: 10px;">
+          <label>目标敌人:</label>
+          <select v-model="selectedEnemyIndex" style="margin-left:8px; padding:4px; background:#34495e; color:white; border:none; border-radius:4px;">
+            <option v-for="enemy in state.enemies" :key="enemy.index" :value="enemy.index">{{ enemy.name }} (❤️{{ enemy.hp }})</option>
+          </select>
+        </div>
+
+        <!-- 1️⃣ SELECT 模式消耗手牌 (仅当当前手中有其他牌时才能选) -->
+        <div v-if="selectedCard && selectedCard.exhaustHandCount > 0 && selectedCard.exhaustHandMode === 'SELECT' && (hand.length - 1) > 0" style="margin-top: 15px; text-align: left;">
+          <label style="display: block; margin-bottom: 8px; color: #f1c40f; font-weight: bold;">🔥 请选择要消耗的手牌 ({{ selectedCard.exhaustHandCount }}张):</label>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+            <template v-for="(card, idx) in hand" :key="idx">
+              <div v-if="idx !== selectedIndex" @click="selectExhaustHand(idx)" :style="{ padding: '6px 10px', background: selectedExhaustHandIndex === idx ? '#e74c3c' : '#34495e', color: 'white', borderRadius: '4px', cursor: 'pointer', border: selectedExhaustHandIndex === idx ? '2px solid #f1c40f' : '1px solid #2c3e50', fontSize: '12px' }">{{ card.name }} ({{ card.cost }}费)</div>
+            </template>
+          </div>
+          <p v-if="selectedExhaustHandIndex === -1" style="color: #e74c3c; font-size: 12px; margin-top: 6px;">* 必须选择一张牌才能打出</p>
+        </div>
+
+        <!-- 2️⃣ RANDOM 模式消耗手牌提示 (只要结算时有牌可消耗就提示) -->
+        <div v-if="selectedCard && selectedCard.exhaustHandCount > 0 && selectedCard.exhaustHandMode === 'RANDOM' && availableCardsAfterPlay > 0 && !isDrawFirstWithNoCurrentHand" style="margin-top: 15px; text-align: left; color: #bdc3c7; font-size: 13px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+          🎲 打出后将 <b>随机消耗</b> {{ selectedCard.exhaustHandCount }} 张手牌。
+        </div>
+
+        <!-- 3️⃣ 随机丢弃提示 -->
+        <div v-if="selectedCard && selectedCard.discardCount > 0 && selectedCard.discardMode !== 'SELECT' && (hand.length - 1) > 0" style="margin-top: 10px; color: #3498db; font-size: 14px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+          🎲 将随机丢弃 {{ selectedCard.discardCount }} 张手牌。
+        </div>
+        <!-- 3️⃣ 丢弃手牌选择 (仅SELECT模式) -->
+        <div v-if="selectedCard && selectedCard.discardCount > 0 && selectedCard.discardMode === 'SELECT' && (hand.length - 1) > 0" style="margin-top: 15px; text-align: left;">
+          <label style="display: block; margin-bottom: 8px; color: #3498db; font-weight: bold;">🗑️ 请选择要丢弃的手牌 (最多 {{ selectedCard.discardCount }}张，已选 {{ selectedDiscardHandIndices.length }}):</label>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+            <template v-for="(card, idx) in hand" :key="idx">
+              <div v-if="idx !== selectedIndex" @click="selectDiscardHand(idx)" :style="{ padding: '6px 10px', background: selectedDiscardHandIndices.includes(idx) ? '#3498db' : '#34495e', color: 'white', borderRadius: '4px', cursor: 'pointer', border: selectedDiscardHandIndices.includes(idx) ? '2px solid #f1c40f' : '1px solid #2c3e50', fontSize: '12px' }">{{ card.name }} ({{ card.cost }}费)</div>
+            </template>
+          </div>
+          <p v-if="selectedDiscardHandIndices.length > selectedCard.discardCount" style="color: #f39c12; font-size: 12px; margin-top: 6px;">⚠️ 已选超出上限，将自动截取</p>
+        </div>
+
+        <!-- 🔨 升级手牌选择 (武装) -->
+        <div v-if="selectedCard && selectedCard.upgradeHandCount > 0 && selectedCard.upgradeHandMode === 'SELECT' && (hand.length - 1) > 0" style="margin-top: 15px; text-align: left;">
+          <label style="display: block; margin-bottom: 8px; color: #f1c40f; font-weight: bold;">🔨 请选择要临时升级的手牌:</label>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+            <template v-for="(card, idx) in hand" :key="idx">
+              <div v-if="idx !== selectedIndex && !card.upgraded" @click="selectUpgradeHand(idx)" :style="{ padding: '6px 10px', background: selectedUpgradeHandIndex === idx ? '#f1c40f' : '#34495e', color: 'white', borderRadius: '4px', cursor: 'pointer', border: selectedUpgradeHandIndex === idx ? '2px solid #e67e22' : '1px solid #2c3e50', fontSize: '12px' }">{{ card.name }} ({{ card.cost }}费)</div>
+            </template>
+          </div>
+          <p v-if="selectedUpgradeHandIndex === -1" style="color: #e74c3c; font-size: 12px; margin-top: 6px;">* 必须选择一张未升级的牌</p>
+        </div>
+
+        <!-- 4️⃣ 先抽牌导致当前无牌可选，只能随机消耗/丢弃的提示 (如：手中只有杂技时) -->
+        <div v-if="isDrawFirstWithNoCurrentHand && availableCardsAfterPlay > 0 && (selectedCard.discardCount > 0 || selectedCard.exhaustHandCount > 0)" style="margin-top: 10px; color: #3498db; font-size: 14px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+          🎲 将先抽牌，然后 <b>随机</b> 执行消耗/丢弃。
+        </div>
+
+        <!-- 5️⃣ 手中无其他牌提示 (结算时也没牌，真的不触发) -->
+        <div v-if="selectedCard && (selectedCard.exhaustHandCount > 0 || selectedCard.discardCount > 0) && availableCardsAfterPlay === 0" style="margin-top: 10px; color: #e67e22; font-size: 14px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+          ⚠️ 手中无其他牌，将直接打出（不触发消耗/丢弃）
+        </div>
+
         <div class="modal-actions">
-          <button class="btn-confirm" @click="confirmPlay">确认打出</button>
+          <button class="btn-confirm" @click="confirmPlay" :disabled="isConfirmDisabled">确认打出</button>
           <button class="btn-cancel" @click="cancelPlay">取消</button>
         </div>
       </div>
@@ -138,185 +508,223 @@
 
   <script>
     const API_BASE = '/api/game';
-
     const app = Vue.createApp({
-      data() {
-        return {
-          state: null,
-          loading: false,
-          error: null,
-          showCardConfirm: false,
-          selectedCard: null,
-          selectedIndex: -1,
-          isFromMap: false,
-          prevNodeId: null,
-          nextNodeId: null
-        };
+      data() { 
+        return { 
+          state: null, loading: false, error: null, showCardConfirm: false, selectedCard: null, selectedIndex: -1,
+          selectedEnemyIndex: 0, selectedExhaustHandIndex: -1, selectedDiscardHandIndices: [], selectedUpgradeHandIndex: -1,
+          isFromMap: false, prevNodeId: null, nextNodeId: null, tooltipCard: null, tooltipX: 0, tooltipY: 0, logVisible: true, pilePopupVisible: false, pilePopupTitle: '', pilePopupCards: [],
+          playerRelics: [] 
+        }; 
       },
-
       mounted() {
         const params = new URLSearchParams(window.location.search);
-        if (params.get('from') === 'map') {
-          this.isFromMap = true;
-          this.prevNodeId = params.get('prevNode') || 'start';
-          this.nextNodeId = params.get('nextNode');
-        }
-        // 自动开始战斗
+        if (params.get('from') === 'map') { this.isFromMap = true; this.prevNodeId = params.get('prevNode') || 'start'; this.nextNodeId = params.get('nextNode'); }
         this.newGame();
       },
-
       computed: {
-        hand() {
-          return this.state?.hand || [];
+        hand() { return this.state ? this.state.hand : []; },
+        tooltipInfo() {
+          if (!this.tooltipCard) return null;
+          const effects = CARD_UI.getCardEffects(this.tooltipCard);
+          const firstType = effects.length > 0 ? effects[0].type : null;
+          if (!firstType) return null;
+          return CARD_UI.STATUS_INFO[firstType] || null;
+        },
+        // 🆕 预估打出该牌并结算抽牌后的手牌数量（用于精准判断是否需要选择消耗/丢弃）
+        availableCardsAfterPlay() {
+            if (!this.selectedCard) return 0;
+            let count = this.hand.length - 1;
+            // 如果是先抽牌，预估抽牌后的手牌数
+            if (this.selectedCard.drawFirst && this.selectedCard.drawCount > 0) {
+                count += this.selectedCard.drawCount;
+            }
+            return count;
+        },
+        // 🆕 判断是否是“先抽牌”且“当前手中没有其他牌”的情况
+        isDrawFirstWithNoCurrentHand() {
+            return this.selectedCard && this.selectedCard.drawFirst && (this.hand.length - 1) === 0;
+        },
+        isConfirmDisabled() {
+            if (!this.selectedCard) return true;
+            
+            // 消耗手牌检查
+            if (this.selectedCard.exhaustHandCount > 0 && this.availableCardsAfterPlay > 0) {
+                // 如果是先抽牌且当前没牌，只能随机，不禁用确认按钮
+                if (!this.isDrawFirstWithNoCurrentHand) {
+                    if (this.selectedCard.exhaustHandMode === 'SELECT' && this.selectedExhaustHandIndex === -1) return true;
+                }
+            }
+            
+            // 丢弃手牌检查
+            if (this.selectedCard.discardCount > 0 && this.selectedCard.discardMode === 'SELECT' && this.availableCardsAfterPlay > 0) {
+                if (!this.isDrawFirstWithNoCurrentHand) {
+                    if (this.selectedDiscardHandIndices.length === 0) return true;
+                }
+            }
+
+            if (this.selectedCard.upgradeHandCount > 0 && this.selectedCard.upgradeHandMode === 'SELECT' && this.availableCardsAfterPlay > 0) {
+                if (this.selectedUpgradeHandIndex === -1) return true;
+            }
+
+            return false;
         }
       },
-
       methods: {
-        getStatusName(type) {
-          const map = { 'VULNERABLE': '易伤', 'WEAK': '虚弱', 'FRAIL': '脆弱', 'STRENGTH': '力量' };
-          return map[type] || type;
-        },
-
+        getStatusName(type) { return CARD_UI.getStatusName(type); },
         canPlayCard(card) {
-          if (!this.state || !card) return false;
-          return card.cost <= this.state.energy;
+            return this.state && card && !card.unplayable && (card.xCost ? this.state.energy > 0 : card.cost <= this.state.energy) && (!card.requiresEmptyDrawPile || this.state.drawPileSize === 0);
         },
-
+        getCardCharStyle(card) { return CARD_UI.getCardCharStyle(card); },
+        getCardTypeLabel(card) { return CARD_UI.getCardTypeLabel(card); },
+        getRarityBorderColor(card) { return CARD_UI.getRarityBorderColor(card); },
+        selectEnemy(index) { this.selectedEnemyIndex = index; },
+        selectExhaustHand(idx) { this.selectedExhaustHandIndex = idx; },
+        selectDiscardHand(idx) {
+          var arr = this.selectedDiscardHandIndices;
+          var pos = arr.indexOf(idx);
+          if (pos >= 0) { arr.splice(pos, 1); } else { arr.push(idx); }
+        },
+        selectUpgradeHand(idx) { this.selectedUpgradeHandIndex = idx; },
+        
         async newGame() {
-          this.error = null;
-          this.loading = true;
+          this.error = null; this.loading = true;
           try {
-            const currentDeck = JSON.parse(localStorage.getItem('deck') || '[]');
-            const currentRelics = JSON.parse(localStorage.getItem('relics') || '[]');
-            const currentHp = parseInt(localStorage.getItem('playerHP')) || 70;
-            const maxHp = parseInt(localStorage.getItem('maxHP')) || 70;
-            
-            const resp = await fetch(`${API_BASE}/new`, { 
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                deck: currentDeck,
-                relics: currentRelics,
-                playerHp: currentHp,
-                playerMaxHp: maxHp
-              })
-            });
-            
-            if (!resp.ok) {
-              const text = await resp.text();
-              throw new Error(`请求失败 ${resp.status}: ${text}`);
-            }
+            const charParam = new URLSearchParams(window.location.search).get('char') || '1';
+            const nodeTypeParam = new URLSearchParams(window.location.search).get('nodeType') || '';
+            const actParam = new URLSearchParams(window.location.search).get('act') || '1';
+            const saveData = await loadSaveData(charParam);
+            this.playerRelics = saveData.relics || [];
+            const bodyData = { deck: saveData.deck, relics: saveData.relics, playerHp: saveData.playerHp, playerMaxHp: saveData.maxHp };
+            bodyData.nodeType = (nodeTypeParam || 'monster') + '_act' + actParam;
+            const resp = await fetch(`${API_BASE}/new`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyData) });
+            if (!resp.ok) throw new Error(`请求失败 ${resp.status}`);
             this.state = await resp.json();
-          } catch (e) {
-            this.error = e.message.includes('Failed to fetch')
-              ? '无法连接后端。请确认后端已启动。'
-              : '无法开始战斗：' + e.message;
-            console.error(e);
-          } finally {
-            this.loading = false;
-          }
+            if (this.state && this.state.enemies && this.state.enemies.length > 0) {
+              this.selectedEnemyIndex = this.state.enemies[0].index;
+            }
+          } catch (e) { this.error = '无法开始战斗：' + e.message; } finally { this.loading = false; }
         },
-
+        
         previewCard(index) {
-          if (!this.state) {
-            this.error = '请先开始新战斗';
-            return;
-          }
-          if (index < 0 || index >= this.hand.length) {
-            this.error = '无效的卡牌编号';
-            return;
-          }
+          if (!this.state) return;
           const card = this.hand[index];
-          if (!this.canPlayCard(card)) {
-            this.error = `能量不足！该卡牌需要 ${card.cost} 点能量，当前只有 ${this.state.energy} 点`;
-            return;
-          }
-          this.selectedCard = card;
-          this.selectedIndex = index;
+          if (!this.canPlayCard(card)) { this.error = `能量不足或无法打出！`; return; }
+          this.selectedCard = card; 
+          this.selectedIndex = index; 
+          this.selectedExhaustHandIndex = -1;
+          this.selectedDiscardHandIndices = [];
+          this.selectedUpgradeHandIndex = -1;
           this.showCardConfirm = true;
         },
-
+        
         async confirmPlay() {
-          if (this.selectedIndex < 0) return;
-          await this.playCard(this.selectedIndex);
-          this.showCardConfirm = false;
-          this.selectedCard = null;
-          this.selectedIndex = -1;
-        },
-
-        cancelPlay() {
-          this.showCardConfirm = false;
-          this.selectedCard = null;
-          this.selectedIndex = -1;
-        },
-
-        async playCard(index) {
-          this.error = null;
-          if (!this.state || index < 0 || index >= this.hand.length) {
-            this.error = '请先开始新战斗或选择有效卡牌';
-            return;
-          }
-          try {
-            const resp = await fetch(`${API_BASE}/play?index=${encodeURIComponent(index)}`, {
-              method: 'POST'
-            });
-            const data = await resp.json();
-            if (!resp.ok) {
-              this.error = data.error || `请求失败 ${resp.status}`;
-              return;
+          if (this.selectedIndex >= 0) {
+            let url = `${API_BASE}/play?index=${this.selectedIndex}`;
+            const card = this.selectedCard;
+            
+            if (card && card.type === 'ATTACK' && this.state && this.state.enemies && this.state.enemies.length > 1 && !card.randomTarget) {
+              url += `&targetIndex=${this.selectedEnemyIndex}`;
             }
-            this.state = data;
-          } catch (e) {
-            this.error = e.message.includes('Failed to fetch')
-              ? '无法连接后端。请确认后端已启动。'
-              : '打出卡牌失败：' + e.message;
-            console.error(e);
+            if (card && card.exhaustHandCount > 0 && this.selectedExhaustHandIndex !== -1) {
+              url += `&exhaustHandIndex=${this.selectedExhaustHandIndex}`;
+            }
+            if (card && card.discardCount > 0 && this.selectedDiscardHandIndices.length > 0) {
+              this.selectedDiscardHandIndices.forEach(function(di) { url += '&discardHandIndices=' + di; });
+            }
+            if (card && card.upgradeHandCount > 0 && this.selectedUpgradeHandIndex !== -1) {
+              url += `&upgradeHandIndex=${this.selectedUpgradeHandIndex}`;
+            }
+            
+            await this.playCard(this.selectedIndex, url);
+          }
+          this.showCardConfirm = false;
+        },
+        
+        cancelPlay() { this.showCardConfirm = false; },
+        getCardEffectText(card) { return CARD_UI.getCardEffectText(card); },
+        
+        showTooltip(index, event) {
+          const card = this.hand[index];
+          if (card) {
+            const effects = CARD_UI.getCardEffects(card);
+            if (effects.length > 0) {
+              this.tooltipCard = card;
+              const w = window.innerWidth;
+              const x = event.clientX;
+              const y = event.clientY;
+              this.tooltipX = (x + 280 > w) ? x - 270 : x + 15;
+              this.tooltipY = Math.min(y, window.innerHeight - 120);
+            }
           }
         },
-
+        hideTooltip() { this.tooltipCard = null; },
+        
+        showPilePopup(pileName) {
+          if (!this.state || !this.state[pileName]) return;
+          var names = { 'drawPile': '✨ 抽牌堆', 'discardPile': '♻️ 弃牌堆', 'exhaustPile': '⚡ 消耗堆' };
+          this.pilePopupTitle = names[pileName] || pileName;
+          this.pilePopupCards = this.state[pileName];
+          this.pilePopupVisible = true;
+        },
+        
+        async playCard(index, customUrl) {
+          this.error = null;
+          try {
+            const url = customUrl || `${API_BASE}/play?index=${index}`;
+            const resp = await fetch(url, { method: 'POST' });
+            this.state = await resp.json();
+            this.checkAnthonyAnger();
+          } catch (e) { this.error = '打出卡牌失败'; }
+        },
+        
         async endTurn() {
           this.error = null;
-          if (!this.state || this.state.gameOver) {
-            this.error = !this.state ? '请先开始新战斗' : '战斗已结束';
-            return;
-          }
-          try {
-            const resp = await fetch(`${API_BASE}/endTurn`, { method: 'POST' });
-            if (!resp.ok) {
-              const text = await resp.text();
-              throw new Error(`请求失败 ${resp.status}: ${text}`);
-            }
-            this.state = await resp.json();
-          } catch (e) {
-            this.error = e.message.includes('Failed to fetch')
-              ? '无法连接后端。请确认后端已启动。'
-              : '结束回合失败：' + e.message;
-            console.error(e);
+          if (!this.state || this.state.gameOver) return;
+          try { const resp = await fetch(`${API_BASE}/endTurn`, { method: 'POST' }); this.state = await resp.json(); this.checkAnthonyAnger(); } catch (e) { this.error = '结束回合失败'; }
+        },
+        
+        checkAnthonyAnger() {
+          if (this.state && this.state.exhaustHappened && (this.playerRelics || []).includes('anthony_anger')) {
+            if (window.showModal) { window.showModal('你的卡组太小了！', { title: '😡 安东尼之怒', icon: '😡', borderColor: '#e74c3c' }); } else { alert('再玩小卡组找人弄你😡'); }
           }
         },
-
-        goAfterFight() {
-          if (this.state && this.state.playerHp !== undefined) {
-            localStorage.setItem('playerHP', this.state.playerHp);
-          }
-          if (window.updateStatusBar) window.updateStatusBar();
-
+        async goAfterFight() {
+          if (!this.state) return;
           const charParam = new URLSearchParams(window.location.search).get('char') || '1';
-
-          if (this.isFromMap && this.state && (this.state.winner === 'player' || this.state.winner === 'Player' || (this.state.gameOver && this.state.playerHp > 0))) {
-            const nodeType = new URLSearchParams(window.location.search).get('nodeType') || 'monster';
-            const prev = this.prevNodeId || 'start';
-            const next = this.nextNodeId || prev;
-            window.location.href = `reward.html?source=fight&char=${charParam}&prevNode=${prev}&nextNode=${next}&nodeType=${nodeType}&gotCard=0`;
-          } else {
-            const target = this.isFromMap ? (this.prevNodeId || 'start') : 'start';
-            window.location.href = `map.html?char=${charParam}&currentNode=${target}`;
+          if (this.state.gameOver && (this.state.playerHp <= 0 || this.state.winner === '敌人')) {
+            try {
+              const visited = JSON.parse(localStorage.getItem('visitedNodes') || '[]');
+              const deck = JSON.parse(localStorage.getItem('deck') || '[]');
+              const relics = JSON.parse(localStorage.getItem('relics') || '[]');
+              const gold = parseInt(localStorage.getItem('gold')) || 0;
+              const deathStats = { killedBy: this.state.enemyName || '未知敌人', floor: Math.max(0, visited.length - 1), deckSize: deck.length, relicCount: relics.length, gold: gold, nodesVisited: visited.length, battleLog: this.state.log || [] };
+              sessionStorage.setItem('deathStats', JSON.stringify(deathStats));
+            } catch (e) { console.error('保存死亡统计数据失败:', e); }
+            window.location.href = 'gameover.html';
+            return;
           }
+          const nodeType = new URLSearchParams(window.location.search).get('nodeType') || 'monster';
+          const prev = this.prevNodeId || 'start';
+          const next = this.nextNodeId || prev;
+          const saveData = await loadSaveData(charParam);
+          saveData.playerHp = this.state.playerHp; saveData.maxHp = this.state.playerMaxHp;
+          const isVictory = this.state.gameOver && this.state.playerHp > 0;
+          if (isVictory && saveData.relics && saveData.relics.includes('burning_blood')) {
+            saveData.playerHp = Math.min(saveData.maxHp, saveData.playerHp + 6);
+          }
+          saveData.currentNode = next;
+          if (!saveData.visitedNodes.includes(next)) saveData.visitedNodes.push(next);
+          await saveSaveData(saveData);
+          const actParam = new URLSearchParams(window.location.search).get('act') || '1';
+          if (this.isFromMap && (this.state.winner === '玩家' || (this.state.gameOver && this.state.playerHp > 0))) {
+            window.location.href = `reward.html?source=fight&char=${charParam}&prevNode=${prev}&nextNode=${next}&nodeType=${nodeType}&act=${actParam}&gotCard=0`;
+          } else { window.location.href = `map.html?char=${charParam}&currentNode=${prev}&act=${actParam}`; }
         }
       }
     });
-
     app.mount('#app');
   </script>
+  <script src="status_bar.js"></script>
 </body>
 </html>

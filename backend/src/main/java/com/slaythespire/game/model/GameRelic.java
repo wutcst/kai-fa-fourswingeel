@@ -2,6 +2,9 @@ package com.slaythespire.game.model;
 
 import com.slaythespire.repository.RelicTemplate;
 
+/**
+ * 遗物运行时实例 — 仅保存数据，效果由 RelicEffectHandler 统一处理
+ */
 public class GameRelic implements Relic {
     private final String id;
     private final String name;
@@ -23,24 +26,9 @@ public class GameRelic implements Relic {
     public String getEffectType() { return effectType; }
     public int getValue() { return value; }
 
-    @Override
-    public void onTurnStart(Combatant owner) {
-        if ("NO_EFFECT".equals(effectType)) return;
-        if ("HEAL_START_TURN".equals(effectType)) owner.heal(value);
-        if ("BLOCK_START_TURN".equals(effectType)) owner.gainBlock(value);
-    }
-
-    @Override
-    public void onTurnEnd(Combatant owner) {
-        if ("NO_EFFECT".equals(effectType)) return;
-        if ("HEAL_END_TURN".equals(effectType)) owner.heal(value);
-        if ("BLOCK_END_TURN".equals(effectType)) owner.gainBlock(value);
-    }
-
-    @Override
-    public int onDamageTaken(int amount, Combatant owner) {
-        if ("NO_EFFECT".equals(effectType)) return amount;
-        if ("DAMAGE_CAP".equals(effectType)) return Math.min(amount, value);
-        return amount;
-    }
+    // 效果逻辑已移至 RelicEffectHandler，这些接口方法保留空实现
+    @Override public void onTurnStart(Combatant owner) {}
+    @Override public void onTurnEnd(Combatant owner) {}
+    @Override public int onDamageTaken(int amount, Combatant owner) { return amount; }
+    @Override public int onDamageDealt(int amount, Combatant source, Combatant target) { return amount; }
 }

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>选择 Boss 遗物</title>
+  <script src="card_ui.js"></script>
+  <script src="save_helper.js"></script>
+  <style>
+    body {
+      background: #1a1a2e; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; min-height: 100vh;
+      margin: 0; font-family: 'Segoe UI', sans-serif; color: #e0e0e0;
+    }
+    h2 { color: #f1c40f; margin-bottom: 30px; }
+    .relic-list { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
+    .relic-card {
+      width: 200px; padding: 25px 15px; border: 2px solid #34495e;
+      border-radius: 12px; background: #16213e; text-align: center;
+      cursor: pointer; transition: all 0.3s;
+    }
+    .relic-card:hover:not(:disabled) {
+      border-color: #e67e22; box-shadow: 0 0 20px #e67e22;
+      transform: translateY(-5px);
+    }
+    .relic-card:disabled { opacity: 0.5; cursor: not-allowed; }
+    .relic-icon { font-size: 50px; margin-bottom: 10px; }
+    .relic-name { font-weight: bold; font-size: 18px; margin: 10px 0; }
+    .relic-desc { font-size: 14px; color: #ccc; }
+  </style>
+</head>
+<body>
+  <h2>🏆 选择一个 Boss 遗物</h2>
+  <div class="relic-list" id="relic-list"></div>
+
+  <script>
+    (async function() {
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      const nextAct = parseInt(params.get('nextAct')) || 2;
+
+      // 从后端获取 3 个 Boss 遗物选项
+      let bossRelicOptions = [];
+      try {
+        const saveData = await loadSaveData(char);
+        const owned = (saveData.relics || []).join(',');
+        const resp = await fetch(`/api/bossRelics?charId=${char}&ownedRelics=${owned}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          bossRelicOptions = data.map((r, i) => ({
+            id: r.id,
+            name: r.name,
+            description: r.description,
+            effectType: r.effectType,
+            value: r.value || 0,
+            rarity: r.rarity || 'BOSS',
+            icon: getIconForBossRelic(i)
+          }));
+        }
+      } catch (e) {
+        console.warn('Boss遗物接口不可用', e);
+      }
+
+      // 降级：如果 API 失败，用默认数据
+      if (bossRelicOptions.length === 0) {
+        bossRelicOptions = [
+          { id: 'energy_cube', name: '能量方块', icon: '💎', description: '每回合获得 1 点额外能量。', effectType: 'ENERGY_PER_TURN', value: 1, rarity: 'BOSS' },
+          { id: 'soul_furnace', name: '灵魂之炉', icon: '🔥', description: '每场战斗首次受伤时，恢复 8 点生命。', effectType: 'FIRST_HIT_HEAL', value: 8, rarity: 'BOSS' },
+          { id: 'rune_cube', name: '符文立方体', icon: '📖', description: '每回合多抽 1 张牌。', effectType: 'DRAW_PER_TURN', value: 1, rarity: 'BOSS' }
+        ];
+      }
+
+      function getIconForBossRelic(index) {
+        const icons = ['💎', '🔮', '🪨', '🔥', '🪶', '🌑', '📯', '👁️', '💪', '🌀'];
+        return icons[index % icons.length];
+      }
+
+      const listDiv = document.getElementById('relic-list');
+      let selected = false;
+
+      bossRelicOptions.forEach(option => {
+        const div = document.createElement('div');
+        div.className = 'relic-card';
+        div.innerHTML = `
+          <div class="relic-icon">${option.icon}</div>
+          <div class="relic-name">${option.name}</div>
+          <div class="relic-desc">${option.description || option.desc || ''}</div>
+          <div style="font-size:11px;color:#f1c40f;margin-top:8px;">${option.effectType ? '⚡ ' + option.effectType : ''}</div>
+        `;
+        div.addEventListener('click', async () => {
+          if (selected) return;
+          selected = true;
+          div.style.borderColor = '#f1c40f';
+          div.style.background = 'rgba(241,196,15,0.2)';
+
+          // 获取存档并添加遗物
+          let saveData = await loadSaveData(char);
+          if (!saveData.relics.includes(option.id)) {
+            saveData.relics.push(option.id);
+          }
+          // 处理 MAX_HP 类遗物（如巨人之力）
+          if (option.effectType === 'MAX_HP' && option.value > 0) {
+            saveData.maxHp = (saveData.maxHp || 70) + option.value;
+            saveData.playerHp = Math.min((saveData.playerHp || saveData.maxHp) + option.value, saveData.maxHp);
+          }
+          // 拾起回血遗物
+          // 拾起金币遗物
+          if (option.id === 'small_gold_bag') saveData.gold = (saveData.gold || 0) + 50;
+          if (option.id === 'treasure_bag') saveData.gold = (saveData.gold || 0) + 150;
+          if (option.id === 'ancient_coin') saveData.gold = (saveData.gold || 0) + 500;
+          if (option.id === 'small_blood') saveData.playerHp = Math.min((saveData.playerHp || 0) + 10, saveData.maxHp || 70);
+          if (option.id === 'apple') saveData.playerHp = Math.min((saveData.playerHp || 0) + 5, saveData.maxHp || 70);
+          if (option.id === 'pear') saveData.playerHp = Math.min((saveData.playerHp || 0) + 20, saveData.maxHp || 70);
+          if (option.id === 'waffle') saveData.playerHp = saveData.maxHp || 80;
+          // 设置阶段信息
+          saveData.act = nextAct;
+          saveData.currentNode = 'start';
+          saveData.visitedNodes = ['start'];
+          await saveSaveData(saveData);
+
+          // 清除旧地图缓存，新阶段会重新生成
+          sessionStorage.removeItem(`mapData_act${nextAct}`);
+          sessionStorage.removeItem(`mapData_act${nextAct - 1}`); // 顺便清理旧阶段地图
+
+          // 如果获得的是彩蛋遗物，在 Boss 遗物弹窗后追加彩蛋消息
+          var bossRelicId = option.id;
+          window.showModal(`已获得 Boss 遗物：${option.name}！`, {
+            title: '🏆 获得 Boss 遗物',
+            icon: option.icon || '🏆',
+            borderColor: '#e67e22',
+            onClose: function() {
+              if (bossRelicId === 'jiucai_anger') {
+                window.showModal('怪物太难都是九才8干的，大家一起骂他', {
+                  title: '😡 九才8之怒',
+                  icon: '😡',
+                  borderColor: '#e74c3c',
+                  onClose: function() {
+                    window.location.href = `map.html?char=${char}&act=${nextAct}&currentNode=start`;
+                  }
+                });
+              } else {
+                window.location.href = `map.html?char=${char}&act=${nextAct}&currentNode=start`;
+              }
+            }
+          });
+        });
+        listDiv.appendChild(div);
+      });
+    })();
+  </script>
+  <!-- 加入背景音乐支持 -->
+  <script src="status_bar.js"></script>
+</body>
+</html>

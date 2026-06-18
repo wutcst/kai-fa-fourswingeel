@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>锻造</title>
+  <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
+  <style>
+    body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; }
+    h2 { color: #f1c40f; }
+    .card-list { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 600px; margin-top: 20px; }
+    .card { width: 140px; padding: 20px; border: 2px solid #34495e; border-radius: 8px; text-align: center; cursor: pointer; color: white; }
+    .card:hover { transform: scale(1.05); }
+    .card.attack { border-left: 5px solid #e74c3c; }
+    .card.skill  { border-left: 5px solid #3498db; }
+    .card.power  { border-left: 5px solid #2ecc71; }
+    .card .card-type-label { font-size: 10px; color: #ccc; margin-top: 2px; }
+    .back-btn { margin-top: 30px; background: #e74c3c; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>🔨 选择一张卡牌进行锻造</h2>
+  <div class="card-list" id="card-list"></div>
+  <button class="back-btn" id="back-btn">返回篝火</button>
+
+  <script>
+    (async function() {
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      const currentNode = params.get('currentNode') || 'start';
+      const nextNode = params.get('nextNode') || 'start';
+      const act = params.get('act') || '1';
+
+      let saveData = await loadSaveData(char);
+      // 可锻造：未升级的牌 + 有 forgeDamageBonus 的牌（可无限锻造）
+      const upgradeable = saveData.deck.filter(card => !card.upgraded || (card.forgeDamageBonus && card.forgeDamageBonus > 0));
+      const listDiv = document.getElementById('card-list');
+
+      if (upgradeable.length === 0) {
+        listDiv.innerHTML = '<div>没有可锻造的卡牌</div>';
+      } else {
+        upgradeable.forEach(card => {
+          const div = document.createElement('div');
+          div.className = `card ${CARD_UI.getCardTypeClass(card)}`;
+          div.style.background = CARD_UI.getCardCharStyle(card);
+          const typeLabel = CARD_UI.getCardTypeLabel(card);
+          const forgeCount = card.forgeCount || 0;
+          const forgeLabel = card.forgeDamageBonus ? ' <span style="color:#ff6b6b;">(+' + (forgeCount) + ')</span>' : '';
+          div.innerHTML = '<h3>' + card.name + forgeLabel + '</h3><p>⚡' + card.cost + '</p><div class="card-type-label">' + typeLabel + '</div><p style="font-size:12px;color:#ecf0f1;">' + CARD_UI.getCardEffectText(card) + '</p>';
+          var _eff = CARD_UI.getCardEffects(card); CARD_UI.bindTooltip(div, _eff.length > 0 ? _eff[0].type : null);
+          div.addEventListener('click', async () => {
+            const idx = saveData.deck.indexOf(card);
+            if (idx !== -1) {
+              const baseCard = saveData.deck[idx];
+
+              // 🆕 无限锻造卡牌：每次锻造增加固定伤害
+              if (baseCard.forgeDamageBonus && baseCard.forgeDamageBonus > 0) {
+                baseCard.damage = (baseCard.damage || 0) + baseCard.forgeDamageBonus;
+                baseCard.forgeCount = (baseCard.forgeCount || 0) + 1;
+                baseCard.name = baseCard.name.replace(/\+\d+$/, '') + '+' + baseCard.forgeCount;
+                if (!baseCard.upgraded) baseCard.upgraded = true;
+                await saveSaveData(saveData);
+                window.showModal('灼热攻击 已锻造 ' + baseCard.forgeCount + ' 次！伤害 +' + baseCard.forgeDamageBonus, {
+                  title: '🔨 锻造完成', icon: '🔥', borderColor: '#ff6b6b'
+                });
+                sessionStorage.setItem('campfireAction', 'forge');
+                window.location.href = 'campfire.html?char=' + char + '&currentNode=' + encodeURIComponent(currentNode) + '&nextNode=' + encodeURIComponent(nextNode) + '&act=' + act;
+                return;
+              }
+
+              const baseId = baseCard.id;
+              if (baseId) {
+                const upgradedId = baseId + '+';
+                try {
+                  const resp = await fetch(`/api/card/${encodeURIComponent(upgradedId)}`);
+                  if (resp.ok) {
+                    const upgradedCardData = await resp.json();
+                    saveData.deck[idx] = upgradedCardData;
+                    await saveSaveData(saveData);
+                    window.showModal('升级成功！', { title: '🔨 锻造完成', icon: '🔨', borderColor: '#f1c40f' });
+                    sessionStorage.setItem('campfireAction', 'forge');
+                    window.location.href = 'campfire.html?char=' + char + '&currentNode=' + encodeURIComponent(currentNode) + '&nextNode=' + encodeURIComponent(nextNode) + '&act=' + act;
+                    return;
+                  }
+                } catch (e) {
+                  console.warn('无法获取升级模板', e);
+                }
+              }
+              window.showModal('无法升级该卡牌（缺少升级模板）', { title: '❌ 锻造失败', icon: '⚠️', borderColor: '#e74c3c' });
+            }
+          });
+          listDiv.appendChild(div);
+        });
+      }
+
+      document.getElementById('back-btn').addEventListener('click', () => {
+        window.location.href = `campfire.html?char=${char}&currentNode=${encodeURIComponent(currentNode)}&nextNode=${encodeURIComponent(nextNode)}&act=${act}`;
+      });
+    })();
+  </script>
+  <!-- 加入背景音乐支持 -->
+  <script src="status_bar.js"></script>
+</body>
+</html>

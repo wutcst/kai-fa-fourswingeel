@@ -5,5 +5,12 @@
   { "id": "STRENGTH", "name": "力量", "description": "每层力量使攻击伤害增加 1 点。", "effectType": "OUTGOING_DAMAGE_FLAT", "value": 1.0, "color": "#f1c40f", "decay": false },
   { "id": "DEXTERITY", "name": "敏捷", "description": "每层敏捷使获得的格挡增加 1 点。", "effectType": "OUTGOING_BLOCK_FLAT", "value": 1.0, "color": "#2ecc71", "decay": false },
   { "id": "POISON", "name": "毒", "description": "回合结束时，造成等同于毒层数的伤害，然后减少 1 层。", "effectType": "TURN_END_DAMAGE", "value": 1.0, "color": "#27ae60", "decay": true },
-  { "id": "REGENERATION", "name": "再生", "description": "回合结束时，恢复等同于再生层数的生命，然后减少 1 层。", "effectType": "TURN_END_HEAL", "value": 1.0, "color": "#8e44ad", "decay": true }
+  { "id": "REGENERATION", "name": "再生", "description": "回合结束时，恢复等同于再生层数的生命，然后减少 1 层。", "effectType": "TURN_END_HEAL", "value": 1.0, "color": "#8e44ad", "decay": true },
+  { "id": "RITUAL", "name": "仪式", "description": "回合开始时，获得 1 点力量。", "effectType": "TURN_START_GAIN_STRENGTH", "value": 1.0, "color": "#e67e22", "decay": false },
+  { "id": "ANGRY", "name": "激怒", "description": "玩家每打出一张技能牌，获得等额力量。", "effectType": "ANGRY_ON_SKILL", "value": 1.0, "color": "#e74c3c", "decay": false },
+  { "id": "ARTIFACT", "name": "人工制品", "description": "抵消下一次施加的负面状态效果。", "effectType": "ARTIFACT", "value": 1.0, "color": "#3498db", "decay": true },
+  { "id": "INTANGIBLE", "name": "无实体", "description": "持续一回合，受到的所有伤害降低为 1。", "effectType": "DAMAGE_CAP", "value": 1.0, "color": "#8e44ad", "decay": true },
+  { "id": "PLATED_ARMOR", "name": "多层护甲", "description": "每回合结束时获得等量格挡。每次受到生命伤害时减少 1 层。", "effectType": "GAIN_BLOCK_PER_TURN", "value": 1.0, "color": "#3498db", "decay": false },
+  { "id": "SPLIT", "name": "分裂", "description": "生命值低于 50% 时触发，分裂成更小的个体。", "effectType": "SPLIT", "value": 1.0, "color": "#2ecc71", "decay": false },
+  { "id": "CONSTRICTED", "name": "缠绕", "description": "回合结束时，受到等同于缠绕层数的伤害。不衰减。", "effectType": "TURN_END_DAMAGE", "value": 1.0, "color": "#8e44ad", "decay": false }
 ]

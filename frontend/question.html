@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>问号事件</title>
+  <script src="card_ui.js"></script>
+  <script src="save_helper.js"></script>
+  <style>
+    body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; position: relative; }
+    .event-background { width: 100%; height: 250px; display: flex; align-items: center; justify-content: center; font-size: 80px; color: white; text-shadow: 0 0 20px rgba(0,0,0,0.8); }
+    .event-text { max-width: 600px; padding: 20px; text-align: center; font-size: 18px; line-height: 1.6; background: rgba(0,0,0,0.4); border-radius: 12px; margin: 20px; }
+    .options { display: flex; gap: 30px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+    .option-btn { padding: 15px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; background: #e67e22; color: white; max-width: 250px; }
+    .option-btn:hover { background: #d35400; transform: translateY(-2px); }
+    .option-btn:disabled { background: #555; cursor: not-allowed; transform: none; }
+  </style>
+</head>
+<body>
+  <script src="status_bar.js"></script>
+  <div class="event-background" id="event-bg"></div>
+  <div class="event-text" id="event-description"></div>
+  <div class="options" id="options-container"></div>
+
+  <script>
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      const currentNode = params.get('currentNode') || 'start';
+      const nextNode = params.get('nextNode') || currentNode;
+      const act = params.get('act') || '1';
+
+      let eventData = null; // 保存后端返回的事件数据
+
+      // 加载事件
+      async function loadEvent() {
+        try {
+          const resp = await fetch('/api/event/roll?act=' + encodeURIComponent(act));
+          if (resp.ok) {
+            eventData = await resp.json();
+            renderEvent(eventData);
+          } else {
+            throw new Error('事件接口错误');
+          }
+        } catch (e) {
+          console.error('无法获取事件', e);
+          // 降级显示简单文本
+          document.getElementById('event-bg').style.background = 'linear-gradient(135deg, #333, #111)';
+          document.getElementById('event-bg').innerHTML = '❓';
+          document.getElementById('event-description').textContent = '一片未知的区域，什么也没有发生。';
+          const optionsDiv = document.getElementById('options-container');
+          optionsDiv.innerHTML = '';
+          // 提供继续前进按钮，防止玩家卡死
+          const skipBtn = document.createElement('button');
+          skipBtn.className = 'option-btn';
+          skipBtn.textContent = '继续前进 →';
+          skipBtn.addEventListener('click', () => {
+            window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
+          });
+          optionsDiv.appendChild(skipBtn);
+        }
+      }
+
+      function renderEvent(event) {
+        document.getElementById('event-bg').style.background = event.background || 'linear-gradient(135deg, #333, #111)';
+        document.getElementById('event-bg').innerHTML = `<span>${event.icon || '❓'}</span>`;
+        document.getElementById('event-description').textContent = event.description || '无描述';
+
+        const optionsDiv = document.getElementById('options-container');
+        optionsDiv.innerHTML = '';
+        event.options.forEach((opt, index) => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.textContent = opt.text;
+          btn.addEventListener('click', async () => {
+            // 检查是否需要选择卡牌删除（CHOOSE_REMOVE_CARD 效果）
+            const hasChooseRemove = opt.effects && opt.effects.some(function(e) { return e.type === 'CHOOSE_REMOVE_CARD'; });
+            if (hasChooseRemove) {
+              const removeEffect = opt.effects.find(function(e) { return e.type === 'CHOOSE_REMOVE_CARD'; });
+              const removeCount = removeEffect.count || 1;
+              // 保存事件上下文到 sessionStorage，供 event_remove.html 使用
+              sessionStorage.setItem('eventRemoveContext', JSON.stringify({
+                eventId: event.id,
+                optionIndex: index,
+                removeCount: removeCount,
+                char: char,
+                nextNode: nextNode,
+                act: act
+              }));
+              window.location.href = `event_remove.html?char=${char}&count=${removeCount}`;
+              return;
+            }
+
+            btn.disabled = true;
+            try {
+              const chooseResp = await fetch(`/api/event/choose?eventId=${encodeURIComponent(event.id)}&optionIndex=${index}&charId=${char}`, { method: 'POST' });
+              if (chooseResp.ok) {
+                const result = await chooseResp.text();
+                console.log('事件结果:', result);
+                window.showModal(result, {
+                  title: '事件发生',
+                  icon: event.icon || '✨',
+                  buttonText: '继续',
+                  borderColor: '#e67e22',
+                  onClose: function() {
+                    // 检查是否获得了彩蛋遗物，单独弹窗
+                    loadSaveData(char).then(function(sd) {
+                      if (sd.relics && sd.relics.includes('jiucai_anger')) {
+                        window.showModal('怪物太难都是九才8干的，大家一起骂他', {
+                          title: '😡 九才8之怒',
+                          icon: '😡',
+                          borderColor: '#e74c3c',
+                          onClose: function() {
+                            window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
+                          }
+                        });
+                      } else {
+                        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
+                      }
+                    });
+                  }
+                });
+              } else {
+                window.showModal('请稍后重试', { title: '执行失败', icon: '⚠️', borderColor: '#e74c3c' });
+                btn.disabled = false;
+              }
+            } catch (e) {
+              console.error('执行事件错误', e);
+              window.showModal('网络错误，请检查连接后重试', { title: '发生错误', icon: '❌', borderColor: '#e74c3c' });
+              btn.disabled = false;
+            }
+          });
+          optionsDiv.appendChild(btn);
+        });
+      }
+
+      loadEvent();
+  </script>
+</body>
+</html>

@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>卡组</title>
+  <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
   <style>
     body {
       margin: 0; padding-top: 50px;
@@ -12,11 +14,9 @@
       display: flex; flex-direction: column; align-items: center;
       min-height: 100vh;
     }
-    h2 {
-      color: #f1c40f; margin: 30px 0 20px;
-    }
+    h2 { color: #f1c40f; margin: 30px 0 20px; }
     .deck-table {
-      width: 500px; max-width: 95%;
+      width: 600px; max-width: 95%;
       border-collapse: collapse;
       background: #16213e; border-radius: 8px;
       overflow: hidden;
@@ -30,50 +30,66 @@
       padding: 10px 12px; border-bottom: 1px solid #2c3e50;
     }
     .deck-table tr:last-child td { border-bottom: none; }
-    .empty {
-      color: #aaa; margin-top: 40px; font-size: 18px;
-    }
+    .deck-table tr:hover { background: rgba(255,255,255,0.05); }
+    .empty { color: #aaa; margin-top: 40px; font-size: 18px; }
     .back-btn {
       margin-top: 30px;
       background: #e74c3c; color: white; border: none;
       padding: 10px 24px; font-size: 16px; border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s;
+      cursor: pointer; transition: all 0.3s;
     }
     .back-btn:hover { background: #c0392b; transform: translateY(-2px); }
+    /* 稀有度边框颜色（内联样式将覆盖） */
+    .deck-table td {
+      border-left: 5px solid transparent;
+    }
   </style>
 </head>
 <body>
-  <script src="status_bar.js"></script>
   <h2>🃏 当前卡组</h2>
   <div id="deck-container">
-    <!-- 动态生成表格 -->
+    <div class="empty">加载中...</div>
   </div>
   <button class="back-btn" onclick="history.back()">返回</button>
 
   <script>
-    (function() {
-      const deck = JSON.parse(localStorage.getItem('deck') || '[]');
+    (async function() {
+      const params = new URLSearchParams(window.location.search);
+      const char = params.get('char') || '1';
+      const saveData = await loadSaveData(char);
+      const deck = saveData.deck || [];
+
       const container = document.getElementById('deck-container');
       if (deck.length === 0) {
         container.innerHTML = '<div class="empty">卡组为空</div>';
         return;
       }
-      // 按费用排序
+
       deck.sort((a, b) => a.cost - b.cost);
-      let html = '<table class="deck-table"><thead><tr><th>名称</th><th>费用</th><th>伤害</th><th>格挡</th><th>类型</th></tr></thead><tbody>';
+
+      let html = '<table class="deck-table"><thead><tr><th>名称</th><th>费用</th><th>类型</th><th>效果</th></tr></thead><tbody>';
       deck.forEach(card => {
-        html += `<tr>
+        const bgStyle = CARD_UI.getCardCharStyle(card);
+        const borderColor = CARD_UI.getRarityBorderColor(card);
+        html += `<tr style="background:${bgStyle.replace('background:','')}; color:white; border-left: 5px solid ${borderColor};">
           <td>${card.name}</td>
           <td>⚡ ${card.cost}</td>
-          <td>${card.damage > 0 ? `🗡️ ${card.damage}` : '-'}</td>
-          <td>${card.block > 0 ? `🛡️ ${card.block}` : '-'}</td>
-          <td>${card.type === 'ATTACK' ? '攻击' : '技能'}</td>
+          <td>${card.type === 'ATTACK' ? '攻击' : card.type === 'SKILL' ? '技能' : '能力'}</td>
+          <td style="font-size:13px;color:#ecf0f1;">${CARD_UI.getCardEffectText(card)}</td>
         </tr>`;
       });
       html += '</tbody></table>';
       container.innerHTML = html;
+
+      const tbody = container.querySelector('tbody');
+      if (tbody) {
+        tbody.querySelectorAll('tr').forEach((row, i) => {
+          var _eff = CARD_UI.getCardEffects(deck[i]); CARD_UI.bindTooltip(row, _eff.length > 0 ? _eff[0].type : null);
+        });
+      }
     })();
   </script>
+
+  <script src="status_bar.js"></script>
 </body>
 </html>

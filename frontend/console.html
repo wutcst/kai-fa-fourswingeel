@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>控制台</title>
+  <script src="save_helper.js"></script>
+  <script src="card_ui.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 60px 20px 20px; background: #1a1a2e; color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh;
+    }
+    .top-bar {
+      display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .top-bar input { padding: 8px 14px; border-radius: 6px; border: 1px solid #34495e; background: #16213e; color: #ecf0f1; font-size: 14px; width: 220px; }
+    .top-bar select { padding: 8px; border-radius: 6px; border: 1px solid #34495e; background: #16213e; color: #ecf0f1; font-size: 14px; }
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: all 0.2s; }
+    .btn-add { background: #2ecc71; color: white; }
+    .btn-add:hover { background: #27ae60; }
+    .btn-back { background: #e74c3c; color: white; }
+    .btn-back:hover { background: #c0392b; }
+    .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .panel {
+      background: #16213e; border-radius: 10px; padding: 16px;
+      border: 1px solid #2c3e50; max-height: calc(100vh - 160px); overflow-y: auto;
+    }
+    .panel h3 { margin: 0 0 12px; color: #f1c40f; }
+    .item-list { display: flex; flex-direction: column; gap: 6px; }
+    .item-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: rgba(0,0,0,0.2); border-radius: 6px;
+      font-size: 13px; cursor: pointer; transition: all 0.15s;
+    }
+    .item-row:hover { background: rgba(241,196,15,0.1); }
+    .item-row .item-name { font-weight: bold; flex: 1; }
+    .item-row .item-info { font-size: 11px; color: #95a5a6; margin: 0 10px; }
+    .item-row .item-rarity {
+      font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold;
+    }
+    .rarity-COMMON { color: #95a5a6; }
+    .rarity-UNCOMMON { color: #3498db; }
+    .rarity-RARE { color: #f39c12; }
+    .rarity-LEGENDARY { color: #ff6b6b; }
+    .rarity-SPECIAL { color: #9b59b6; }
+    .rarity-START { color: #888; }
+    .msg { position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; border-radius: 8px; font-weight: bold; z-index: 999; animation: fadeOut 2s forwards; }
+    @keyframes fadeOut { 0%,70% { opacity:1; } 100% { opacity:0; } }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <input type="text" id="card-search" placeholder="搜索卡牌..." oninput="filterCards()">
+    <select id="card-rarity" onchange="filterCards()">
+      <option value="">全部稀有度</option>
+      <option value="COMMON">普通</option>
+      <option value="UNCOMMON">罕见</option>
+      <option value="RARE">稀有</option>
+      <option value="LEGENDARY">传说</option>
+      <option value="START">起始</option>
+      <option value="SPECIAL">特殊</option>
+    </select>
+    <input type="text" id="relic-search" placeholder="搜索遗物..." oninput="filterRelics()">
+    <select id="relic-tier" onchange="filterRelics()">
+      <option value="">全部稀有度</option>
+      <option value="COMMON">普通</option>
+      <option value="RARE">稀有</option>
+      <option value="LEGENDARY">传说</option>
+      <option value="BOSS">Boss</option>
+      <option value="STARTER">初始</option>
+      <option value="SPECIAL">特殊</option>
+    </select>
+    <span style="color:#bdc3c7;font-size:13px;">角色: <b id="char-label">-</b></span>
+    <button class="btn btn-back" onclick="window.history.back()">← 返回</button>
+  </div>
+
+  <div class="columns">
+    <div class="panel">
+      <h3>🃏 卡牌列表 <span style="font-size:12px;color:#95a5a6;" id="card-count"></span></h3>
+      <div class="item-list" id="card-list"></div>
+    </div>
+    <div class="panel">
+      <h3>📿 遗物列表 <span style="font-size:12px;color:#95a5a6;" id="relic-count"></span></h3>
+      <div class="item-list" id="relic-list"></div>
+    </div>
+  </div>
+
+  <div id="msg-box"></div>
+
+  <script>
+    var allCards = [];
+    var allRelics = [];
+    var currentChar = '1';
+
+    function showMsg(text, color) {
+      var el = document.getElementById('msg-box');
+      var div = document.createElement('div');
+      div.className = 'msg';
+      div.style.background = color || '#2ecc71';
+      div.textContent = text;
+      el.appendChild(div);
+      setTimeout(function() { div.remove(); }, 2200);
+    }
+
+    function filterCards() {
+      var search = (document.getElementById('card-search').value || '').toLowerCase();
+      var rarity = document.getElementById('card-rarity').value;
+      var filtered = allCards.filter(function(c) {
+        if (search && c.name.toLowerCase().indexOf(search) < 0 && c.id.toLowerCase().indexOf(search) < 0) return false;
+        if (rarity && c.rarity !== rarity) return false;
+        return true;
+      });
+      renderCards(filtered);
+    }
+
+    function filterRelics() {
+      var search = (document.getElementById('relic-search').value || '').toLowerCase();
+      var tier = document.getElementById('relic-tier').value;
+      var filtered = allRelics.filter(function(r) {
+        if (search && r.name.toLowerCase().indexOf(search) < 0 && r.id.toLowerCase().indexOf(search) < 0) return false;
+        if (tier && r.rarity !== tier) return false;
+        return true;
+      });
+      renderRelics(filtered);
+    }
+
+    function rarityColor(r) {
+      var colors = { 'COMMON':'#95a5a6','UNCOMMON':'#3498db','RARE':'#f39c12','LEGENDARY':'#ff6b6b','STARTER':'#888','SPECIAL':'#9b59b6','BOSS':'#ff4757' };
+      return colors[r] || '#95a5a6';
+    }
+
+    function renderCards(cards) {
+      document.getElementById('card-count').textContent = '(' + cards.length + ')';
+      var html = '';
+      cards.forEach(function(c) {
+        var color = rarityColor(c.rarity);
+        var typeLabel = CARD_UI.getCardTypeLabel(c);
+        var effText = CARD_UI.getCardEffectText(c);
+        html += '<div class="item-row" onclick="addCard(\'' + c.id + '\',\'' + c.name.replace(/'/g, "\\'") + '\')">' +
+          '<span class="item-name" style="color:' + color + '">' + c.name + (c.upgraded ? ' +' : '') + '</span>' +
+          '<span class="item-info">⚡' + c.cost + ' ' + typeLabel + '</span>' +
+          '<span class="item-info" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + effText + '</span>' +
+          '<span class="item-rarity rarity-' + c.rarity + '">' + c.rarity + '</span>' +
+          '</div>';
+      });
+      document.getElementById('card-list').innerHTML = html || '<div style="color:#555;">无匹配卡牌</div>';
+    }
+
+    function renderRelics(relics) {
+      document.getElementById('relic-count').textContent = '(' + relics.length + ')';
+      var html = '';
+      relics.forEach(function(r) {
+        var color = rarityColor(r.rarity);
+        html += '<div class="item-row" onclick="addRelic(\'' + r.id + '\',\'' + r.name.replace(/'/g, "\\'") + '\')">' +
+          '<span class="item-name" style="color:' + color + '">' + r.name + '</span>' +
+          '<span class="item-info">' + (r.effectType || '') + '</span>' +
+          '<span class="item-info">' + (r.description || '') + '</span>' +
+          '<span class="item-rarity rarity-' + (r.rarity||'COMMON') + '">' + (r.rarity||'COMMON') + '</span>' +
+          '</div>';
+      });
+      document.getElementById('relic-list').innerHTML = html || '<div style="color:#555;">无匹配遗物</div>';
+    }
+
+    async function addCard(cardId, cardName) {
+      try {
+        var resp = await fetch('/api/card/' + encodeURIComponent(cardId));
+        if (!resp.ok) { showMsg('卡牌不存在: ' + cardId, '#e74c3c'); return; }
+        var cardData = await resp.json();
+        var saveData = await loadSaveData(currentChar);
+        saveData.deck.push(cardData);
+        await saveSaveData(saveData);
+        showMsg('✅ 已添加: ' + cardName, '#2ecc71');
+      } catch (e) { showMsg('添加失败: ' + e.message, '#e74c3c'); }
+    }
+
+    async function addRelic(relicId, relicName) {
+      try {
+        var saveData = await loadSaveData(currentChar);
+        if (saveData.relics.indexOf(relicId) >= 0) {
+          showMsg('⚠️ 已拥有: ' + relicName, '#f39c12');
+          return;
+        }
+        saveData.relics.push(relicId);
+        await saveSaveData(saveData);
+        showMsg('✅ 已添加遗物: ' + relicName, '#2ecc71');
+      } catch (e) { showMsg('添加失败: ' + e.message, '#e74c3c'); }
+    }
+
+    (async function init() {
+      var params = new URLSearchParams(window.location.search);
+      currentChar = params.get('char') || localStorage.getItem('char') || '1';
+      document.getElementById('char-label').textContent = currentChar === '1' ? '铁甲战士' : currentChar === '2' ? '静默猎手' : '未知';
+
+      try {
+        var cardResp = await fetch('/api/cards');
+        if (cardResp.ok) {
+          allCards = await cardResp.json();
+          // 去重（只显示未升级版）
+          var seen = {};
+          allCards = allCards.filter(function(c) {
+            if (seen[c.id]) return false;
+            seen[c.id] = true;
+            return true;
+          });
+          allCards.sort(function(a,b) {
+            return (a.rarity||'').localeCompare(b.rarity||'') || a.name.localeCompare(b.name);
+          });
+          renderCards(allCards);
+        }
+      } catch(e) {
+        console.warn('加载卡牌失败', e);
+        document.getElementById('card-list').innerHTML = '<div style="color:#e74c3c;">加载卡牌失败</div>';
+      }
+
+      try {
+        var relicsResp = await fetch('/api/relics');
+        if (relicsResp.ok) {
+          allRelics = await relicsResp.json();
+          allRelics.sort(function(a,b) {
+            return (a.rarity||'').localeCompare(b.rarity||'') || a.name.localeCompare(b.name);
+          });
+          renderRelics(allRelics);
+        }
+      } catch(e) {
+        console.warn('加载遗物失败', e);
+        document.getElementById('relic-list').innerHTML = '<div style="color:#e74c3c;">加载遗物失败</div>';
+      }
+    })();
+  </script>
+  <script src="status_bar.js"></script>
+</body>
+</html>
