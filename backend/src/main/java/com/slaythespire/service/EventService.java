@@ -63,7 +63,7 @@ public class EventService {
         // 加载存档获取已见事件
         SaveData saveData = saveService.loadGame();
         List<String> seen = (saveData != null && saveData.getSeenEvents() != null)
-            ? saveData.getSeenEvents() : new ArrayList<>();
+            ? saveData.getSeenEvents() : new ArrayList<String>();
 
         // 按阶段过滤
         List<EventTemplate> pool = new ArrayList<>();
