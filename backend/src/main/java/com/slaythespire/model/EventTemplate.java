@@ -13,6 +13,7 @@ public class EventTemplate {
     private String background;
     private String icon;
     private List<EventOption> options;
+    private List<Integer> acts;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -26,6 +27,8 @@ public class EventTemplate {
     public void setIcon(String icon) { this.icon = icon; }
     public List<EventOption> getOptions() { return options; }
     public void setOptions(List<EventOption> options) { this.options = options; }
+    public List<Integer> getActs() { return acts; }
+    public void setActs(List<Integer> acts) { this.acts = acts; }
 
     public static class EventOption {
         private String text;

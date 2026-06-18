@@ -40,7 +40,7 @@ public class SaveData {
 
     private int act = 1;
 
-
+    private List<String> seenEvents;
 
     public SaveData() {}
 
@@ -113,5 +113,8 @@ public class SaveData {
     public int getAct() { return act; }
 
     public void setAct(int act) { this.act = act; }
+
+    public List<String> getSeenEvents() { return seenEvents; }
+    public void setSeenEvents(List<String> seenEvents) { this.seenEvents = seenEvents; }
 
 }

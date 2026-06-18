@@ -96,12 +96,8 @@
         }
 
         // 从后端获取所有遗物配置，用于显示名称和描述
-        fetch('/api/relics')
-            .then(r => r.json())
-            .then(allRelics => {
-                // 构建 ID -> 对象 的映射
-                const relicMap = {};
-                allRelics.forEach(r => relicMap[r.id] = r);
+        var fetchRelics = window._relicMap ? Promise.resolve(window._relicMap) : fetch('/api/relics').then(function(r) { return r.json(); }).then(function(all) { var m = {}; all.forEach(function(x) { m[x.id] = x; }); window._relicMap = m; return m; });
+        fetchRelics.then(function(relicMap) {
 
                 let html = `
                     <div style="background:#1a1a2e; border:2px solid #f1c40f; border-radius:16px; max-width:500px; width:90%; max-height:80vh; overflow-y:auto; padding:24px; color:#ecf0f1;">
@@ -247,6 +243,57 @@
             style.id = 'spire-modal-style';
             style.textContent = '@keyframes spire-modal-in { from { opacity:0; transform:scale(0.85) translateY(-20px); } to { opacity:1; transform:scale(1) translateY(0); } }';
             document.head.appendChild(style);
+        }
+    };
+
+    /** 展示获得遗物的弹窗，包含效果描述 */
+    window.showRelicPickupPopup = function(relicId, relicName, onClose) {
+        var showWithInfo = function() {
+            var relicInfo = window._relicMap ? window._relicMap[relicId] : null;
+            var descHtml = '';
+            if (relicInfo) {
+                descHtml = '<div style="margin-top:10px;padding:10px 14px;background:rgba(255,255,255,0.05);border-radius:8px;text-align:left;">' +
+                    '<div style="font-size:14px;color:#bdc3c7;line-height:1.5;">' + (relicInfo.description || '') + '</div>';
+                var effectType = relicInfo.effectType || '';
+                var value = relicInfo.value || 0;
+                if (effectType && value > 0) {
+                    descHtml += '<div style="margin-top:6px;font-size:13px;color:' + rarityColor(relicInfo.rarity) + ';font-weight:bold;">⚡ ' + effectType + ' +' + value + '</div>';
+                }
+                descHtml += '</div>';
+            }
+            window.showModal('获得遗物：<b>' + relicName + '</b>' + descHtml, {
+                title: '📿 获得遗物',
+                icon: '📿',
+                borderColor: '#9b59b6',
+                onClose: function() {
+                    if (relicId === 'jiucai_anger') {
+                        window.showModal('怪物太难都是九才8干的，大家一起骂他', {
+                            title: '😡 九才8之怒',
+                            icon: '😡',
+                            borderColor: '#e74c3c',
+                            onClose: onClose
+                        });
+                    } else {
+                        if (onClose) onClose();
+                    }
+                }
+            });
+        };
+
+        if (window._relicMap) {
+            showWithInfo();
+        } else {
+            fetch('/api/relics')
+                .then(function(r) { return r.json(); })
+                .then(function(all) {
+                    var m = {};
+                    all.forEach(function(x) { m[x.id] = x; });
+                    window._relicMap = m;
+                    showWithInfo();
+                })
+                .catch(function() {
+                    showWithInfo();
+                });
         }
     };
 

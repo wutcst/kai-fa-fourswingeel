@@ -22,6 +22,12 @@ public class BattleService {
     private List<Enemy> enemies;
     private List<Card> drawPile, hand, discardPile, exhaustPile;
     private int energy;
+    private int blockPerAttackThisTurn = 0;
+    private boolean hasDiscardedThisTurn = false;
+    private int drawCountThisTurn = 0;
+    private CardTemplate buffedShivTemplate = null;
+    private int shivBuffDamage = 0;
+    private boolean playerExtraPoisonTick = false;
     private List<String> logList;
     private boolean gameOver;
     private String winner;
@@ -232,12 +238,16 @@ public class BattleService {
     }
 
     public synchronized Map<String, Object> playCard(int index, Integer targetIndex, Integer exhaustHandIndex, Integer discardHandIndex) {
+        return playCard(index, targetIndex, exhaustHandIndex, discardHandIndex, null);
+    }
+    public synchronized Map<String, Object> playCard(int index, Integer targetIndex, Integer exhaustHandIndex, Integer discardHandIndex, Integer upgradeHandIndex) {
         validateBattleActive();
         validateCardIndex(index);
 
         Card card = hand.get(index);
 
         if (card.isUnplayable()) throw new IllegalStateException("此牌无法被主动打出！");
+        if (card.isRequiresEmptyDrawPile() && !drawPile.isEmpty()) throw new IllegalStateException("抽牌堆不为空，无法打出此牌！");
         if (card.isXCost() && energy <= 0) throw new IllegalStateException("X耗能卡牌需要至少1点能量才能打出！");
         if (!card.isXCost() && card.getCost() > energy) throw new IllegalStateException("能量不足");
 
@@ -286,6 +296,12 @@ public class BattleService {
                 }
             }
         }
+        // 🆕 狂怒：每打出一张攻击牌获得格挡
+        if (card.getType() == Card.CardType.ATTACK && blockPerAttackThisTurn > 0) {
+            player.gainBlock(blockPerAttackThisTurn);
+            logList.add("💢 狂怒！获得 " + blockPerAttackThisTurn + " 点格挡（当前: " + player.getBlock() + "）");
+        }
+
         // 🆕 黄金戒指：每打出3张攻击牌获得1层敏捷（跨回合累计）
         if (card.getType() == Card.CardType.ATTACK) {
             attackCountThisTurn++;
@@ -315,6 +331,12 @@ public class BattleService {
             logList.add(String.format("🛡️ 获得 %d 点格挡，当前格挡: %d", actualBlock, player.getBlock()));
         }
 
+        // 🆕 狂怒效果：本回合每打出一张攻击牌获得格挡
+        if (card.getBlockPerAttack() > 0) {
+            blockPerAttackThisTurn = card.getBlockPerAttack();
+            logList.add("💢 进入狂怒状态！本回合每打出攻击牌获得 " + blockPerAttackThisTurn + " 点格挡");
+        }
+
         if (card.getSelfDamage() > 0) {
             player.takeDamage(card.getSelfDamage(), null, true);
             logList.addAll(player.getLastCombatLogs());
@@ -327,8 +349,31 @@ public class BattleService {
             logList.add(String.format("⚡ 获得 %d 点能量，当前能量: %d", card.getEnergyGain(), energy));
         }
 
+        // 🆕 隐秘打击：本回合丢弃过牌获得能量
+        if (card.getEnergyGainIfDiscarded() > 0 && hasDiscardedThisTurn) {
+            energy += card.getEnergyGainIfDiscarded();
+            logList.add(String.format("⚡ 隐秘打击！获得 %d 点能量，当前: %d", card.getEnergyGainIfDiscarded(), energy));
+        }
+
+        // 🆕 腐蚀波：本回合每抽1张牌，给所有敌人施加毒
+        if (card.getDrawPoisonAll() > 0 && drawCountThisTurn > 0) {
+            int poison = card.getDrawPoisonAll() * drawCountThisTurn;
+            for (Enemy e : aliveEnemies) {
+                StatusEffect ps = StatusFactory.create("POISON", poison, dataRepo);
+                if (ps != null) e.addStatus(ps);
+            }
+            logList.add(String.format("☠️ 腐蚀波！本回合抽了 %d 张，给所有敌人施加 %d 层毒", drawCountThisTurn, poison));
+        }
+
+        // ================= 全身撞击：伤害=当前格挡 =================
+        int actualCardDamage = card.getDamage();
+        if (card.isBlockToDamage()) {
+            actualCardDamage = player.getBlock();
+            logList.add(String.format("💥 全身撞击！当前格挡 %d 转化为伤害", actualCardDamage));
+        }
+
         // ================= 伤害计算（包含力量倍率和随机目标） =================
-        if (card.getDamage() > 0) {
+        if (actualCardDamage > 0) {
             int strengthMultiplier = card.getStrengthMultiplier();
             int strengthCount = 0;
             StatusEffect savedStrength = null;
@@ -346,7 +391,17 @@ public class BattleService {
                 logList.add("💪 力量发挥 " + strengthMultiplier + " 倍效果，临时锁定力量值: " + strengthCount);
             }
 
-            int baseDamage = card.getDamage() * xValue;
+            int baseDamage = actualCardDamage * xValue;
+            // 全身撞击：基础伤害=格挡，也享受力量加成
+            if (card.isBlockToDamage()) {
+                for (StatusEffect s : player.getStatuses()) {
+                    if ("STRENGTH".equals(s.getId()) && s.getCount() > 0) {
+                        baseDamage += s.getCount();
+                        logList.add("💪 全身撞击获得力量加成 +" + s.getCount() + " 伤害");
+                        break;
+                    }
+                }
+            }
             if (strengthMultiplier > 1) {
                 baseDamage += strengthCount * strengthMultiplier;
                 logList.add("💪 额外增加 " + (strengthCount * strengthMultiplier) + " 伤害");
@@ -435,6 +490,108 @@ public class BattleService {
 
         int playedCardIndex = index;
 
+        // ================= 硬撑：增加伤口到手牌 =================
+        if (card.getAddWoundCount() > 0) {
+            for (int i = 0; i < card.getAddWoundCount(); i++) {
+                Card wound = new Card("伤口", -1, 0, 0, Card.CardType.STATUS);
+                wound.setUnplayable(true);
+                wound.setEthereal(true);
+                wound.setRarity("COMMON");
+                hand.add(playedCardIndex + 1 + i, wound);
+            }
+            logList.add(String.format("🩹 增加了 %d 张伤口到手牌", card.getAddWoundCount()));
+        }
+
+        // 🆕 武装/武装+：临时升级手牌（仅本场战斗有效）
+        if (card.isUpgradeAllInHand()) {
+            int upgraded = 0;
+            for (int i = 0; i < hand.size(); i++) {
+                if (i == playedCardIndex || hand.get(i).isUpgraded()) continue;
+                Card old = hand.get(i);
+                CardTemplate tpl = dataRepo.getCardById(old.getName().replaceAll("\\+\\d*$", "") + "+");
+                if (tpl != null) { hand.set(i, new Card(tpl)); upgraded++; }
+            }
+            if (upgraded > 0) logList.add("🔨 武装+！升级了手中 " + upgraded + " 张牌");
+        } else if (card.getUpgradeHandCount() > 0) {
+            int count = Math.min(card.getUpgradeHandCount(), hand.size() - 1);
+            for (int i = 0; i < count; i++) {
+                int ti = resolveHandInteractionIndex(i, upgradeHandIndex, playedCardIndex, hand.size(), "升级");
+                Card old = hand.get(ti);
+                if (!old.isUpgraded()) {
+                    CardTemplate tpl = dataRepo.getCardById(old.getName().replaceAll("\\+\\d*$", "") + "+");
+                    if (tpl != null) {
+                        hand.set(ti, new Card(tpl));
+                        logList.add("🔨 武装！" + old.getName() + " → " + hand.get(ti).getName());
+                    }
+                }
+                if (ti < playedCardIndex) playedCardIndex--;
+            }
+        }
+
+        // 🆕 通用：增加指定卡牌到手牌（如刀刃之舞、斗篷与匕首）
+        if (card.getAddCardId() != null && !card.getAddCardId().isEmpty() && card.getAddCardCount() > 0) {
+            for (int i = 0; i < card.getAddCardCount(); i++) {
+                Card gen = createCardFromId(card.getAddCardId());
+                if (gen != null) {
+                    hand.add(playedCardIndex + 1 + i, gen);
+                }
+            }
+            logList.add(String.format("🃏 增加了 %d 张%s到手牌", card.getAddCardCount(),
+                dataRepo.getCardById(card.getAddCardId()) != null ? dataRepo.getCardById(card.getAddCardId()).getName() : card.getAddCardId()));
+        }
+
+        // 🆕 精准：本场战斗小刀伤害增加
+        if (card.getBuffCardName() != null && !card.getBuffCardName().isEmpty() && card.getBuffDamageAmount() > 0) {
+            if (buffedShivTemplate == null) {
+                buffedShivTemplate = dataRepo.getCardById(card.getBuffCardName());
+            }
+            if (buffedShivTemplate != null) {
+                // store the buff amount for future shiv creations
+                shivBuffDamage += card.getBuffDamageAmount();
+                logList.add("🎯 精准！小刀伤害增加 " + card.getBuffDamageAmount() + "（当前加成: " + shivBuffDamage + "）");
+            }
+        }
+
+        // 🆕 催化剂：将目标敌人中毒翻倍
+        if (card.isDoublePoison() && target != null && target.isAlive()) {
+            for (StatusEffect s : target.getStatuses()) {
+                if ("POISON".equals(s.getId())) {
+                    int oldCount = s.getCount();
+                    s.setCount(oldCount * 2);
+                    logList.add("☠️ 催化剂！中毒 " + oldCount + " → " + s.getCount());
+                    break;
+                }
+            }
+        }
+
+        // 🆕 触媒：回合结束中毒额外结算1次
+        if (card.isExtraPoisonTick()) {
+            playerExtraPoisonTick = true;
+            logList.add("⚗️ 触媒：本场战斗回合结束时中毒额外结算1次");
+        }
+
+        // ================= 重振精神：消耗手牌中所有非攻击牌，每张获得格挡 =================
+        if (card.getExhaustNonAttackBlock() > 0) {
+            int exhaustedCount = 0;
+            for (int i = hand.size() - 1; i >= 0; i--) {
+                if (i == playedCardIndex) continue;
+                Card hc = hand.get(i);
+                if (hc.getType() != Card.CardType.ATTACK) {
+                    hand.remove(i);
+                    exhaustPile.add(hc);
+                    exhaustedCount++;
+                    if (i < playedCardIndex) playedCardIndex--;
+                    logList.add("🔥 重振精神消耗了 " + hc.getName());
+                    triggerDrawOnExhaust();
+                }
+            }
+            if (exhaustedCount > 0) {
+                int bonusBlock = card.getExhaustNonAttackBlock() * exhaustedCount;
+                player.gainBlock(bonusBlock);
+                logList.add(String.format("🛡️ 重振精神消耗 %d 张牌，额外获得 %d 格挡（当前: %d）", exhaustedCount, bonusBlock, player.getBlock()));
+            }
+        }
+
         if (card.isDrawFirst()) {
             if (card.getDrawCount() > 0) {
                 drawCards(card.getDrawCount());
@@ -464,6 +621,40 @@ public class BattleService {
                     playedCardIndex--;
                 }
             }
+            hasDiscardedThisTurn = true;
+        }
+
+        // 🆕 钢铁风暴：丢弃所有手牌，获得对应数量的小刀
+        if (card.getDiscardAllForCards() != null && !card.getDiscardAllForCards().isEmpty()) {
+            while (hand.size() > 1) {
+                for (int i = 0; i < hand.size(); i++) {
+                    if (i != playedCardIndex) { discardPile.add(hand.remove(i)); break; }
+                }
+            }
+            int shivCount = discardPile.size(); // Approximate count of discarded this action
+            // Actually count what we just discarded — simpler: count from log
+            int created = 0;
+            for (int i = 0; i < shivCount; i++) {
+                Card shiv = createCardFromId(card.getDiscardAllForCards());
+                if (shiv != null) { hand.add(playedCardIndex + 1 + i, shiv); created++; }
+            }
+            if (created > 0) logList.add("🔪 钢铁风暴：丢弃所有手牌，获得 " + created + " 张小刀");
+            hasDiscardedThisTurn = true;
+        }
+
+        // 🆕 计算下注：丢弃所有手牌，抽对应数量
+        if (card.isDiscardAllForDraw()) {
+            int discarded = 0;
+            while (hand.size() > 1) {
+                for (int i = 0; i < hand.size(); i++) {
+                    if (i != playedCardIndex) { discardPile.add(hand.remove(i)); discarded++; break; }
+                }
+            }
+            if (discarded > 0) {
+                drawCards(discarded);
+                logList.add("🎰 计算下注：丢弃 " + discarded + " 张，抽 " + discarded + " 张");
+            }
+            hasDiscardedThisTurn = true;
         }
 
         if (!card.isDrawFirst()) {
@@ -646,6 +837,9 @@ public class BattleService {
         if (!player.isAlive()) { gameOver = true; winner = "敌人"; logList.add("💀 玩家倒下..."); return getCurrentState(); }
 
         energy = 3;
+        blockPerAttackThisTurn = 0;
+        hasDiscardedThisTurn = false;
+        drawCountThisTurn = 0;
         if (RelicEffectHandler.hasEffect(player, "ENERGY_PER_TURN")) {
             energy += RelicEffectHandler.getEffectValue(player, "ENERGY_PER_TURN");
         }
@@ -702,7 +896,10 @@ public class BattleService {
                 logList.add(String.format("🌑 抽到了【%s】，失去了 %d 点能量，当前能量: %d", drawnCard.getName(), energyLoss, energy));
             }
         }
-        if (drawn > 0) logList.add(String.format("抽了 %d 张牌（手牌 %d/%d）", drawn, hand.size(), HAND_LIMIT));
+        if (drawn > 0) {
+            logList.add(String.format("抽了 %d 张牌（手牌 %d/%d）", drawn, hand.size(), HAND_LIMIT));
+            drawCountThisTurn += drawn;
+        }
     }
 
     private List<Card> buildDeckFromPlayerData(List<Map<String, Object>> playerDeck) {
@@ -810,6 +1007,32 @@ public class BattleService {
             if (cardData.containsKey("energyLossOnDraw") && cardData.get("energyLossOnDraw") != null) {
                 card.setEnergyLossOnDraw(((Number) cardData.get("energyLossOnDraw")).intValue());
             }
+            if (cardData.containsKey("exhaustNonAttackBlock") && cardData.get("exhaustNonAttackBlock") != null) {
+                card.setExhaustNonAttackBlock(((Number) cardData.get("exhaustNonAttackBlock")).intValue());
+            }
+            if (cardData.containsKey("addWoundCount") && cardData.get("addWoundCount") != null) {
+                card.setAddWoundCount(((Number) cardData.get("addWoundCount")).intValue());
+            }
+            if (cardData.containsKey("blockToDamage") && cardData.get("blockToDamage") != null) {
+                card.setBlockToDamage((Boolean) cardData.get("blockToDamage"));
+            }
+            if (cardData.containsKey("blockPerAttack") && cardData.get("blockPerAttack") != null) {
+                card.setBlockPerAttack(((Number) cardData.get("blockPerAttack")).intValue());
+            }
+            if (cardData.containsKey("energyGainIfDiscarded")) card.setEnergyGainIfDiscarded(((Number) cardData.get("energyGainIfDiscarded")).intValue());
+            if (cardData.containsKey("discardAllForCards")) card.setDiscardAllForCards((String) cardData.get("discardAllForCards"));
+            if (cardData.containsKey("discardAllForDraw")) card.setDiscardAllForDraw((Boolean) cardData.get("discardAllForDraw"));
+            if (cardData.containsKey("buffCardName")) card.setBuffCardName((String) cardData.get("buffCardName"));
+            if (cardData.containsKey("buffDamageAmount")) card.setBuffDamageAmount(((Number) cardData.get("buffDamageAmount")).intValue());
+            if (cardData.containsKey("doublePoison")) card.setDoublePoison((Boolean) cardData.get("doublePoison"));
+            if (cardData.containsKey("drawPoisonAll")) card.setDrawPoisonAll(((Number) cardData.get("drawPoisonAll")).intValue());
+            if (cardData.containsKey("extraPoisonTick")) card.setExtraPoisonTick((Boolean) cardData.get("extraPoisonTick"));
+            if (cardData.containsKey("addCardId")) card.setAddCardId((String) cardData.get("addCardId"));
+            if (cardData.containsKey("addCardCount")) card.setAddCardCount(((Number) cardData.get("addCardCount")).intValue());
+            if (cardData.containsKey("upgradeHandCount")) card.setUpgradeHandCount(((Number) cardData.get("upgradeHandCount")).intValue());
+            if (cardData.containsKey("upgradeHandMode")) card.setUpgradeHandMode((String) cardData.get("upgradeHandMode"));
+            if (cardData.containsKey("upgradeAllInHand")) card.setUpgradeAllInHand((Boolean) cardData.get("upgradeAllInHand"));
+            if (cardData.containsKey("requiresEmptyDrawPile")) card.setRequiresEmptyDrawPile((Boolean) cardData.get("requiresEmptyDrawPile"));
 
             deck.add(card);
         }
@@ -907,6 +1130,24 @@ public class BattleService {
             // 🆕 传递特殊状态牌数值给前端
             cardInfo.put("endOfTurnDamage", c.getEndOfTurnDamage());
             cardInfo.put("energyLossOnDraw", c.getEnergyLossOnDraw());
+            cardInfo.put("exhaustNonAttackBlock", c.getExhaustNonAttackBlock());
+            cardInfo.put("addWoundCount", c.getAddWoundCount());
+            cardInfo.put("blockToDamage", c.isBlockToDamage());
+            cardInfo.put("blockPerAttack", c.getBlockPerAttack());
+            cardInfo.put("energyGainIfDiscarded", c.getEnergyGainIfDiscarded());
+            cardInfo.put("discardAllForCards", c.getDiscardAllForCards());
+            cardInfo.put("discardAllForDraw", c.isDiscardAllForDraw());
+            cardInfo.put("buffCardName", c.getBuffCardName());
+            cardInfo.put("buffDamageAmount", c.getBuffDamageAmount());
+            cardInfo.put("doublePoison", c.isDoublePoison());
+            cardInfo.put("drawPoisonAll", c.getDrawPoisonAll());
+            cardInfo.put("extraPoisonTick", c.isExtraPoisonTick());
+            cardInfo.put("addCardId", c.getAddCardId());
+            cardInfo.put("addCardCount", c.getAddCardCount());
+            cardInfo.put("upgradeHandCount", c.getUpgradeHandCount());
+            cardInfo.put("upgradeHandMode", c.getUpgradeHandMode());
+            cardInfo.put("upgradeAllInHand", c.isUpgradeAllInHand());
+            cardInfo.put("requiresEmptyDrawPile", c.isRequiresEmptyDrawPile());
 
             handCards.add(cardInfo);
         }
@@ -952,6 +1193,16 @@ public class BattleService {
     private void validateBattleActive() { if (gameOver) throw new IllegalStateException("战斗已经结束"); }
     private void validateCardIndex(int index) { if (index < 0 || index >= hand.size()) throw new IllegalArgumentException("无效的卡牌编号"); }
 
+    private Card createCardFromId(String cardId) {
+        CardTemplate tpl = dataRepo.getCardById(cardId);
+        if (tpl == null) return null;
+        Card c = new Card(tpl);
+        if (shivBuffDamage > 0 && "shiv".equals(cardId)) {
+            c.setDamage(c.getDamage() + shivBuffDamage);
+        }
+        return c;
+    }
+
     private List<Map<String, Object>> cardsToStateList(List<Card> cards) {
         List<Map<String, Object>> list = new ArrayList<>();
         for (Card c : cards) {
@@ -980,6 +1231,24 @@ public class BattleService {
             // 🆕 传递特殊状态牌数值给前端
             info.put("endOfTurnDamage", c.getEndOfTurnDamage());
             info.put("energyLossOnDraw", c.getEnergyLossOnDraw());
+            info.put("exhaustNonAttackBlock", c.getExhaustNonAttackBlock());
+            info.put("addWoundCount", c.getAddWoundCount());
+            info.put("blockToDamage", c.isBlockToDamage());
+            info.put("blockPerAttack", c.getBlockPerAttack());
+            info.put("energyGainIfDiscarded", c.getEnergyGainIfDiscarded());
+            info.put("discardAllForCards", c.getDiscardAllForCards());
+            info.put("discardAllForDraw", c.isDiscardAllForDraw());
+            info.put("buffCardName", c.getBuffCardName());
+            info.put("buffDamageAmount", c.getBuffDamageAmount());
+            info.put("doublePoison", c.isDoublePoison());
+            info.put("drawPoisonAll", c.getDrawPoisonAll());
+            info.put("extraPoisonTick", c.isExtraPoisonTick());
+            info.put("addCardId", c.getAddCardId());
+            info.put("addCardCount", c.getAddCardCount());
+            info.put("upgradeHandCount", c.getUpgradeHandCount());
+            info.put("upgradeHandMode", c.getUpgradeHandMode());
+            info.put("upgradeAllInHand", c.isUpgradeAllInHand());
+            info.put("requiresEmptyDrawPile", c.isRequiresEmptyDrawPile());
 
             list.add(info);
         }

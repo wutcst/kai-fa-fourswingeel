@@ -9,7 +9,7 @@ const CARD_UI = {
     'REGENERATION': { name: '再生',     desc: '回合结束时，恢复等同于再生层数的生命，然后减少 1 层。',          decay: true },
     'RITUAL':       { name: '仪式',     desc: '回合开始时，获得 1 点力量。',                                  decay: false },
     'EXHAUST':      { name: '消耗',     desc: '打出的牌将被消耗，本场战斗无法再次抽到。',                     decay: false },
-    'INTANGIBLE':   { name: '无实体',   desc: '持续一回合，受到的所有伤害降低为 1。',                         decay: false }
+    'INTANGIBLE':   { name: '无实体',   desc: '持续一回合，受到的所有伤害降低为 1。',                         decay: true }
   },
   RARITY_COLORS: { 'START': '#999999', 'COMMON': '#bdc3c7', 'UNCOMMON': '#5dade2', 'RARE': '#3498db', 'LEGENDARY': '#ffd700', 'SPECIAL': '#8e44ad' },
   
@@ -49,19 +49,59 @@ const CARD_UI = {
         parts.push(`力量发挥 ${card.strengthMultiplier} 倍效果`);
     }
 
+    // 🆕 回合结束伤害（灼烧等状态牌）
+    if (card.endOfTurnDamage > 0) {
+        parts.push(`回合结束时受到 ${card.endOfTurnDamage} 点伤害`);
+    }
+
+    // 🆕 抽到时效果（虚空的失去能量等）
+    if (card.energyLossOnDraw > 0) {
+        parts.push(`抽到时失去 ${card.energyLossOnDraw} 点能量`);
+    }
+
+    // 🆕 特殊机制卡牌
+    if (card.blockToDamage) parts.push('造成当前格挡值的伤害');
+    if (card.exhaustNonAttackBlock > 0) parts.push(`消耗手中所有非攻击牌，每张获 ${card.exhaustNonAttackBlock} 点格挡`);
+    if (card.addWoundCount > 0) parts.push(`增加 ${card.addWoundCount} 张伤口到手牌`);
+    if (card.blockPerAttack > 0) parts.push(`本回合每打出1张攻击牌获得 ${card.blockPerAttack} 点格挡`);
+    if (card.forgeDamageBonus > 0) {
+        const cnt = card.forgeCount || 0;
+        parts.push(`可多次锻造（已锻 ${cnt} 次，每次 +${card.forgeDamageBonus} 伤害）`);
+    }
+    if (card.energyGainIfDiscarded > 0) parts.push(`本回合丢弃过牌获得 ${card.energyGainIfDiscarded} 能量`);
+    if (card.discardAllForCards) parts.push(`丢弃所有手牌，获得对应数量的小刀`);
+    if (card.discardAllForDraw) parts.push(`丢弃所有手牌，抽对应数量的牌`);
+    if (card.buffCardName && card.buffDamageAmount > 0) parts.push(`本场战斗${card.buffCardName}伤害 +${card.buffDamageAmount}`);
+    if (card.doublePoison) parts.push(`将目标敌人的中毒翻倍`);
+    if (card.drawPoisonAll > 0) parts.push(`本回合每抽1张牌，所有敌人获 ${card.drawPoisonAll} 层毒`);
+    if (card.extraPoisonTick) parts.push(`回合结束时中毒额外结算1次`);
+    if (card.addCardId && card.addCardCount > 0) parts.push(`增加 ${card.addCardCount} 张${card.addCardId === 'shiv' ? '小刀' : card.addCardId}到手牌`);
+    if (card.requiresEmptyDrawPile) parts.push('抽牌堆为空时才可打出');
+    if (card.upgradeAllInHand) parts.push('临时升级手牌中所有牌');
+    else if (card.upgradeHandCount > 0) {
+        const mode = card.upgradeHandMode === 'SELECT' ? '选择' : '随机';
+        parts.push(`${mode}临时升级手牌中 ${card.upgradeHandCount} 张牌`);
+    }
+
     if (card.drawFirst) {
         if (card.drawCount > 0) parts.push(`抽 ${card.drawCount} 张牌`);
         if (card.exhaustHandCount > 0) {
             const mode = card.exhaustHandMode === 'SELECT' ? '选择' : '随机';
             parts.push(`${mode}消耗 ${card.exhaustHandCount} 张手牌`);
         }
-        if (card.discardCount > 0) parts.push(`丢弃 ${card.discardCount} 张手牌`);
+        if (card.discardCount > 0) {
+            const mode = card.discardMode === 'SELECT' ? '选择' : '随机';
+            parts.push(`${mode}丢弃 ${card.discardCount} 张手牌`);
+        }
     } else {
         if (card.exhaustHandCount > 0) {
             const mode = card.exhaustHandMode === 'SELECT' ? '选择' : '随机';
             parts.push(`${mode}消耗 ${card.exhaustHandCount} 张手牌`);
         }
-        if (card.discardCount > 0) parts.push(`丢弃 ${card.discardCount} 张手牌`);
+        if (card.discardCount > 0) {
+            const mode = card.discardMode === 'SELECT' ? '选择' : '随机';
+            parts.push(`${mode}丢弃 ${card.discardCount} 张手牌`);
+        }
         if (card.drawCount > 0) parts.push(`抽 ${card.drawCount} 张牌`);
     }
 

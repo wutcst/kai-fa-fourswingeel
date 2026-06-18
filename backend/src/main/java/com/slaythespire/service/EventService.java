@@ -47,11 +47,48 @@ public class EventService {
     }
 
     /**
-     * 随机选择一个事件
+     * 随机选择一个事件（不限制阶段）
      */
     public EventTemplate rollEvent() {
+        return rollEvent(1);
+    }
+
+    /**
+     * 随机选择一个事件（按阶段过滤）
+     * @param act 当前阶段 (1/2/3)，事件无 acts 字段则在所有阶段出现
+     */
+    public EventTemplate rollEvent(int act) {
         if (events.isEmpty()) return null;
-        return events.get(random.nextInt(events.size()));
+
+        // 加载存档获取已见事件
+        SaveData saveData = saveService.loadGame();
+        List<String> seen = (saveData != null && saveData.getSeenEvents() != null)
+            ? saveData.getSeenEvents() : new ArrayList<>();
+
+        // 按阶段过滤
+        List<EventTemplate> pool = new ArrayList<>();
+        for (EventTemplate e : events) {
+            if (e.getActs() == null || e.getActs().isEmpty() || e.getActs().contains(act)) {
+                pool.add(e);
+            }
+        }
+        if (pool.isEmpty()) return events.get(random.nextInt(events.size()));
+
+        // 排除已见过的事件
+        List<EventTemplate> fresh = new ArrayList<>();
+        for (EventTemplate e : pool) {
+            if (!seen.contains(e.getId())) {
+                fresh.add(e);
+            }
+        }
+
+        // 如果所有事件都见过了，重置
+        if (fresh.isEmpty()) {
+            seen.clear();
+            fresh.addAll(pool);
+        }
+
+        return fresh.get(random.nextInt(fresh.size()));
     }
 
     /**
@@ -135,9 +172,6 @@ public class EventService {
                         else if ("small_blood".equals(rid)) saveData.setPlayerHp(Math.min(saveData.getPlayerHp() + 10, saveData.getMaxHp()));
                         else if ("apple".equals(rid)) saveData.setPlayerHp(Math.min(saveData.getPlayerHp() + 5, saveData.getMaxHp()));
                         else if ("pear".equals(rid)) saveData.setPlayerHp(Math.min(saveData.getPlayerHp() + 20, saveData.getMaxHp()));
-                        // 彩蛋遗物弹窗（事件获得时随日志展示）
-                        if ("jiucai_anger".equals(rid)) logs.add("😡 怪物太难都是九才8干的，大家一起骂他");
-                        else if ("anthony_anger".equals(rid)) logs.add("😡 再玩小卡组找人弄你");
                         logs.add("获得遗物: " + relic.getName());
                     } else {
                         logs.add("没有可获得的遗物");
@@ -225,6 +259,11 @@ public class EventService {
                         cardMap.put("xCost", chosen.isXCost());
                         cardMap.put("aoe", chosen.isAoe());
                         cardMap.put("drawFirst", chosen.isDrawFirst());
+                        cardMap.put("copyToDiscard", chosen.isCopyToDiscard());
+                        cardMap.put("strengthMultiplier", chosen.getStrengthMultiplier());
+                        cardMap.put("randomTarget", chosen.isRandomTarget());
+                        cardMap.put("endOfTurnDamage", chosen.getEndOfTurnDamage());
+                        cardMap.put("energyLossOnDraw", chosen.getEnergyLossOnDraw());
                         cardMap.put("charId", chosen.getCharId());
                         cardMap.put("drawCount", chosen.getDrawCount());
                         cardMap.put("upgraded", chosen.isUpgraded());
@@ -239,6 +278,14 @@ public class EventService {
                 default:
                     logs.add("未知效果: " + type);
             }
+        }
+
+        // 🆕 标记事件为已见，防止重复
+        if (saveData.getSeenEvents() == null) {
+            saveData.setSeenEvents(new ArrayList<>());
+        }
+        if (!saveData.getSeenEvents().contains(eventId)) {
+            saveData.getSeenEvents().add(eventId);
         }
 
         // 🆕 移除 charId 参数，直接保存全局存档

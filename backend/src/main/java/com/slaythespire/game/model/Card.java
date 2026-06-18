@@ -51,6 +51,25 @@ public class Card {
     // 🆕 新增字段：支持特殊状态牌机制
     private int endOfTurnDamage;
     private int energyLossOnDraw;
+    // 🆕 新增字段：特殊卡牌机制
+    private int exhaustNonAttackBlock;
+    private int addWoundCount;
+    private boolean blockToDamage;
+    private int blockPerAttack;
+    private int energyGainIfDiscarded;
+    private String discardAllForCards;
+    private boolean discardAllForDraw;
+    private String buffCardName;
+    private int buffDamageAmount;
+    private boolean doublePoison;
+    private int drawPoisonAll;
+    private boolean extraPoisonTick;
+    private String addCardId;
+    private int addCardCount;
+    private int upgradeHandCount;
+    private String upgradeHandMode;
+    private boolean upgradeAllInHand;
+    private boolean requiresEmptyDrawPile;
 
     // 🆕 修改：枚举增加 STATUS 类型
     public enum CardType { 
@@ -98,6 +117,24 @@ public class Card {
         // 🆕 新增字段赋值
         this.endOfTurnDamage = template.getEndOfTurnDamage();
         this.energyLossOnDraw = template.getEnergyLossOnDraw();
+        this.exhaustNonAttackBlock = template.getExhaustNonAttackBlock();
+        this.addWoundCount = template.getAddWoundCount();
+        this.blockToDamage = template.isBlockToDamage();
+        this.blockPerAttack = template.getBlockPerAttack();
+        this.energyGainIfDiscarded = template.getEnergyGainIfDiscarded();
+        this.discardAllForCards = template.getDiscardAllForCards();
+        this.discardAllForDraw = template.isDiscardAllForDraw();
+        this.buffCardName = template.getBuffCardName();
+        this.buffDamageAmount = template.getBuffDamageAmount();
+        this.doublePoison = template.isDoublePoison();
+        this.drawPoisonAll = template.getDrawPoisonAll();
+        this.extraPoisonTick = template.isExtraPoisonTick();
+        this.addCardId = template.getAddCardId();
+        this.addCardCount = template.getAddCardCount();
+        this.upgradeHandCount = template.getUpgradeHandCount();
+        this.upgradeHandMode = template.getUpgradeHandMode();
+        this.upgradeAllInHand = template.isUpgradeAllInHand();
+        this.requiresEmptyDrawPile = template.isRequiresEmptyDrawPile();
     }
 
     public Card(String name, int cost, int damage, int block, CardType type) {
@@ -135,6 +172,24 @@ public class Card {
         // 🆕 新增字段默认赋值
         this.endOfTurnDamage = 0;
         this.energyLossOnDraw = 0;
+        this.exhaustNonAttackBlock = 0;
+        this.addWoundCount = 0;
+        this.blockToDamage = false;
+        this.blockPerAttack = 0;
+        this.energyGainIfDiscarded = 0;
+        this.discardAllForCards = null;
+        this.discardAllForDraw = false;
+        this.buffCardName = null;
+        this.buffDamageAmount = 0;
+        this.doublePoison = false;
+        this.drawPoisonAll = 0;
+        this.extraPoisonTick = false;
+        this.addCardId = null;
+        this.addCardCount = 0;
+        this.upgradeHandCount = 0;
+        this.upgradeHandMode = "RANDOM";
+        this.upgradeAllInHand = false;
+        this.requiresEmptyDrawPile = false;
     }
 
     // copy constructor for Anger copy
@@ -178,6 +233,24 @@ public class Card {
         // 🆕 新增字段拷贝
         this.endOfTurnDamage = original.endOfTurnDamage;
         this.energyLossOnDraw = original.energyLossOnDraw;
+        this.exhaustNonAttackBlock = original.exhaustNonAttackBlock;
+        this.addWoundCount = original.addWoundCount;
+        this.blockToDamage = original.blockToDamage;
+        this.blockPerAttack = original.blockPerAttack;
+        this.energyGainIfDiscarded = original.energyGainIfDiscarded;
+        this.discardAllForCards = original.discardAllForCards;
+        this.discardAllForDraw = original.discardAllForDraw;
+        this.buffCardName = original.buffCardName;
+        this.buffDamageAmount = original.buffDamageAmount;
+        this.doublePoison = original.doublePoison;
+        this.drawPoisonAll = original.drawPoisonAll;
+        this.extraPoisonTick = original.extraPoisonTick;
+        this.addCardId = original.addCardId;
+        this.addCardCount = original.addCardCount;
+        this.upgradeHandCount = original.upgradeHandCount;
+        this.upgradeHandMode = original.upgradeHandMode;
+        this.upgradeAllInHand = original.upgradeAllInHand;
+        this.requiresEmptyDrawPile = original.requiresEmptyDrawPile;
     }
 
     // ==================== Getter 方法 ====================
@@ -219,6 +292,18 @@ public class Card {
     // 🆕 新增 Getter 方法
     public int getEndOfTurnDamage() { return endOfTurnDamage; }
     public int getEnergyLossOnDraw() { return energyLossOnDraw; }
+    public int getExhaustNonAttackBlock() { return exhaustNonAttackBlock; }
+    public int getAddWoundCount() { return addWoundCount; }
+    public boolean isBlockToDamage() { return blockToDamage; }
+    public int getBlockPerAttack() { return blockPerAttack; }
+    public int getEnergyGainIfDiscarded() { return energyGainIfDiscarded; }
+    public String getDiscardAllForCards() { return discardAllForCards; }
+    public boolean isDiscardAllForDraw() { return discardAllForDraw; }
+    public String getBuffCardName() { return buffCardName; }
+    public int getBuffDamageAmount() { return buffDamageAmount; }
+    public boolean isDoublePoison() { return doublePoison; }
+    public int getDrawPoisonAll() { return drawPoisonAll; }
+    public boolean isExtraPoisonTick() { return extraPoisonTick; }
 
     // ==================== Setter 方法 ====================
 
@@ -256,6 +341,30 @@ public class Card {
     // 🆕 新增 Setter 方法
     public void setEndOfTurnDamage(int endOfTurnDamage) { this.endOfTurnDamage = endOfTurnDamage; }
     public void setEnergyLossOnDraw(int energyLossOnDraw) { this.energyLossOnDraw = energyLossOnDraw; }
+    public void setExhaustNonAttackBlock(int exhaustNonAttackBlock) { this.exhaustNonAttackBlock = exhaustNonAttackBlock; }
+    public void setAddWoundCount(int addWoundCount) { this.addWoundCount = addWoundCount; }
+    public void setBlockToDamage(boolean blockToDamage) { this.blockToDamage = blockToDamage; }
+    public void setBlockPerAttack(int blockPerAttack) { this.blockPerAttack = blockPerAttack; }
+    public void setEnergyGainIfDiscarded(int v) { this.energyGainIfDiscarded = v; }
+    public void setDiscardAllForCards(String v) { this.discardAllForCards = v; }
+    public void setDiscardAllForDraw(boolean v) { this.discardAllForDraw = v; }
+    public void setBuffCardName(String v) { this.buffCardName = v; }
+    public void setBuffDamageAmount(int v) { this.buffDamageAmount = v; }
+    public void setDoublePoison(boolean v) { this.doublePoison = v; }
+    public void setDrawPoisonAll(int v) { this.drawPoisonAll = v; }
+    public void setExtraPoisonTick(boolean v) { this.extraPoisonTick = v; }
+    public String getAddCardId() { return addCardId; }
+    public int getAddCardCount() { return addCardCount; }
+    public void setAddCardId(String v) { this.addCardId = v; }
+    public void setAddCardCount(int v) { this.addCardCount = v; }
+    public int getUpgradeHandCount() { return upgradeHandCount; }
+    public String getUpgradeHandMode() { return upgradeHandMode; }
+    public boolean isUpgradeAllInHand() { return upgradeAllInHand; }
+    public void setUpgradeHandCount(int v) { this.upgradeHandCount = v; }
+    public void setUpgradeHandMode(String v) { this.upgradeHandMode = v; }
+    public void setUpgradeAllInHand(boolean v) { this.upgradeAllInHand = v; }
+    public boolean isRequiresEmptyDrawPile() { return requiresEmptyDrawPile; }
+    public void setRequiresEmptyDrawPile(boolean v) { this.requiresEmptyDrawPile = v; }
 
     // ==================== 辅助方法 (状态效果相关) ====================
 

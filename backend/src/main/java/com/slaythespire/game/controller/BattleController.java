@@ -65,15 +65,17 @@ public class BattleController {
      * 打出卡牌
      * @param index 打出的手牌索引
      * @param targetIndex 攻击目标敌人索引（可选，多目标时使用）
-     * @param exhaustHandIndex 要消耗的手牌索引（可选，用于“知识渴求”等卡牌手动选牌）
-     * @param discardHandIndex 要丢弃的手牌索引（可选，用于“杂技”等卡牌手动选牌）
+     * @param exhaustHandIndex 要消耗的手牌索引（可选，用于"知识渴求"等卡牌手动选牌）
+     * @param discardHandIndex 要丢弃的手牌索引（可选，用于"杂技"等卡牌手动选牌）
+     * @param upgradeHandIndex 要升级的手牌索引（可选，用于"武装"等卡牌手动选牌）
      */
     @PostMapping("/play")
     public Map<String, Object> playCard(@RequestParam int index,
                                         @RequestParam(required = false) Integer targetIndex,
                                         @RequestParam(required = false) Integer exhaustHandIndex,
-                                        @RequestParam(required = false) Integer discardHandIndex) {
-        return battleService.playCard(index, targetIndex, exhaustHandIndex, discardHandIndex);
+                                        @RequestParam(required = false) Integer discardHandIndex,
+                                        @RequestParam(required = false) Integer upgradeHandIndex) {
+        return battleService.playCard(index, targetIndex, exhaustHandIndex, discardHandIndex, upgradeHandIndex);
     }
 
     /**

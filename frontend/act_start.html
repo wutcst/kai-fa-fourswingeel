@@ -112,7 +112,6 @@
           if (option.id === 'apple') saveData.playerHp = Math.min((saveData.playerHp || 0) + 5, saveData.maxHp || 70);
           if (option.id === 'pear') saveData.playerHp = Math.min((saveData.playerHp || 0) + 20, saveData.maxHp || 70);
           if (option.id === 'waffle') saveData.playerHp = saveData.maxHp || 80;
-          if (option.id === 'jiucai_anger') window.showModal('怪物太难都是九才8干的，大家一起骂他', { title: '😡 九才8之怒', icon: '😡', borderColor: '#e74c3c' });
           // 设置阶段信息
           saveData.act = nextAct;
           saveData.currentNode = 'start';
@@ -123,12 +122,25 @@
           sessionStorage.removeItem(`mapData_act${nextAct}`);
           sessionStorage.removeItem(`mapData_act${nextAct - 1}`); // 顺便清理旧阶段地图
 
+          // 如果获得的是彩蛋遗物，在 Boss 遗物弹窗后追加彩蛋消息
+          var bossRelicId = option.id;
           window.showModal(`已获得 Boss 遗物：${option.name}！`, {
             title: '🏆 获得 Boss 遗物',
             icon: option.icon || '🏆',
             borderColor: '#e67e22',
             onClose: function() {
-              window.location.href = `map.html?char=${char}&act=${nextAct}&currentNode=start`;
+              if (bossRelicId === 'jiucai_anger') {
+                window.showModal('怪物太难都是九才8干的，大家一起骂他', {
+                  title: '😡 九才8之怒',
+                  icon: '😡',
+                  borderColor: '#e74c3c',
+                  onClose: function() {
+                    window.location.href = `map.html?char=${char}&act=${nextAct}&currentNode=start`;
+                  }
+                });
+              } else {
+                window.location.href = `map.html?char=${char}&act=${nextAct}&currentNode=start`;
+              }
             }
           });
         });

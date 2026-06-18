@@ -450,7 +450,11 @@ public class GameConfigController {
                 cardMap.put("drawFirst", tpl.isDrawFirst()); 
                 cardMap.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
                 cardMap.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
-                
+                cardMap.put("copyToDiscard", tpl.isCopyToDiscard());
+                cardMap.put("strengthMultiplier", tpl.getStrengthMultiplier());
+                cardMap.put("randomTarget", tpl.isRandomTarget());
+                cardMap.put("xCost", tpl.isXCost());
+
                 int price = 50 + (tpl.getCost() * 25);
                 if (tpl.getDamage() > 10 || tpl.getBlock() > 10) price += 20;
                 cardMap.put("price", price);
@@ -496,8 +500,9 @@ public class GameConfigController {
             );
         } else if ("2".equals(charId)) {
             info.put("name", "静默猎手");
-            info.put("maxHp", 70);  
-            info.put("gold", 99);              
+            info.put("maxHp", 70);
+            info.put("gold", 99);
+            info.put("startingRelicId", "snake_eye_ring");
             starterIds = Arrays.asList(
                 "strike_silent", "strike_silent", "strike_silent", "strike_silent", "strike_silent",
                 "defend_silent", "defend_silent", "defend_silent", "defend_silent","defend_silent",
@@ -542,15 +547,40 @@ public class GameConfigController {
                     cardMap.put("discardCount", tpl.getDiscardCount());
                     cardMap.put("discardMode", tpl.getDiscardMode());
                     cardMap.put("aoe", tpl.isAoe());
-                    cardMap.put("drawFirst", tpl.isDrawFirst()); 
+                    cardMap.put("drawFirst", tpl.isDrawFirst());
                     cardMap.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
                     cardMap.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
-                    
+                    cardMap.put("copyToDiscard", tpl.isCopyToDiscard());
+                    cardMap.put("strengthMultiplier", tpl.getStrengthMultiplier());
+                    cardMap.put("randomTarget", tpl.isRandomTarget());
+                    cardMap.put("xCost", tpl.isXCost());
+                    cardMap.put("exhaustNonAttackBlock", tpl.getExhaustNonAttackBlock());
+                    cardMap.put("addWoundCount", tpl.getAddWoundCount());
+                    cardMap.put("blockToDamage", tpl.isBlockToDamage());
+                    cardMap.put("blockPerAttack", tpl.getBlockPerAttack());
+                    cardMap.put("forgeDamageBonus", 0);
+                    cardMap.put("energyGainIfDiscarded", tpl.getEnergyGainIfDiscarded());
+                    cardMap.put("discardAllForCards", tpl.getDiscardAllForCards());
+                    cardMap.put("discardAllForDraw", tpl.isDiscardAllForDraw());
+                    cardMap.put("buffCardName", tpl.getBuffCardName());
+                    cardMap.put("buffDamageAmount", tpl.getBuffDamageAmount());
+                    cardMap.put("doublePoison", tpl.isDoublePoison());
+                    cardMap.put("drawPoisonAll", tpl.getDrawPoisonAll());
+                    cardMap.put("extraPoisonTick", tpl.isExtraPoisonTick());
+                    cardMap.put("addCardId", tpl.getAddCardId());
+                    cardMap.put("addCardCount", tpl.getAddCardCount());
+                    cardMap.put("upgradeHandCount", tpl.getUpgradeHandCount());
+                    cardMap.put("upgradeHandMode", tpl.getUpgradeHandMode());
+                    cardMap.put("upgradeAllInHand", tpl.isUpgradeAllInHand());
+                    cardMap.put("requiresEmptyDrawPile", tpl.isRequiresEmptyDrawPile());
+
                     deck.add(cardMap);
                 }
             }
             info.put("startingDeck", deck);
-            info.put("startingRelicId", "burning_blood");
+            if (!info.containsKey("startingRelicId")) {
+                info.put("startingRelicId", "burning_blood");
+            }
         return info;
     }
 
@@ -604,6 +634,9 @@ public class GameConfigController {
         map.put("drawFirst", tpl.isDrawFirst());
         map.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
         map.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
+        map.put("copyToDiscard", tpl.isCopyToDiscard());
+        map.put("strengthMultiplier", tpl.getStrengthMultiplier());
+        map.put("randomTarget", tpl.isRandomTarget());
         return map;
     }
 }
