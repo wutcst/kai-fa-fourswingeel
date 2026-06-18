@@ -191,13 +191,18 @@
                   sessionStorage.setItem('shopDeleted', 'true');
                   await saveSaveData(saveData);
                   window.showModal(`删除了 ${card.name}`, { title: '🗑️ 删除卡牌', icon: '🗑️', borderColor: '#e74c3c' });
-                  location.reload();
+                  refreshDeleteSection();
                 }
               });
               deleteDiv.appendChild(span);
             });
           }
         }
+      }
+
+      function refreshDeleteSection() {
+        document.getElementById('delete-cards').innerHTML = '<p style="color:#aaa;">你已经在本商人处删除过卡牌了。</p>';
+        document.getElementById('delete-title').textContent = '删除卡牌（已完成）';
       }
 
       loadShopData();
