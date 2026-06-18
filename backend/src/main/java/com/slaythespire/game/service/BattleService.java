@@ -37,6 +37,7 @@ public class BattleService {
     private int skillCountCombat;    // 本场战斗累计技能牌计数（黄金项链，跨回合累计）
     private boolean hasDealtDamageThisTurn; // 魔力花：本回合是否已造成过伤害
     private boolean exhaustedThisAction;   // 本次操作是否消耗了卡牌（安东尼之怒）
+    private final Random random = new Random();
 
     // 🔥 简单状态牌模板（晕眩、灼伤）
     private static class StatusCardTemplate {
@@ -438,7 +439,6 @@ public class BattleService {
                     }
                 }
             } else {
-                Random random = new Random();
                 List<Enemy> currentAlive = new ArrayList<>(aliveEnemies);
                 for (int i = 0; i < hitCount; i++) {
                     if (currentAlive.isEmpty()) {
@@ -447,7 +447,7 @@ public class BattleService {
                     }
                     Enemy currentTarget;
                     if (card.isRandomTarget()) {
-                        currentTarget = currentAlive.get(random.nextInt(currentAlive.size()));
+                        currentTarget = currentAlive.get(this.random.nextInt(currentAlive.size()));
                     } else {
                         if (!target.isAlive()) {
                             currentAlive = new ArrayList<>(getAliveEnemies());
@@ -740,7 +740,7 @@ public class BattleService {
             for (int j = 0; j < currentHandSize; j++) {
                 if (j != playedCardIndex) validIndices.add(j);
             }
-            targetIdx = validIndices.get(new Random().nextInt(validIndices.size()));
+            targetIdx = validIndices.get(random.nextInt(validIndices.size()));
             logList.add(String.format("🎲 随机%s了手中的 %s", actionName, hand.get(targetIdx).getName()));
         }
         return targetIdx;
