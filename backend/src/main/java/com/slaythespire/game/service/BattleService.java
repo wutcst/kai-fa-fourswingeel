@@ -766,7 +766,8 @@ public class BattleService {
 
         boolean hasRunePyramid = RelicEffectHandler.hasEffect(player, "RUNE_PYRAMID");
         List<Card> retained = new ArrayList<>();
-        for (Card card : hand) {
+        // ⚠️ 遍历 hand 副本，防止 triggerDrawOnExhaust->drawCards->hand.add() 导致 ConcurrentModificationException
+        for (Card card : new ArrayList<>(hand)) {
             if (card.isEthereal()) {
                 exhaustPile.add(card);
                 logList.add(card.getName() + "因【虚无】被消耗");
@@ -932,7 +933,7 @@ public class BattleService {
         for (int i = 0; i < count; i++) {
             if (hand.size() >= HAND_LIMIT) { logList.add("⚠️ 手牌已满"); break; }
             if (drawPile.isEmpty()) {
-                if (discardPile.isEmpty()) break;
+                if (discardPile.isEmpty()) { logList.add("⚠️ 抽牌堆和弃牌堆均为空，无法抽牌"); break; }
                 drawPile.addAll(discardPile); discardPile.clear(); Collections.shuffle(drawPile);
                 logList.add("🔄 弃牌堆洗入抽牌堆");
             }
