@@ -364,7 +364,7 @@
           <button v-for="(card, index) in hand" :key="index" @click="previewCard(index)" :disabled="!canPlayCard(card) || state.gameOver" :class="['card-btn', { 'disabled': !canPlayCard(card), 'attack': card.type === 'ATTACK', 'skill': card.type === 'SKILL', 'power': card.type === 'POWER' }]" :style="{ background: getCardCharStyle(card), borderColor: getRarityBorderColor(card), borderWidth: '3px', opacity: card.unplayable ? 0.6 : 1 }" @mouseenter="showTooltip(index, $event)" @mouseleave="hideTooltip">
             <span class="cost">{{ card.xCost ? 'X' : card.cost }}</span>
             <span class="name">{{ card.name }}</span>
-            <span class="card-type-label">{{ card.type === 'ATTACK' ? '攻击' : card.type === 'SKILL' ? '技能' : '能力' }}</span>
+            <span class="card-type-label">{{ getCardTypeLabel(card) }}</span>
             <span class="card-effect-text">{{ getCardEffectText(card) }}</span>
             <span v-if="card.unplayable" class="card-badge badge-unplayable">🚫</span>
             <span v-else>
@@ -565,6 +565,7 @@
             return this.state && card && !card.unplayable && (card.xCost ? this.state.energy > 0 : card.cost <= this.state.energy) && (!card.requiresEmptyDrawPile || this.state.drawPileSize === 0);
         },
         getCardCharStyle(card) { return CARD_UI.getCardCharStyle(card); },
+        getCardTypeLabel(card) { return CARD_UI.getCardTypeLabel(card); },
         getRarityBorderColor(card) { return CARD_UI.getRarityBorderColor(card); },
         selectEnemy(index) { this.selectedEnemyIndex = index; },
         selectExhaustHand(idx) { this.selectedExhaustHandIndex = idx; },

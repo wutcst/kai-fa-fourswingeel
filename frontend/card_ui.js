@@ -131,12 +131,14 @@ const CARD_UI = {
     if (card.type === 'ATTACK') return '攻击';
     if (card.type === 'SKILL')  return '技能';
     if (card.type === 'POWER')  return '能力';
+    if (card.type === 'STATUS') return '状态';
     return '未知';
   },
   getCardTypeClass(card) {
     if (card.type === 'ATTACK') return 'attack';
     if (card.type === 'SKILL')  return 'skill';
     if (card.type === 'POWER')  return 'power';
+    if (card.type === 'STATUS') return 'status';
     return '';
   },
   getCardCharStyle(card) {

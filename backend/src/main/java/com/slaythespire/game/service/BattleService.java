@@ -42,16 +42,17 @@ public class BattleService {
         int cost;
         boolean ethereal;
         boolean unplayable;
-        StatusCardTemplate(String name, int cost, boolean ethereal, boolean unplayable) {
-            this.name = name; this.cost = cost; this.ethereal = ethereal; this.unplayable = unplayable;
+        boolean exhaust;
+        StatusCardTemplate(String name, int cost, boolean ethereal, boolean unplayable, boolean exhaust) {
+            this.name = name; this.cost = cost; this.ethereal = ethereal; this.unplayable = unplayable; this.exhaust = exhaust;
         }
     }
     private static final Map<String, StatusCardTemplate> STATUS_CARD_TEMPLATES = new HashMap<>();
     static {
-        STATUS_CARD_TEMPLATES.put("burn", new StatusCardTemplate("灼伤", 1, false, false));
-        STATUS_CARD_TEMPLATES.put("dazed", new StatusCardTemplate("晕眩", 0, true, true));
-        STATUS_CARD_TEMPLATES.put("wound", new StatusCardTemplate("伤口", 1, false, false));
-        STATUS_CARD_TEMPLATES.put("slime", new StatusCardTemplate("黏液", 1, false, false));
+        STATUS_CARD_TEMPLATES.put("burn",  new StatusCardTemplate("灼伤", 1, false, false, true));
+        STATUS_CARD_TEMPLATES.put("dazed", new StatusCardTemplate("晕眩", 0, true,  true,  false));
+        STATUS_CARD_TEMPLATES.put("wound", new StatusCardTemplate("伤口", 1, false, true,  false));
+        STATUS_CARD_TEMPLATES.put("slime", new StatusCardTemplate("黏液", 1, false, false, true));
     }
 
     /** 向抽牌堆中塞入一张状态牌 */
@@ -62,6 +63,7 @@ public class BattleService {
         Card card = new Card(tpl.name, tpl.cost, 0, 0, Card.CardType.STATUS);
         if (tpl.ethereal) card.setEthereal(true);
         if (tpl.unplayable) card.setUnplayable(true);
+        if (tpl.exhaust) card.setExhaust(true);
         drawPile.add(new Random().nextInt(drawPile.size() + 1), card); // 随机位置洗入
         logList.add("🃏 一张【" + tpl.name + "】被洗入抽牌堆");
     }
@@ -137,6 +139,7 @@ public class BattleService {
         this.exhaustPile = new ArrayList<>();
         this.logList = new ArrayList<>();
         this.logList.add("━━━ 战斗开始 ━━━");
+        log.info("New battle started: hp={}/{}, deck={}, relics={}, nodeType={}", playerHp, playerMaxHp, playerDeck.size(), playerRelics != null ? playerRelics.size() : 0, nodeType);
         this.energy = 0;
         this.gameOver = false;
         this.winner = null;
@@ -855,7 +858,27 @@ public class BattleService {
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) turnDrawCount++;
         if (RelicEffectHandler.hasEffect(player, "DRAW_PER_TURN")) turnDrawCount++;
         drawCards(Math.max(0, turnDrawCount));
+
+        // 🆕 触媒：回合结束时中毒额外结算一次
+        if (playerExtraPoisonTick) {
+            for (Enemy e : enemies) {
+                if (!e.isAlive()) continue;
+                for (StatusEffect s : new ArrayList<>(e.getStatuses())) {
+                    if ("POISON".equals(s.getId())) {
+                        int poisonDmg = s.getCount();
+                        e.takeDamage(poisonDmg, null, true);
+                        logList.add("⚗️ 触媒额外结算！" + e.getEnemyName() + " 毒发 " + poisonDmg + " 点伤害");
+                        log.debug("Extra poison tick on {}: {} damage", e.getEnemyName(), poisonDmg);
+                        break;
+                    }
+                }
+            }
+        }
+
         for (Enemy enemy : enemies) enemy.advanceIntent();
+
+        // 🆕 战斗关键事件日志
+        if (gameOver) log.info("战斗结束，胜利者: {}", winner);
         return getCurrentState();
     }
 

@@ -13,49 +13,42 @@ import java.util.Random;
 @Service
 public class QuestionService {
 
-    // 基础概率（单位：百分点）
-    private static final int BASE_ENEMY    = 10;
-    private static final int BASE_CHEST    = 2;
-    private static final int BASE_SHOP     = 3;
-    // 事件概率 = 100 - (BASE_ENEMY+BASE_CHEST+BASE_SHOP) = 85
-    private static final int BASE_EVENT    = 85;
+    // 基础概率（单位：百分点，总和=100）
+    private static final int BASE_ENEMY = 10;
+    private static final int BASE_CHEST = 2;
+    private static final int BASE_SHOP  = 3;
+    private static final int BASE_EVENT = 85;
 
-    // 每个角色当前的偏移量（初始0）
+    // 每个角色 4 个偏移量: [enemy, chest, shop, event]
     private final Map<String, int[]> charOffsets = new HashMap<>();
-    // int[] 顺序: [enemy, chest, shop] (事件偏移永远是事件 = -(偏移之和)，我们不存事件偏移)
-    // 但更简单：存三个偏移，事件概率自动计算为 100 - 三个概率之和
 
     private final Random random = new Random();
 
     public synchronized QuestionResult roll(String charId) {
-        int[] offsets = charOffsets.computeIfAbsent(charId, k -> new int[3]);
-        int enemyProb = BASE_ENEMY    + offsets[0];
-        int chestProb = BASE_CHEST    + offsets[1];
-        int shopProb  = BASE_SHOP     + offsets[2];
-        int total = enemyProb + chestProb + shopProb;
-        // 事件概率
-        int eventProb = 100 - total;
-        if (eventProb < 0) eventProb = 0; // 防止负概率
+        int[] off = charOffsets.computeIfAbsent(charId, k -> new int[4]);
+        int enemyProb = BASE_ENEMY + off[0];
+        int chestProb = BASE_CHEST + off[1];
+        int shopProb  = BASE_SHOP  + off[2];
+        int eventProb = BASE_EVENT + off[3];
+        int total = enemyProb + chestProb + shopProb + eventProb;
 
-        int roll = random.nextInt(100);
+        // 归一化到 100
+        int roll = random.nextInt(total);
         if (roll < enemyProb) {
-            // 命中敌人
-            offsets[0] = 0; // 重置
+            off[0] = 0; // 命中→重置该类型偏移
             return QuestionResult.ENEMY;
         } else if (roll < enemyProb + chestProb) {
-            // 命中宝箱
-            offsets[1] = 0;
+            off[1] = 0;
             return QuestionResult.CHEST;
         } else if (roll < enemyProb + chestProb + shopProb) {
-            // 命中商店
-            offsets[2] = 0;
+            off[2] = 0;
             return QuestionResult.SHOP;
         } else {
-            // 命中事件
-            // 非事件结果增加自己的基础概率
-            offsets[0] += BASE_ENEMY;
-            offsets[1] += BASE_CHEST;
-            offsets[2] += BASE_SHOP;
+            // 命中事件：重置事件偏移，其他三类增加概率
+            off[3] = 0;
+            off[0] += BASE_ENEMY;
+            off[1] += BASE_CHEST;
+            off[2] += BASE_SHOP;
             return QuestionResult.EVENT;
         }
     }
