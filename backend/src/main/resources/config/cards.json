@@ -155,8 +155,8 @@
     {"id":"armaments","name":"武装","cost":1,"damage":0,"block":5,"type":"SKILL","upgradeHandCount":1,"upgradeHandMode":"SELECT","upgraded":false,"charId":"1","rarity":"COMMON"},
     {"id":"armaments+","name":"武装+","cost":1,"damage":0,"block":8,"type":"SKILL","upgradeAllInHand":true,"upgraded":true,"charId":"1","rarity":"COMMON"},
 
-    {"id":"demon_form","name":"恶魔形态","cost":3,"damage":0,"block":0,"type":"POWER","effects":[{"type":"STRENGTH","count":3,"target":"SELF"}],"upgraded":false,"charId":"1","rarity":"RARE"},
-    {"id":"demon_form+","name":"恶魔形态+","cost":3,"damage":0,"block":0,"type":"POWER","effects":[{"type":"STRENGTH","count":4,"target":"SELF"}],"upgraded":true,"charId":"1","rarity":"RARE"},
+    {"id":"demon_form","name":"恶魔形态","cost":3,"damage":0,"block":0,"type":"POWER","effects":[{"type":"RITUAL","count":3,"target":"SELF"}],"upgraded":false,"charId":"1","rarity":"RARE"},
+    {"id":"demon_form+","name":"恶魔形态+","cost":3,"damage":0,"block":0,"type":"POWER","effects":[{"type":"RITUAL","count":4,"target":"SELF"}],"upgraded":true,"charId":"1","rarity":"RARE"},
 
     {"id":"shiv","name":"小刀","cost":0,"damage":4,"block":0,"type":"ATTACK","exhaust":true,"upgraded":false,"charId":"2","rarity":"SPECIAL"},
 
