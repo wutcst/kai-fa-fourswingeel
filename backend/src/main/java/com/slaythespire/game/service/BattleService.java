@@ -36,6 +36,36 @@ public class BattleService {
     private boolean hasDealtDamageThisTurn; // 魔力花：本回合是否已造成过伤害
     private boolean exhaustedThisAction;   // 本次操作是否消耗了卡牌（安东尼之怒）
 
+    // 🔥 简单状态牌模板（晕眩、灼伤）
+    private static class StatusCardTemplate {
+        String name;
+        int cost;
+        boolean ethereal;
+        boolean unplayable;
+        StatusCardTemplate(String name, int cost, boolean ethereal, boolean unplayable) {
+            this.name = name; this.cost = cost; this.ethereal = ethereal; this.unplayable = unplayable;
+        }
+    }
+    private static final Map<String, StatusCardTemplate> STATUS_CARD_TEMPLATES = new HashMap<>();
+    static {
+        STATUS_CARD_TEMPLATES.put("burn", new StatusCardTemplate("灼伤", 1, false, false));
+        STATUS_CARD_TEMPLATES.put("dazed", new StatusCardTemplate("晕眩", 0, true, true));
+        STATUS_CARD_TEMPLATES.put("wound", new StatusCardTemplate("伤口", 1, false, false));
+        STATUS_CARD_TEMPLATES.put("slime", new StatusCardTemplate("黏液", 1, false, false));
+    }
+
+    /** 向抽牌堆中塞入一张状态牌 */
+    public void addStatusCardToDrawPile(String type) {
+        StatusCardTemplate tpl = STATUS_CARD_TEMPLATES.get(type);
+        if (tpl == null) return;
+        // 构造一张简单卡片对象
+        Card card = new Card(tpl.name, tpl.cost, 0, 0, Card.CardType.STATUS);
+        if (tpl.ethereal) card.setEthereal(true);
+        if (tpl.unplayable) card.setUnplayable(true);
+        drawPile.add(new Random().nextInt(drawPile.size() + 1), card); // 随机位置洗入
+        logList.add("🃏 一张【" + tpl.name + "】被洗入抽牌堆");
+    }
+
     public synchronized Map<String, Object> newBattle(List<Map<String, Object>> playerDeck, List<String> playerRelics, int playerHp, int playerMaxHp, String nodeType) {
         this.player = new Player(playerHp, playerMaxHp, dataRepo);
         this.player.resetBattleFlags();
@@ -89,7 +119,12 @@ public class BattleService {
         this.enemies = new ArrayList<>();
         for (String eid : chosenGroup.getEnemies()) {
             EnemyTemplate tpl = dataRepo.getEnemyById(eid);
-            if (tpl != null) enemies.add(new Enemy(tpl, dataRepo));
+            if (tpl != null) {
+                Enemy e = new Enemy(tpl, dataRepo);
+                // 绑定塞牌回调
+                e.setDrawer(cardType -> addStatusCardToDrawPile(cardType));
+                enemies.add(e);
+            }
         }
         if (enemies.isEmpty()) {
             List<EnemyTemplate> all = dataRepo.getAllEnemies();
@@ -728,12 +763,50 @@ public class BattleService {
             if (actualDmg > 0) logList.add(String.format("⚔️ %s %s，造成 %d 点伤害。玩家 HP: %d | 格挡: %d", enemy.getEnemyName(), enemy.getIntentDesc(), actualDmg, player.getHp(), player.getBlock()));
             else logList.add(String.format("🛡️ %s %s", enemy.getEnemyName(), enemy.getIntentDesc()));
 
+            // 🆕 BUFF意图中的治疗：如果意图有heal字段，治疗所有敌人
             IntentTemplate intent = enemy.getCurrentIntentTemplate();
-            if (intent != null && intent.getApplyStatusType() != null) {
-                StatusEffect status = StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo);
-                if (status != null) {
-                    if ("ENEMY".equals(intent.getApplyStatusTarget())) enemy.addStatus(status);
-                    else player.addStatus(status);
+            if (intent != null) {
+                // 🆕 召唤匕首：如果意图是召唤，生成新匕首加入战斗
+                if (intent.getSummonCount() > 0) {
+                    EnemyTemplate daggerTpl = dataRepo.getEnemyById("dagger");
+                    if (daggerTpl != null) {
+                        for (int i = 0; i < intent.getSummonCount(); i++) {
+                            Enemy newDagger = new Enemy(daggerTpl, dataRepo);
+                            newDagger.setDrawer(cardType -> addStatusCardToDrawPile(cardType));
+                            enemies.add(newDagger);
+                            logList.add("🗡️ " + enemy.getEnemyName() + "召唤了一把匕首！");
+                        }
+                    }
+                }
+                if (intent.getHealAmount() > 0) {
+                    // 🆕 群体治疗（神秘术士的治愈）vs 单体治疗（虱虫的吮吸）
+                    if (intent.getType() == IntentType.BUFF) {
+                        // BUFF类型治疗 = 群体治疗
+                        for (Enemy ally : enemies) {
+                            if (ally.isAlive()) ally.heal(intent.getHealAmount());
+                        }
+                        logList.add("💚 " + enemy.getEnemyName() + "为所有敌人恢复了 " + intent.getHealAmount() + " 点生命");
+                    } else {
+                        // 非BUFF类型治疗 = 单体治疗（吮吸等，已在Enemy.java中处理）
+                    }
+                }
+                if (intent.getApplyStatusType() != null) {
+                    StatusEffect status = StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo);
+                    if (status != null) {
+                        if ("ENEMY".equals(intent.getApplyStatusTarget())) {
+                            // 给所有敌方加buff（神秘术士的群体强化/治愈）
+                            for (Enemy ally : enemies) {
+                                ally.addStatus(StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo));
+                            }
+                            logList.add("✨ " + enemy.getEnemyName() + "为所有敌人施加了 " + intent.getApplyStatusCount() + " 层" + status.getName());
+                        } else if ("PLAYER".equals(intent.getApplyStatusTarget()) || "SELF".equals(intent.getApplyStatusTarget())) {
+                            // 修正：给玩家施加debuff（PLAYER目标）
+                            player.addStatus(StatusFactory.create(intent.getApplyStatusType(), intent.getApplyStatusCount(), dataRepo));
+                            logList.add("☠️ " + enemy.getEnemyName() + "对玩家施加了 " + intent.getApplyStatusCount() + " 层" + status.getName());
+                        } else {
+                            enemy.addStatus(status);
+                        }
+                    }
                 }
             }
 

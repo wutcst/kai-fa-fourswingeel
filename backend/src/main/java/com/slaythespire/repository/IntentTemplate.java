@@ -16,6 +16,10 @@ public class IntentTemplate {
     private final int stunCards;
     private final boolean skipBurnCards;
     private final boolean upgradeBurns;
+    private final int healAmount;
+    private final int summonCount;
+    private final String statusCards;
+    private final int statusCardCount;
 
     @JsonCreator
     public IntentTemplate(
@@ -30,7 +34,11 @@ public class IntentTemplate {
             @JsonProperty("burnCards") Integer burnCards,
             @JsonProperty("stunCards") Integer stunCards,
             @JsonProperty("skipBurnCards") Boolean skipBurnCards,
-            @JsonProperty("upgradeBurns") Boolean upgradeBurns) {
+            @JsonProperty("upgradeBurns") Boolean upgradeBurns,
+            @JsonProperty("healAmount") Integer healAmount,
+            @JsonProperty("summonCount") Integer summonCount,
+            @JsonProperty("statusCards") String statusCards,
+            @JsonProperty("statusCardCount") Integer statusCardCount) {
         this.type = type;
         this.value = value;
         this.desc = desc;
@@ -43,6 +51,10 @@ public class IntentTemplate {
         this.stunCards = stunCards != null ? stunCards : 0;
         this.skipBurnCards = skipBurnCards != null ? skipBurnCards : false;
         this.upgradeBurns = upgradeBurns != null ? upgradeBurns : false;
+        this.healAmount = healAmount != null ? healAmount : 0;
+        this.summonCount = summonCount != null ? summonCount : 0;
+        this.statusCards = statusCards;
+        this.statusCardCount = statusCardCount != null ? statusCardCount : 0;
     }
 
     public IntentType getType() { return type; }
@@ -57,6 +69,10 @@ public class IntentTemplate {
     public int getStunCards() { return stunCards; }
     public boolean isSkipBurnCards() { return skipBurnCards; }
     public boolean isUpgradeBurns() { return upgradeBurns; }
+    public int getHealAmount() { return healAmount; }
+    public int getSummonCount() { return summonCount; }
+    public String getStatusCards() { return statusCards; }
+    public int getStatusCardCount() { return statusCardCount; }
 
     @Override
     public String toString() {

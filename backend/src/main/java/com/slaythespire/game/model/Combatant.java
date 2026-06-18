@@ -110,6 +110,19 @@ public abstract class Combatant {
 
         hp = Math.max(0, hp - hpLost);
 
+        // 🆕 受到生命伤害时回调状态效果（多层护甲减少等）
+        if (hpLost > 0) {
+            List<StatusEffect> toRemoveHp = new ArrayList<>();
+            for (StatusEffect s : new ArrayList<>(statuses)) {
+                String log = s.onHpLost(this);
+                if (log != null) {
+                    lastCombatLogs.add(log);
+                    if (s.getCount() <= 0) toRemoveHp.add(s);
+                }
+            }
+            statuses.removeAll(toRemoveHp);
+        }
+
         // ================= Boss 遗物效果：伤害相关 =================
         // 🩸 灵魂之炉：每场战斗首次受伤时恢复生命（仅限玩家）
         if (hpLost > 0 && source != null && this instanceof Player) {

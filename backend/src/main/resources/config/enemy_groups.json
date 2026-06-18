@@ -37,7 +37,15 @@
     "type": "ELITE",
     "minAct": 1,
     "maxAct": 1,
-    "enemies": ["sentry", "sentry", "sentry"]
+    "enemies": ["sentry_a", "sentry_b", "sentry_a"]
+  },
+  {
+    "id": "elite_sentry_single",
+    "name": "单个哨卫",
+    "type": "ELITE",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["sentry_a"]
   },
   {
     "id": "boss_hexaghost",
@@ -56,12 +64,36 @@
     "enemies": ["jaw_worm"]
   },
   {
+    "id": "big_jaw_worm",
+    "name": "大颚虫",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["big_jaw_worm"]
+  },
+  {
     "id": "jaw_worm_cultist_1",
     "name": "巨口+邪教徒",
     "type": "NORMAL",
     "minAct": 1,
     "maxAct": 1,
     "enemies": ["jaw_worm", "cultist"]
+  },
+  {
+    "id": "single_louse",
+    "name": "单个虱虫",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["red_louse"]
+  },
+  {
+    "id": "double_louse",
+    "name": "两只虱虫",
+    "type": "NORMAL",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["red_louse", "red_louse"]
   },
   {
     "id": "jaw_worm_cultist_2",
@@ -110,6 +142,14 @@
     "minAct": 2,
     "maxAct": 2,
     "enemies": ["centurion", "mystic"]
+  },
+  {
+    "id": "mystic_centurion",
+    "name": "神秘术士+百夫长（二层）",
+    "type": "NORMAL",
+    "minAct": 2,
+    "maxAct": 2,
+    "enemies": ["mystic", "centurion"]
   },
   {
     "id": "shelled_parasite",

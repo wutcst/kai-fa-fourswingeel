@@ -42,7 +42,7 @@ public class EnemyTemplate {
         List<IntentTemplate> tempIntents;
         if (intents == null || intents.isEmpty()) {
             tempIntents = Collections.singletonList(
-                new IntentTemplate(IntentType.ATTACK, baseAttack, "攻击", null, 0, null, null, null, null, null, null, null)
+                new IntentTemplate(IntentType.ATTACK, baseAttack, "攻击", null, 0, null, null, null, null, null, null, null, null, null, null, null)
             );
         } else {
             tempIntents = new ArrayList<>();
@@ -51,7 +51,7 @@ public class EnemyTemplate {
             }
             if (tempIntents.isEmpty()) {
                 tempIntents = Collections.singletonList(
-                    new IntentTemplate(IntentType.ATTACK, baseAttack, "攻击", null, 0, null, null, null, null, null, null, null)
+                    new IntentTemplate(IntentType.ATTACK, baseAttack, "攻击", null, 0, null, null, null, null, null, null, null, null, null, null, null)
                 );
             }
         }
