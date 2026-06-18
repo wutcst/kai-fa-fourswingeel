@@ -206,7 +206,7 @@
             sessionStorage.removeItem(`mapData_act${i}`);
           }
 
-          window.location.href = `map.html?char=${selectedCharacter}&act=1`;
+          window.location.href = `start.html?char=${selectedCharacter}&currentNode=start&nextNode=start&act=1`;
         } catch (e) {
           console.error(e);
           alert('初始化角色失败：' + e.message);

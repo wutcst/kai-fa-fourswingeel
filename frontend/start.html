@@ -23,6 +23,7 @@
   <script src="status_bar.js"></script>
   <script src="save_helper.js"></script>
   <script src="card_ui.js"></script>
+  <div id="char-intro" style="text-align:center;margin:20px 0;"></div>
   <h2>🏕️ 选择你的初始遗物</h2>
   <div id="main-content">
     <div class="relic-options"></div>
@@ -36,7 +37,14 @@
 
       const currentSaveData = await loadSaveData(char);
 
-      // ✅ 终极修复：检查是否已经拥有初始遗物，而不是检查 visitedNodes
+      // 🆕 显示角色信息
+      var charNames = { '1': '🦾 铁甲战士', '2': '🔪 静默猎手' };
+      document.getElementById('char-intro').innerHTML =
+        '<h2 style="color:#f1c40f;margin:0;">' + (charNames[char] || '未知角色') + '</h2>' +
+        '<p style="color:#bdc3c7;">❤️ ' + currentSaveData.playerHp + '/' + currentSaveData.maxHp +
+        ' &nbsp; 💰 ' + currentSaveData.gold + ' &nbsp; 🃏 ' + currentSaveData.deck.length + ' 张牌</p>';
+
+      // ✅ 检查是否已经拥有初始遗物，而不是检查 visitedNodes
       const starterRelicIds = ['neow_remove', 'neow_blood', 'neow_upgrade'];
       const hasChosenStarterRelic = starterRelicIds.some(id => currentSaveData.relics.includes(id));
 

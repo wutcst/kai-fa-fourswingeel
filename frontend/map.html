@@ -281,6 +281,12 @@ border-radius: 8px; font-size: 14px; z-index: 10; }
 
       if (currentNode) currentLabel.textContent = currentNode.label || currentNode.id;
 
+      // 🆕 滚动到当前节点
+      setTimeout(function() {
+        if (!currentNode) return;
+        var cy = (currentNode.y / 100) * 2500 - window.innerHeight / 3;
+        window.scrollTo(0, Math.max(0, cy));
+      }, 100);
 
 
       // 阶段1需要完成起点（选择初始遗物），阶段2、3视为已完成
