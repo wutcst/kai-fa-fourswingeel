@@ -22,8 +22,8 @@ public class RelicPoolService {
     /** 各稀有度权重，key按优先级排列 */
     private static final LinkedHashMap<String, Integer> TIER_WEIGHTS = new LinkedHashMap<>();
     static {
-        TIER_WEIGHTS.put("COMMON", 60);
-        TIER_WEIGHTS.put("RARE", 35);
+        TIER_WEIGHTS.put("COMMON", 80);
+        TIER_WEIGHTS.put("RARE", 15);
         TIER_WEIGHTS.put("LEGENDARY", 5);
     }
 
