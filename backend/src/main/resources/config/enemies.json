@@ -7,7 +7,7 @@
     "attackDamage": 6,
     "description": "首回合念咒(仪式4)，之后固定黑暗打击(6+力量)。",
     "intents": [
-      { "type": "BUFF", "value": 0, "desc": "念咒", "applyStatusType": "RITUAL", "applyStatusCount": 4, "applyStatusTarget": "ENEMY" },
+      { "type": "BUFF", "value": 0, "desc": "念咒", "applyStatusType": "RITUAL", "applyStatusCount": 4, "applyStatusTarget": "SELF" },
       { "type": "ATTACK", "value": 6, "desc": "黑暗打击" }
     ]
   },
@@ -106,11 +106,11 @@
     "attackDamage": 12,
     "description": "半血前：防御/打脸/挑衅/重斩/强化随机。半血后：爆发(清debuff+力量6)→处刑(10×2)循环。",
     "intents": [
-      { "type": "DEFEND", "value": 15, "desc": "防御态势", "applyStatusType": "DEXTERITY", "applyStatusCount": 5, "applyStatusTarget": "ENEMY" },
+      { "type": "DEFEND", "value": 15, "desc": "防御态势", "applyStatusType": "DEXTERITY", "applyStatusCount": 5, "applyStatusTarget": "SELF" },
       { "type": "ATTACK", "value": 12, "desc": "打脸", "applyStatusType": "VULNERABLE", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
       { "type": "DEBUFF", "value": 0, "desc": "挑衅", "applyStatusType": "WEAK", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
       { "type": "ATTACK", "value": 16, "desc": "重斩" },
-      { "type": "BUFF", "value": 0, "desc": "强化", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" }
+      { "type": "BUFF", "value": 0, "desc": "强化", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "SELF" }
     ]
   },
   {
@@ -147,7 +147,7 @@
     "description": "固定交替：力量之环(全体+3力量)→双击(10×2)→循环。人工制品×2。",
     "initialStatuses": { "ARTIFACT": 2 },
     "intents": [
-      { "type": "BUFF", "value": 0, "desc": "力量之环", "applyStatusType": "STRENGTH", "applyStatusCount": 3, "applyStatusTarget": "ENEMY" },
+      { "type": "BUFF", "value": 0, "desc": "力量之环", "applyStatusType": "STRENGTH", "applyStatusCount": 3, "applyStatusTarget": "ALL_ENEMY" },
       { "type": "MULTI_ATTACK", "value": 10, "desc": "双击", "multiHit": 2 }
     ]
   },
@@ -177,7 +177,7 @@
       { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 },
       { "type": "MULTI_ATTACK", "value": 5, "desc": "双击", "multiHit": 2 },
       { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 },
-      { "type": "BUFF", "value": 12, "desc": "高热", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" },
+      { "type": "BUFF", "value": 12, "desc": "高热", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "SELF" },
       { "type": "MULTI_ATTACK", "value": 5, "desc": "双击", "multiHit": 2 },
       { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 },
       { "type": "MULTI_ATTACK", "value": 6, "desc": "地狱火", "multiHit": 3, "upgradeBurns": true, "burnCards": 3 }
@@ -194,7 +194,7 @@
     "intents": [
       { "type": "DEFEND", "value": 25, "desc": "激活（守势）" },
       { "type": "ATTACK", "value": 10, "desc": "脆弱打击", "applyStatusType": "FRAIL", "applyStatusCount": 5, "applyStatusTarget": "PLAYER" },
-      { "type": "ATTACK", "value": 10, "desc": "硬化打击", "applyStatusType": "DEXTERITY", "applyStatusCount": 1, "applyStatusTarget": "ENEMY" },
+      { "type": "ATTACK", "value": 10, "desc": "硬化打击", "applyStatusType": "DEXTERITY", "applyStatusCount": 1, "applyStatusTarget": "SELF" },
       { "type": "MULTI_ATTACK", "value": 10, "desc": "双击", "multiHit": 2 }
     ]
   },
@@ -219,7 +219,7 @@
     "description": "首回合随机：脆弱打击(8+脆弱2)/治愈(全体回6+力量2)。不能连续两次同招。",
     "intents": [
       { "type": "ATTACK", "value": 8, "desc": "脆弱打击", "applyStatusType": "FRAIL", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
-      { "type": "BUFF", "value": 0, "desc": "治愈", "healAmount": 6, "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ENEMY" }
+      { "type": "BUFF", "value": 0, "desc": "治愈", "healAmount": 6, "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ALL_ENEMY" }
     ]
   },
   {
@@ -245,8 +245,8 @@
     "description": "首回合必定啃咬(11)。之后随机：鞭打(7+5盾)/咆哮(力量3+6盾)/啃咬，不能连续两次咆哮。",
     "intents": [
       { "type": "ATTACK", "value": 11, "desc": "啃咬" },
-      { "type": "ATTACK", "value": 7, "desc": "鞭打", "applyStatusType": "DEXTERITY", "applyStatusCount": 5, "applyStatusTarget": "ENEMY" },
-      { "type": "BUFF", "value": 6, "desc": "咆哮", "applyStatusType": "STRENGTH", "applyStatusCount": 3, "applyStatusTarget": "ENEMY" }
+      { "type": "ATTACK", "value": 7, "desc": "鞭打", "applyStatusType": "DEXTERITY", "applyStatusCount": 5, "applyStatusTarget": "SELF" },
+      { "type": "BUFF", "value": 6, "desc": "咆哮", "applyStatusType": "STRENGTH", "applyStatusCount": 3, "applyStatusTarget": "SELF" }
     ]
   },
   {
@@ -258,8 +258,8 @@
     "description": "首回合必定啃咬(12)。之后随机：啃咬/鞭打(8+6盾)/咆哮(力量4+8盾)，不能连续两次咆哮。",
     "intents": [
       { "type": "ATTACK", "value": 12, "desc": "啃咬" },
-      { "type": "ATTACK", "value": 8, "desc": "鞭打", "applyStatusType": "DEXTERITY", "applyStatusCount": 6, "applyStatusTarget": "ENEMY" },
-      { "type": "BUFF", "value": 8, "desc": "咆哮", "applyStatusType": "STRENGTH", "applyStatusCount": 4, "applyStatusTarget": "ENEMY" }
+      { "type": "ATTACK", "value": 8, "desc": "鞭打", "applyStatusType": "DEXTERITY", "applyStatusCount": 6, "applyStatusTarget": "SELF" },
+      { "type": "BUFF", "value": 8, "desc": "咆哮", "applyStatusType": "STRENGTH", "applyStatusCount": 4, "applyStatusTarget": "SELF" }
     ]
   },
   {

@@ -293,7 +293,7 @@ public class EventService {
                         cardMap.put("buffCardName", chosen.getBuffCardName());
                         cardMap.put("buffDamageAmount", chosen.getBuffDamageAmount());
                         cardMap.put("doublePoison", chosen.isDoublePoison());
-                        cardMap.put("drawPoisonAll", chosen.getDrawPoisonAll());
+                        cardMap.put("poisonAllPerCard", chosen.getPoisonAllPerCard());
                         cardMap.put("extraPoisonTick", chosen.isExtraPoisonTick());
                         cardMap.put("addCardId", chosen.getAddCardId());
                         cardMap.put("addCardCount", chosen.getAddCardCount());
