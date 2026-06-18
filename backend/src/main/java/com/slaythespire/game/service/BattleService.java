@@ -532,7 +532,6 @@ public class BattleService {
                         logList.add("🔨 武装！" + old.getName() + " → " + hand.get(ti).getName());
                     }
                 }
-                if (ti < playedCardIndex) playedCardIndex--;
             }
         }
 
@@ -1130,6 +1129,7 @@ public class BattleService {
             cardInfo.put("xCost", c.isXCost());
             cardInfo.put("aoe", c.isAoe());
             cardInfo.put("drawFirst", c.isDrawFirst());
+            cardInfo.put("upgraded", c.isUpgraded());
 
             cardInfo.put("copyToDiscard", c.isCopyToDiscard());
             cardInfo.put("strengthMultiplier", c.getStrengthMultiplier());
