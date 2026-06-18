@@ -1,5 +1,36 @@
 [
   {
+    "id": "gremlin_nob",
+    "name": "地精大块头",
+    "type": "ELITE",
+    "maxHp": 82,
+    "attackDamage": 6,
+    "description": "第一层精英。首回合咆哮(激怒2)，之后颅骨重击(6+易伤2)/蛮牛冲撞(14)随机。玩家每打技能牌+2力量。",
+    "intents": [
+      {
+        "type": "BUFF",
+        "value": 0,
+        "desc": "咆哮",
+        "applyStatusType": "ANGRY",
+        "applyStatusCount": 2,
+        "applyStatusTarget": "SELF"
+      },
+      {
+        "type": "ATTACK",
+        "value": 6,
+        "desc": "颅骨重击",
+        "applyStatusType": "VULNERABLE",
+        "applyStatusCount": 2,
+        "applyStatusTarget": "PLAYER"
+      },
+      {
+        "type": "ATTACK",
+        "value": 14,
+        "desc": "蛮牛冲撞"
+      }
+    ]
+  },
+  {
     "id": "cultist",
     "name": "邪教徒",
     "type": "NORMAL",
@@ -7,8 +38,19 @@
     "attackDamage": 6,
     "description": "首回合念咒(仪式4)，之后固定黑暗打击(6+力量)。",
     "intents": [
-      { "type": "BUFF", "value": 0, "desc": "念咒", "applyStatusType": "RITUAL", "applyStatusCount": 4, "applyStatusTarget": "SELF" },
-      { "type": "ATTACK", "value": 6, "desc": "黑暗打击" }
+      {
+        "type": "BUFF",
+        "value": 0,
+        "desc": "念咒",
+        "applyStatusType": "RITUAL",
+        "applyStatusCount": 4,
+        "applyStatusTarget": "SELF"
+      },
+      {
+        "type": "ATTACK",
+        "value": 6,
+        "desc": "黑暗打击"
+      }
     ]
   },
   {
@@ -17,11 +59,28 @@
     "type": "NORMAL",
     "maxHp": 65,
     "attackDamage": 11,
-    "description": "首回合随机：腐蚀喷吐(11+黏液×2)/重击(16)/舔舔(虚弱2)。之后不能连续同招。",
+    "description": "首回合随机：腐蚀喷吐(11+黏液x2)/重击(16)/舔舔(虚弱2)。之后不能连续同招。",
     "intents": [
-      { "type": "ATTACK", "value": 11, "desc": "腐蚀喷吐", "statusCards": "slime", "statusCardCount": 2 },
-      { "type": "ATTACK", "value": 16, "desc": "重击" },
-      { "type": "ATTACK", "value": 0, "desc": "舔舔", "applyStatusType": "WEAK", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" }
+      {
+        "type": "ATTACK",
+        "value": 11,
+        "desc": "腐蚀喷吐",
+        "statusCards": "slime",
+        "statusCardCount": 2
+      },
+      {
+        "type": "ATTACK",
+        "value": 16,
+        "desc": "重击"
+      },
+      {
+        "type": "ATTACK",
+        "value": 0,
+        "desc": "舔舔",
+        "applyStatusType": "WEAK",
+        "applyStatusCount": 2,
+        "applyStatusTarget": "PLAYER"
+      }
     ]
   },
   {
@@ -32,8 +91,21 @@
     "attackDamage": 8,
     "description": "首回合随机：腐蚀喷吐(8+黏液)/舔舔(脆弱1)。不能连续同招。",
     "intents": [
-      { "type": "ATTACK", "value": 8, "desc": "腐蚀喷吐", "statusCards": "slime", "statusCardCount": 1 },
-      { "type": "DEBUFF", "value": 0, "desc": "舔舔", "applyStatusType": "FRAIL", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" }
+      {
+        "type": "ATTACK",
+        "value": 8,
+        "desc": "腐蚀喷吐",
+        "statusCards": "slime",
+        "statusCardCount": 1
+      },
+      {
+        "type": "DEBUFF",
+        "value": 0,
+        "desc": "舔舔",
+        "applyStatusType": "FRAIL",
+        "applyStatusCount": 2,
+        "applyStatusTarget": "PLAYER"
+      }
     ]
   },
   {
@@ -42,11 +114,22 @@
     "type": "ELITE",
     "maxHp": 38,
     "attackDamage": 9,
-    "description": "三哨卫中开局使用螺旋催眠的那只，之后交替。人工制品×1。",
-    "initialStatuses": { "ARTIFACT": 1 },
+    "description": "三哨卫中开局使用螺旋催眠的那只，之后交替。人工制品x1。",
+    "initialStatuses": {
+      "ARTIFACT": 1
+    },
     "intents": [
-      { "type": "DEBUFF", "value": 0, "desc": "螺旋催眠", "stunCards": 2 },
-      { "type": "ATTACK", "value": 9, "desc": "激光" }
+      {
+        "type": "DEBUFF",
+        "value": 0,
+        "desc": "螺旋催眠",
+        "stunCards": 2
+      },
+      {
+        "type": "ATTACK",
+        "value": 9,
+        "desc": "激光"
+      }
     ]
   },
   {
@@ -55,11 +138,22 @@
     "type": "ELITE",
     "maxHp": 38,
     "attackDamage": 9,
-    "description": "三哨卫中开局使用激光的那只，之后交替。人工制品×1。",
-    "initialStatuses": { "ARTIFACT": 1 },
+    "description": "三哨卫中开局使用激光的那只，之后交替。人工制品x1。",
+    "initialStatuses": {
+      "ARTIFACT": 1
+    },
     "intents": [
-      { "type": "ATTACK", "value": 9, "desc": "激光" },
-      { "type": "DEBUFF", "value": 0, "desc": "螺旋催眠", "stunCards": 2 }
+      {
+        "type": "ATTACK",
+        "value": 9,
+        "desc": "激光"
+      },
+      {
+        "type": "DEBUFF",
+        "value": 0,
+        "desc": "螺旋催眠",
+        "stunCards": 2
+      }
     ]
   },
   {
@@ -70,7 +164,12 @@
     "attackDamage": 7,
     "description": "首回合鞭笞(7+伤口)，之后2/3鞭笞1/3休息？实际固定鞭笞循环。",
     "intents": [
-      { "type": "ATTACK", "value": 7, "desc": "鞭笞", "stunCards": 1 }
+      {
+        "type": "ATTACK",
+        "value": 7,
+        "desc": "鞭笞",
+        "stunCards": 1
+      }
     ]
   },
   {
@@ -81,9 +180,24 @@
     "attackDamage": 13,
     "description": "首回合刺伤(13)，之后：刺伤/刮伤(8+易伤1)交替，每4回合可能丢网。",
     "intents": [
-      { "type": "ATTACK", "value": 13, "desc": "刺伤" },
-      { "type": "ATTACK", "value": 8, "desc": "刮伤", "applyStatusType": "VULNERABLE", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" },
-      { "type": "DEBUFF", "value": 0, "desc": "丢网" }
+      {
+        "type": "ATTACK",
+        "value": 13,
+        "desc": "刺伤"
+      },
+      {
+        "type": "ATTACK",
+        "value": 8,
+        "desc": "刮伤",
+        "applyStatusType": "VULNERABLE",
+        "applyStatusCount": 1,
+        "applyStatusTarget": "PLAYER"
+      },
+      {
+        "type": "DEBUFF",
+        "value": 0,
+        "desc": "丢网"
+      }
     ]
   },
   {
@@ -94,8 +208,19 @@
     "attackDamage": 12,
     "description": "首回合随机：刺击(12)/耙伤(7+虚弱1)，之后不能连续两次耙伤。",
     "intents": [
-      { "type": "ATTACK", "value": 12, "desc": "刺击" },
-      { "type": "ATTACK", "value": 7, "desc": "耙伤", "applyStatusType": "WEAK", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" }
+      {
+        "type": "ATTACK",
+        "value": 12,
+        "desc": "刺击"
+      },
+      {
+        "type": "ATTACK",
+        "value": 7,
+        "desc": "耙伤",
+        "applyStatusType": "WEAK",
+        "applyStatusCount": 1,
+        "applyStatusTarget": "PLAYER"
+      }
     ]
   },
   {
@@ -104,13 +229,45 @@
     "type": "BOSS",
     "maxHp": 420,
     "attackDamage": 12,
-    "description": "半血前：防御/打脸/挑衅/重斩/强化随机。半血后：爆发(清debuff+力量6)→处刑(10×2)循环。",
+    "description": "半血前：防御/打脸/挑衅/重斩/强化随机。半血后：爆发(清debuff+力量6)->处刑(10x2)循环。",
     "intents": [
-      { "type": "DEFEND", "value": 15, "desc": "防御态势", "applyStatusType": "DEXTERITY", "applyStatusCount": 5, "applyStatusTarget": "SELF" },
-      { "type": "ATTACK", "value": 12, "desc": "打脸", "applyStatusType": "VULNERABLE", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
-      { "type": "DEBUFF", "value": 0, "desc": "挑衅", "applyStatusType": "WEAK", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
-      { "type": "ATTACK", "value": 16, "desc": "重斩" },
-      { "type": "BUFF", "value": 0, "desc": "强化", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "SELF" }
+      {
+        "type": "DEFEND",
+        "value": 15,
+        "desc": "防御态势",
+        "applyStatusType": "DEXTERITY",
+        "applyStatusCount": 5,
+        "applyStatusTarget": "SELF"
+      },
+      {
+        "type": "ATTACK",
+        "value": 12,
+        "desc": "打脸",
+        "applyStatusType": "VULNERABLE",
+        "applyStatusCount": 2,
+        "applyStatusTarget": "PLAYER"
+      },
+      {
+        "type": "DEBUFF",
+        "value": 0,
+        "desc": "挑衅",
+        "applyStatusType": "WEAK",
+        "applyStatusCount": 2,
+        "applyStatusTarget": "PLAYER"
+      },
+      {
+        "type": "ATTACK",
+        "value": 16,
+        "desc": "重斩"
+      },
+      {
+        "type": "BUFF",
+        "value": 0,
+        "desc": "强化",
+        "applyStatusType": "STRENGTH",
+        "applyStatusCount": 2,
+        "applyStatusTarget": "SELF"
+      }
     ]
   },
   {
@@ -119,11 +276,28 @@
     "type": "ELITE",
     "maxHp": 180,
     "attackDamage": 13,
-    "description": "首回合召唤匕首，之后蛇搏术(13×2+虚弱1)/巨噬(30)/召唤随机。匕首≥4只时不召唤。",
+    "description": "首回合召唤匕首，之后蛇搏术(13x2+虚弱1)/巨噬(30)/召唤随机。匕首≥4只时不召唤。",
     "intents": [
-      { "type": "MULTI_ATTACK", "value": 13, "desc": "蛇搏术", "multiHit": 2, "applyStatusType": "WEAK", "applyStatusCount": 1, "applyStatusTarget": "PLAYER" },
-      { "type": "ATTACK", "value": 30, "desc": "巨噬" },
-      { "type": "ATTACK", "value": 0, "desc": "召唤匕首", "summonCount": 1 }
+      {
+        "type": "MULTI_ATTACK",
+        "value": 13,
+        "desc": "蛇搏术",
+        "multiHit": 2,
+        "applyStatusType": "WEAK",
+        "applyStatusCount": 1,
+        "applyStatusTarget": "PLAYER"
+      },
+      {
+        "type": "ATTACK",
+        "value": 30,
+        "desc": "巨噬"
+      },
+      {
+        "type": "ATTACK",
+        "value": 0,
+        "desc": "召唤匕首",
+        "summonCount": 1
+      }
     ]
   },
   {
@@ -134,8 +308,17 @@
     "attackDamage": 9,
     "description": "首回合刺击(9+伤口)，第2回合爆破(25)后自毁。",
     "intents": [
-      { "type": "ATTACK", "value": 9, "desc": "刺击", "stunCards": 1 },
-      { "type": "ATTACK", "value": 25, "desc": "爆破" }
+      {
+        "type": "ATTACK",
+        "value": 9,
+        "desc": "刺击",
+        "stunCards": 1
+      },
+      {
+        "type": "ATTACK",
+        "value": 25,
+        "desc": "爆破"
+      }
     ]
   },
   {
@@ -144,11 +327,25 @@
     "type": "BOSS",
     "maxHp": 250,
     "attackDamage": 10,
-    "description": "固定交替：力量之环(全体+3力量)→双击(10×2)→循环。人工制品×2。",
-    "initialStatuses": { "ARTIFACT": 2 },
+    "description": "固定交替：力量之环(全体+3力量)->双击(10x2)->循环。人工制品x2。",
+    "initialStatuses": {
+      "ARTIFACT": 2
+    },
     "intents": [
-      { "type": "BUFF", "value": 0, "desc": "力量之环", "applyStatusType": "STRENGTH", "applyStatusCount": 3, "applyStatusTarget": "ALL_ENEMY" },
-      { "type": "MULTI_ATTACK", "value": 10, "desc": "双击", "multiHit": 2 }
+      {
+        "type": "BUFF",
+        "value": 0,
+        "desc": "力量之环",
+        "applyStatusType": "STRENGTH",
+        "applyStatusCount": 3,
+        "applyStatusTarget": "ALL_ENEMY"
+      },
+      {
+        "type": "MULTI_ATTACK",
+        "value": 10,
+        "desc": "双击",
+        "multiHit": 2
+      }
     ]
   },
   {
@@ -157,11 +354,23 @@
     "type": "BOSS",
     "maxHp": 250,
     "attackDamage": 10,
-    "description": "固定交替：眩目双击(10×2+晕眩×2)→防御屏障(全体+16盾)→循环。人工制品×2。",
-    "initialStatuses": { "ARTIFACT": 2 },
+    "description": "固定交替：眩目双击(10x2+晕眩x2)->防御屏障(全体+16盾)->循环。人工制品x2。",
+    "initialStatuses": {
+      "ARTIFACT": 2
+    },
     "intents": [
-      { "type": "MULTI_ATTACK", "value": 10, "desc": "眩目双击", "multiHit": 2, "stunCards": 2 },
-      { "type": "DEFEND", "value": 16, "desc": "防御屏障" }
+      {
+        "type": "MULTI_ATTACK",
+        "value": 10,
+        "desc": "眩目双击",
+        "multiHit": 2,
+        "stunCards": 2
+      },
+      {
+        "type": "DEFEND",
+        "value": 16,
+        "desc": "防御屏障"
+      }
     ]
   },
   {
@@ -170,17 +379,67 @@
     "type": "BOSS",
     "maxHp": 250,
     "attackDamage": 6,
-    "description": "固定9步循环：启动→地狱火(血线×6)→灼烧→双击→灼烧→高热(12盾+力量2)→双击→灼烧→地狱火(3×6+灼伤3)。",
+    "description": "固定9步循环：启动->地狱火(血线x6)->灼烧->双击->灼烧->高热(12盾+力量2)->双击->灼烧->地狱火(3x6+灼伤3)。",
     "intents": [
-      { "type": "BUFF", "value": 0, "desc": "启动" },
-      { "type": "MULTI_ATTACK", "value": 6, "desc": "地狱火", "multiHit": 6, "hpScaling": true, "skipBurnCards": true },
-      { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 },
-      { "type": "MULTI_ATTACK", "value": 5, "desc": "双击", "multiHit": 2 },
-      { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 },
-      { "type": "BUFF", "value": 12, "desc": "高热", "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "SELF" },
-      { "type": "MULTI_ATTACK", "value": 5, "desc": "双击", "multiHit": 2 },
-      { "type": "ATTACK", "value": 6, "desc": "灼烧", "burnCards": 1 },
-      { "type": "MULTI_ATTACK", "value": 6, "desc": "地狱火", "multiHit": 3, "upgradeBurns": true, "burnCards": 3 }
+      {
+        "type": "BUFF",
+        "value": 0,
+        "desc": "启动"
+      },
+      {
+        "type": "MULTI_ATTACK",
+        "value": 6,
+        "desc": "地狱火",
+        "multiHit": 6,
+        "hpScaling": true,
+        "skipBurnCards": true
+      },
+      {
+        "type": "ATTACK",
+        "value": 6,
+        "desc": "灼烧",
+        "burnCards": 1
+      },
+      {
+        "type": "MULTI_ATTACK",
+        "value": 5,
+        "desc": "双击",
+        "multiHit": 2
+      },
+      {
+        "type": "ATTACK",
+        "value": 6,
+        "desc": "灼烧",
+        "burnCards": 1
+      },
+      {
+        "type": "BUFF",
+        "value": 12,
+        "desc": "高热",
+        "applyStatusType": "STRENGTH",
+        "applyStatusCount": 2,
+        "applyStatusTarget": "SELF"
+      },
+      {
+        "type": "MULTI_ATTACK",
+        "value": 5,
+        "desc": "双击",
+        "multiHit": 2
+      },
+      {
+        "type": "ATTACK",
+        "value": 6,
+        "desc": "灼烧",
+        "burnCards": 1
+      },
+      {
+        "type": "MULTI_ATTACK",
+        "value": 6,
+        "desc": "地狱火",
+        "multiHit": 3,
+        "upgradeBurns": true,
+        "burnCards": 3
+      }
     ]
   },
   {
@@ -189,13 +448,38 @@
     "type": "NORMAL",
     "maxHp": 20,
     "attackDamage": 10,
-    "description": "固定：激活(25盾)→脆弱打击(10+脆弱5)→之后奇回合硬化打击(10+敏捷1)偶回合双击(10×2)。人工制品×3。",
-    "initialStatuses": { "ARTIFACT": 3 },
+    "description": "固定：激活(25盾)->脆弱打击(10+脆弱5)->之后奇回合硬化打击(10+敏捷1)偶回合双击(10x2)。人工制品x3。",
+    "initialStatuses": {
+      "ARTIFACT": 3
+    },
     "intents": [
-      { "type": "DEFEND", "value": 25, "desc": "激活（守势）" },
-      { "type": "ATTACK", "value": 10, "desc": "脆弱打击", "applyStatusType": "FRAIL", "applyStatusCount": 5, "applyStatusTarget": "PLAYER" },
-      { "type": "ATTACK", "value": 10, "desc": "硬化打击", "applyStatusType": "DEXTERITY", "applyStatusCount": 1, "applyStatusTarget": "SELF" },
-      { "type": "MULTI_ATTACK", "value": 10, "desc": "双击", "multiHit": 2 }
+      {
+        "type": "DEFEND",
+        "value": 25,
+        "desc": "激活(守势)"
+      },
+      {
+        "type": "ATTACK",
+        "value": 10,
+        "desc": "脆弱打击",
+        "applyStatusType": "FRAIL",
+        "applyStatusCount": 5,
+        "applyStatusTarget": "PLAYER"
+      },
+      {
+        "type": "ATTACK",
+        "value": 10,
+        "desc": "硬化打击",
+        "applyStatusType": "DEXTERITY",
+        "applyStatusCount": 1,
+        "applyStatusTarget": "SELF"
+      },
+      {
+        "type": "MULTI_ATTACK",
+        "value": 10,
+        "desc": "双击",
+        "multiHit": 2
+      }
     ]
   },
   {
@@ -204,10 +488,19 @@
     "type": "NORMAL",
     "maxHp": 76,
     "attackDamage": 12,
-    "description": "首回合随机：劈斩(12)/三连击(6×3)。不能连续两次同招。",
+    "description": "首回合随机：劈斩(12)/三连击(6x3)。不能连续两次同招。",
     "intents": [
-      { "type": "ATTACK", "value": 12, "desc": "劈斩" },
-      { "type": "MULTI_ATTACK", "value": 6, "desc": "三连击", "multiHit": 3 }
+      {
+        "type": "ATTACK",
+        "value": 12,
+        "desc": "劈斩"
+      },
+      {
+        "type": "MULTI_ATTACK",
+        "value": 6,
+        "desc": "三连击",
+        "multiHit": 3
+      }
     ]
   },
   {
@@ -218,8 +511,23 @@
     "attackDamage": 8,
     "description": "首回合随机：脆弱打击(8+脆弱2)/治愈(全体回6+力量2)。不能连续两次同招。",
     "intents": [
-      { "type": "ATTACK", "value": 8, "desc": "脆弱打击", "applyStatusType": "FRAIL", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" },
-      { "type": "BUFF", "value": 0, "desc": "治愈", "healAmount": 6, "applyStatusType": "STRENGTH", "applyStatusCount": 2, "applyStatusTarget": "ALL_ENEMY" }
+      {
+        "type": "ATTACK",
+        "value": 8,
+        "desc": "脆弱打击",
+        "applyStatusType": "FRAIL",
+        "applyStatusCount": 2,
+        "applyStatusTarget": "PLAYER"
+      },
+      {
+        "type": "BUFF",
+        "value": 0,
+        "desc": "治愈",
+        "healAmount": 6,
+        "applyStatusType": "STRENGTH",
+        "applyStatusCount": 2,
+        "applyStatusTarget": "ALL_ENEMY"
+      }
     ]
   },
   {
@@ -228,12 +536,30 @@
     "type": "NORMAL",
     "maxHp": 68,
     "attackDamage": 6,
-    "description": "双击(6×2)、汲取(10)、脆弱打击(18+脆弱2)。自带14层多层护甲。",
-    "initialStatuses": { "PLATED_ARMOR": 14 },
+    "description": "双击(6x2)、汲取(10)、脆弱打击(18+脆弱2)。自带14层多层护甲。",
+    "initialStatuses": {
+      "PLATED_ARMOR": 14
+    },
     "intents": [
-      { "type": "MULTI_ATTACK", "value": 6, "desc": "双击", "multiHit": 2 },
-      { "type": "ATTACK", "value": 10, "desc": "汲取" },
-      { "type": "ATTACK", "value": 18, "desc": "脆弱打击", "applyStatusType": "FRAIL", "applyStatusCount": 2, "applyStatusTarget": "PLAYER" }
+      {
+        "type": "MULTI_ATTACK",
+        "value": 6,
+        "desc": "双击",
+        "multiHit": 2
+      },
+      {
+        "type": "ATTACK",
+        "value": 10,
+        "desc": "汲取"
+      },
+      {
+        "type": "ATTACK",
+        "value": 18,
+        "desc": "脆弱打击",
+        "applyStatusType": "FRAIL",
+        "applyStatusCount": 2,
+        "applyStatusTarget": "PLAYER"
+      }
     ]
   },
   {
@@ -244,9 +570,27 @@
     "attackDamage": 11,
     "description": "首回合必定啃咬(11)。之后随机：鞭打(7+5盾)/咆哮(力量3+6盾)/啃咬，不能连续两次咆哮。",
     "intents": [
-      { "type": "ATTACK", "value": 11, "desc": "啃咬" },
-      { "type": "ATTACK", "value": 7, "desc": "鞭打", "applyStatusType": "DEXTERITY", "applyStatusCount": 5, "applyStatusTarget": "SELF" },
-      { "type": "BUFF", "value": 6, "desc": "咆哮", "applyStatusType": "STRENGTH", "applyStatusCount": 3, "applyStatusTarget": "SELF" }
+      {
+        "type": "ATTACK",
+        "value": 11,
+        "desc": "啃咬"
+      },
+      {
+        "type": "ATTACK",
+        "value": 7,
+        "desc": "鞭打",
+        "applyStatusType": "DEXTERITY",
+        "applyStatusCount": 5,
+        "applyStatusTarget": "SELF"
+      },
+      {
+        "type": "BUFF",
+        "value": 6,
+        "desc": "咆哮",
+        "applyStatusType": "STRENGTH",
+        "applyStatusCount": 3,
+        "applyStatusTarget": "SELF"
+      }
     ]
   },
   {
@@ -257,9 +601,27 @@
     "attackDamage": 12,
     "description": "首回合必定啃咬(12)。之后随机：啃咬/鞭打(8+6盾)/咆哮(力量4+8盾)，不能连续两次咆哮。",
     "intents": [
-      { "type": "ATTACK", "value": 12, "desc": "啃咬" },
-      { "type": "ATTACK", "value": 8, "desc": "鞭打", "applyStatusType": "DEXTERITY", "applyStatusCount": 6, "applyStatusTarget": "SELF" },
-      { "type": "BUFF", "value": 8, "desc": "咆哮", "applyStatusType": "STRENGTH", "applyStatusCount": 4, "applyStatusTarget": "SELF" }
+      {
+        "type": "ATTACK",
+        "value": 12,
+        "desc": "啃咬"
+      },
+      {
+        "type": "ATTACK",
+        "value": 8,
+        "desc": "鞭打",
+        "applyStatusType": "DEXTERITY",
+        "applyStatusCount": 6,
+        "applyStatusTarget": "SELF"
+      },
+      {
+        "type": "BUFF",
+        "value": 8,
+        "desc": "咆哮",
+        "applyStatusType": "STRENGTH",
+        "applyStatusCount": 4,
+        "applyStatusTarget": "SELF"
+      }
     ]
   },
   {
@@ -270,9 +632,22 @@
     "attackDamage": 6,
     "description": "第一层小怪。啃咬(6)、吮吸(3+回血3)、甲壳(4盾)。",
     "intents": [
-      { "type": "ATTACK", "value": 6, "desc": "啃咬" },
-      { "type": "ATTACK", "value": 3, "desc": "吮吸", "healAmount": 3 },
-      { "type": "DEFEND", "value": 4, "desc": "甲壳" }
+      {
+        "type": "ATTACK",
+        "value": 6,
+        "desc": "啃咬"
+      },
+      {
+        "type": "ATTACK",
+        "value": 3,
+        "desc": "吮吸",
+        "healAmount": 3
+      },
+      {
+        "type": "DEFEND",
+        "value": 4,
+        "desc": "甲壳"
+      }
     ]
   },
   {
@@ -281,10 +656,19 @@
     "type": "NORMAL",
     "maxHp": 90,
     "attackDamage": 15,
-    "description": "首回合随机：利爪(15)/灼伤射线(10+灼伤×2)。不能连续三次同招。",
+    "description": "首回合随机：利爪(15)/灼伤射线(10+灼伤x2)。不能连续三次同招。",
     "intents": [
-      { "type": "ATTACK", "value": 15, "desc": "利爪" },
-      { "type": "ATTACK", "value": 10, "desc": "灼伤射线", "burnCards": 2 }
+      {
+        "type": "ATTACK",
+        "value": 15,
+        "desc": "利爪"
+      },
+      {
+        "type": "ATTACK",
+        "value": 10,
+        "desc": "灼伤射线",
+        "burnCards": 2
+      }
     ]
   },
   {
@@ -295,9 +679,51 @@
     "attackDamage": 16,
     "description": "首回合缠绕(缠绕10)。之后：鞭打(16)/重击(22)/缠绕随机，不能连续两次缠绕。",
     "intents": [
-      { "type": "ATTACK", "value": 16, "desc": "鞭打" },
-      { "type": "ATTACK", "value": 22, "desc": "重击" },
-      { "type": "DEBUFF", "value": 0, "desc": "缠绕", "applyStatusType": "CONSTRICTED", "applyStatusCount": 10, "applyStatusTarget": "PLAYER" }
+      {
+        "type": "ATTACK",
+        "value": 16,
+        "desc": "鞭打"
+      },
+      {
+        "type": "ATTACK",
+        "value": 22,
+        "desc": "重击"
+      },
+      {
+        "type": "DEBUFF",
+        "value": 0,
+        "desc": "缠绕",
+        "applyStatusType": "CONSTRICTED",
+        "applyStatusCount": 10,
+        "applyStatusTarget": "PLAYER"
+      }
+    ]
+  },
+  {
+    "id": "slime_boss",
+    "name": "史莱姆老大",
+    "type": "BOSS",
+    "maxHp": 140,
+    "attackDamage": 35,
+    "description": "第一层Boss。固定循环：黏液喷射(黏液x3)->准备->撞击(35)。半血以下分裂。",
+    "intents": [
+      {
+        "type": "DEBUFF",
+        "value": 0,
+        "desc": "黏液喷射",
+        "statusCards": "slime",
+        "statusCardCount": 3
+      },
+      {
+        "type": "BUFF",
+        "value": 0,
+        "desc": "准备"
+      },
+      {
+        "type": "ATTACK",
+        "value": 35,
+        "desc": "撞击"
+      }
     ]
   }
 ]

@@ -303,13 +303,14 @@ public class BattleService {
         // 🆕 地精大块头被动：玩家打出技能牌时，激怒敌人
         if (card.getType() == Card.CardType.SKILL) {
             for (Enemy e : enemies) {
-                for (StatusEffect s : e.getStatuses()) {
+                for (StatusEffect s : new ArrayList<>(e.getStatuses())) {
                     if ("ANGRY".equals(s.getId())) {
-                        int angryPower = (int) (s.getCount() + 1);
-                        StatusEffect strength = com.slaythespire.game.model.factory.StatusFactory.create("STRENGTH", angryPower, dataRepo);
+                        // 每次打技能牌获得ANGRY层数等额的力量（咆哮给了2层→每次+2力量）
+                        int angryValue = s.getCount();
+                        StatusEffect strength = StatusFactory.create("STRENGTH", angryValue, dataRepo);
                         if (strength != null) {
                             e.addStatus(strength);
-                            logList.add("🔥 " + e.getEnemyName() + "因【激怒】获得 " + angryPower + " 点力量！");
+                            logList.add("🔥 " + e.getEnemyName() + "因【激怒】获得 " + angryValue + " 点力量！");
                         }
                     }
                 }
@@ -1297,42 +1298,9 @@ public class BattleService {
             info.put("drawCount", c.getDrawCount()); info.put("charId", c.getCharId()); info.put("rarity", c.getRarity());
             info.put("selfDamage", c.getSelfDamage()); info.put("energyGain", c.getEnergyGain());
             info.put("multiHitCount", c.getMultiHitCount());
-            info.put("exhaustHandCount", c.getExhaustHandCount());
             info.put("exhaustHandMode", c.getExhaustHandMode());
             info.put("innate", c.isInnate()); info.put("aoe", c.isAoe());
-            info.put("unplayable", c.isUnplayable());
-            info.put("discardCount", c.getDiscardCount());
-            info.put("discardMode", c.getDiscardMode());
-            info.put("xCost", c.isXCost());
-            info.put("drawFirst", c.isDrawFirst());
             info.put("upgraded", c.isUpgraded());
-
-            info.put("copyToDiscard", c.isCopyToDiscard());
-            info.put("strengthMultiplier", c.getStrengthMultiplier());
-            info.put("randomTarget", c.isRandomTarget());
-
-            // 🆕 传递特殊状态牌数值给前端
-            info.put("endOfTurnDamage", c.getEndOfTurnDamage());
-            info.put("energyLossOnDraw", c.getEnergyLossOnDraw());
-            info.put("exhaustNonAttackBlock", c.getExhaustNonAttackBlock());
-            info.put("addWoundCount", c.getAddWoundCount());
-            info.put("blockToDamage", c.isBlockToDamage());
-            info.put("blockPerAttack", c.getBlockPerAttack());
-            info.put("energyGainIfDiscarded", c.getEnergyGainIfDiscarded());
-            info.put("discardAllForCards", c.getDiscardAllForCards());
-            info.put("discardAllForDraw", c.isDiscardAllForDraw());
-            info.put("buffCardName", c.getBuffCardName());
-            info.put("buffDamageAmount", c.getBuffDamageAmount());
-            info.put("doublePoison", c.isDoublePoison());
-            info.put("poisonAllPerCard", c.getPoisonAllPerCard());
-            info.put("extraPoisonTick", c.isExtraPoisonTick());
-            info.put("addCardId", c.getAddCardId());
-            info.put("addCardCount", c.getAddCardCount());
-            info.put("upgradeHandCount", c.getUpgradeHandCount());
-            info.put("upgradeHandMode", c.getUpgradeHandMode());
-            info.put("upgradeAllInHand", c.isUpgradeAllInHand());
-            info.put("requiresEmptyDrawPile", c.isRequiresEmptyDrawPile());
-
             list.add(info);
         }
         return list;
@@ -1346,9 +1314,9 @@ public class BattleService {
             m.put("type", e.getType());
             m.put("count", e.getCount());
             m.put("target", e.getTarget());
+            m.put("copyCount", e.getCopyCount());
             list.add(m);
         }
         return list;
     }
-
 }

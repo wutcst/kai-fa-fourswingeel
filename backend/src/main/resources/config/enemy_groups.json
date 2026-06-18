@@ -24,6 +24,14 @@
     "enemies": ["spike_slime_medium"]
   },
   {
+    "id": "elite_gremlin_nob",
+    "name": "地精大块头",
+    "type": "ELITE",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["gremlin_nob"]
+  },
+  {
     "id": "cultist_acid",
     "name": "邪教徒+酸液史莱姆",
     "type": "NORMAL",
@@ -54,6 +62,14 @@
     "minAct": 1,
     "maxAct": 1,
     "enemies": ["hexaghost"]
+  },
+  {
+    "id": "boss_slime",
+    "name": "史莱姆老大",
+    "type": "BOSS",
+    "minAct": 1,
+    "maxAct": 1,
+    "enemies": ["slime_boss"]
   },
   {
     "id": "jaw_worm",
