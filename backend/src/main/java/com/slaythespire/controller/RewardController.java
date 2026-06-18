@@ -134,6 +134,24 @@ public class RewardController {
         map.put("randomTarget", tpl.isRandomTarget());
         map.put("endOfTurnDamage", tpl.getEndOfTurnDamage());
         map.put("energyLossOnDraw", tpl.getEnergyLossOnDraw());
+        map.put("exhaustNonAttackBlock", tpl.getExhaustNonAttackBlock());
+        map.put("addWoundCount", tpl.getAddWoundCount());
+        map.put("blockToDamage", tpl.isBlockToDamage());
+        map.put("blockPerAttack", tpl.getBlockPerAttack());
+        map.put("energyGainIfDiscarded", tpl.getEnergyGainIfDiscarded());
+        map.put("discardAllForCards", tpl.getDiscardAllForCards());
+        map.put("discardAllForDraw", tpl.isDiscardAllForDraw());
+        map.put("buffCardName", tpl.getBuffCardName());
+        map.put("buffDamageAmount", tpl.getBuffDamageAmount());
+        map.put("doublePoison", tpl.isDoublePoison());
+        map.put("drawPoisonAll", tpl.getDrawPoisonAll());
+        map.put("extraPoisonTick", tpl.isExtraPoisonTick());
+        map.put("addCardId", tpl.getAddCardId());
+        map.put("addCardCount", tpl.getAddCardCount());
+        map.put("upgradeHandCount", tpl.getUpgradeHandCount());
+        map.put("upgradeHandMode", tpl.getUpgradeHandMode());
+        map.put("upgradeAllInHand", tpl.isUpgradeAllInHand());
+        map.put("requiresEmptyDrawPile", tpl.isRequiresEmptyDrawPile());
         return map;
     }
 
