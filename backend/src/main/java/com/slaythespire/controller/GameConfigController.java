@@ -518,8 +518,7 @@ public class GameConfigController {
             starterIds = Arrays.asList(
                 "strike", "strike", "strike", "strike", "strike",
                 "defend", "defend", "defend", "defend",
-                "bash",
-                "oneshot"
+                "bash"
             );
         } else if ("2".equals(charId)) {
             info.put("name", "静默猎手");
@@ -529,8 +528,7 @@ public class GameConfigController {
             starterIds = Arrays.asList(
                 "strike_silent", "strike_silent", "strike_silent", "strike_silent", "strike_silent",
                 "defend_silent", "defend_silent", "defend_silent", "defend_silent","defend_silent",
-                "survivor","neutralize",
-                "oneshot"
+                "survivor","neutralize"
             );
         }else{
             info.put("name", "未知角色");
