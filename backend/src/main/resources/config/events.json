@@ -745,5 +745,91 @@
       }
     ],
     "acts": [1]
+  },
+  {
+    "id": "match_game",
+    "title": "卡牌配对挑战",
+    "description": "一个神秘的赌徒拿出一叠卡牌摆在桌上：'翻出配对的卡牌就归你了！只有10次翻牌机会，里面还混着粘液之类的废牌，能捞多少看本事！'",
+    "background": "linear-gradient(135deg, #2a2a4a, #1a1a3e)",
+    "icon": "🃏",
+    "options": [
+      {
+        "text": "接受挑战（进入配对游戏）",
+        "effects": [
+          { "type": "MATCH_GAME" }
+        ]
+      },
+      {
+        "text": "没兴趣，离开",
+        "effects": []
+      }
+    ],
+    "acts": [1, 2, 3]
+  },
+  {
+    "id": "guess_card",
+    "title": "卡牌竞猜",
+    "description": "一个戴着眼镜的学者拦住了你：'来测测你的卡牌知识吧！我展示一张牌的属性，你能猜出它是哪张吗？猜对就归你了！'",
+    "background": "linear-gradient(135deg, #2a3a5a, #1a2a3e)",
+    "icon": "❓",
+    "options": [
+      {
+        "text": "接受挑战（开始猜牌）",
+        "effects": [
+          { "type": "GUESS_CARD" }
+        ]
+      },
+      {
+        "text": "不感兴趣，离开",
+        "effects": []
+      }
+    ],
+    "acts": [1, 2, 3]
+  },
+  {
+    "id": "lucky_wheel",
+    "title": "幸运轮盘",
+    "description": "一个华丽的轮盘立在路边，上面标注着不同的奖励和惩罚。'转一次吧，我的朋友！命运会眷顾勇者。'",
+    "background": "linear-gradient(135deg, #5a3a1a, #3e2a0e)",
+    "icon": "🎡",
+    "options": [
+      {
+        "text": "转动轮盘（随机奖励或惩罚）",
+        "effects": [
+          { "type": "LUCKY_WHEEL" }
+        ]
+      },
+      {
+        "text": "安全第一，离开",
+        "effects": []
+      }
+    ],
+    "acts": [1, 2, 3]
+  },
+  {
+    "id": "greedy_chest",
+    "title": "贪婪宝箱",
+    "description": "一个镶满宝石的宝箱出现在你面前，旁边写着：'拿走一件普通宝物，或者赌一把——有50%概率获得稀有宝物，但50%概率什么都没有！'",
+    "background": "linear-gradient(135deg, #4a3a1a, #2e2e0e)",
+    "icon": "🎁",
+    "options": [
+      {
+        "text": "稳妥选择（获得普通遗物）",
+        "effects": [
+          { "type": "ADD_RELIC", "tier": "common" }
+        ]
+      },
+      {
+        "text": "赌一把！（50%稀有遗物 / 50%空手而归）",
+        "effects": [
+          { "type": "GREEDY_CHEST" }
+        ]
+      },
+      {
+        "text": "两样都不要，离开",
+        "effects": []
+      }
+    ],
+    "acts": [2, 3]
   }
 ]
