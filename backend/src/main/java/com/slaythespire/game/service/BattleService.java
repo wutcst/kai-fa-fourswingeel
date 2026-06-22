@@ -190,6 +190,10 @@ public class BattleService {
             energy += val;
             logList.add("✳️ 能量方块使初始能量 +" + val);
         }
+        if (RelicEffectHandler.hasEffect(player, "CHAMPION_TROPHY")) {
+            energy++;
+            logList.add("🏆 冠军奖杯：回想起一路上的艰辛，你不再软脚......");
+        }
         // 🆕 音叉：每场战斗第一回合获得格挡
         if (RelicEffectHandler.hasEffect(player, "BLOCK_FIRST_TURN")) {
             int val = RelicEffectHandler.getEffectValue(player, "BLOCK_FIRST_TURN");
@@ -228,6 +232,7 @@ public class BattleService {
         int drawCount = Math.max(0, 5 - innateCards.size());
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) drawCount++;
         if (RelicEffectHandler.hasEffect(player, "DRAW_PER_TURN")) drawCount++;
+        if (RelicEffectHandler.hasEffect(player, "CHAMPION_TROPHY")) drawCount++;
         drawCards(drawCount);
 
         // 🆕 Boss 遗物：混沌之核 — 战斗开始获得力量
@@ -911,6 +916,10 @@ public class BattleService {
         int turnDrawCount = 5 - retained.size();
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) turnDrawCount++;
         if (RelicEffectHandler.hasEffect(player, "DRAW_PER_TURN")) turnDrawCount++;
+        if (RelicEffectHandler.hasEffect(player, "CHAMPION_TROPHY")) {
+            energy++;
+            turnDrawCount++;
+        }
         drawCards(Math.max(0, turnDrawCount));
 
         // 🆕 i18芯片：抽牌堆仅1张且弃牌堆18张时触发
