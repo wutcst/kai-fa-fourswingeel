@@ -3,7 +3,6 @@ name: CI
 
 on:
   push:
-    branches: [ master, develop, 'feature/**' ]
   pull_request:
     branches: [ master, develop ]
   workflow_dispatch:       # ✅ 添加手动触发，方便随时测试
