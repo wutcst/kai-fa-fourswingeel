@@ -37,6 +37,8 @@ public class BattleService {
     private int skillCountCombat;    // 本场战斗累计技能牌计数（黄金项链，跨回合累计）
     private boolean hasDealtDamageThisTurn; // 魔力花：本回合是否已造成过伤害
     private boolean exhaustedThisAction;   // 本次操作是否消耗了卡牌（安东尼之怒）
+    private boolean cardPlayedThisTurn;     // 本回合是否打出过卡牌（山之心）
+    private boolean mountainHeartUsedThisBattle; // 山之心本场战斗是否已触发
     private final Random random = new Random();
 
     // 🔥 简单状态牌模板（晕眩、灼伤）
@@ -152,6 +154,8 @@ public class BattleService {
         this.skillCountCombat = 0;
         this.hasDealtDamageThisTurn = false;
         this.exhaustedThisAction = false;
+        this.cardPlayedThisTurn = false;
+        this.mountainHeartUsedThisBattle = false;
         this.blockPerAttackThisTurn = 0;
         this.hasDiscardedThisTurn = false;
         this.drawCountThisTurn = 0;
@@ -275,6 +279,7 @@ public class BattleService {
         if (card.isXCost() && energy <= 0) throw new IllegalStateException("X耗能卡牌需要至少1点能量才能打出！");
         if (!card.isXCost() && card.getCost() > energy) throw new IllegalStateException("能量不足");
 
+        cardPlayedThisTurn = true;
         exhaustedThisAction = false;
         logList.add("━━━ 🃏 使用: " + card.getName() + " ━━━");
 
@@ -824,6 +829,14 @@ public class BattleService {
         hand.addAll(retained);
         removeDeadEnemies();
 
+        // 🆕 山之心：未打出任何卡牌结束回合时，额外开始一个回合（跳过敌人行动，每场战斗一次）
+        boolean mountainHeartExtraTurn = RelicEffectHandler.hasEffect(player, "MOUNTAIN_HEART") && !cardPlayedThisTurn && !mountainHeartUsedThisBattle && getAliveEnemies().size() > 0;
+        if (mountainHeartExtraTurn) {
+            logList.add("⛰️ 山之心触发：另一个你选择帮助你......");
+            mountainHeartUsedThisBattle = true;
+        }
+
+        if (!mountainHeartExtraTurn) {
         for (Enemy enemy : enemies) {
             enemy.onTurnStart();
             logList.addAll(enemy.getLastTurnStartLogs());
@@ -888,6 +901,10 @@ public class BattleService {
 
             if (!enemy.isAlive()) logList.add(String.format("💀 %s 被击败！", enemy.getEnemyName()));
         }
+        } // end if !mountainHeartExtraTurn
+        if (mountainHeartExtraTurn) {
+            for (Enemy enemy : enemies) enemy.advanceIntent();
+        }
         removeDeadEnemies();
 
         if (getAliveEnemies().isEmpty()) {
@@ -906,6 +923,7 @@ public class BattleService {
 
         energy = 3;
         blockPerAttackThisTurn = 0;
+        cardPlayedThisTurn = false;
         hasDiscardedThisTurn = false;
         drawCountThisTurn = 0;
         poisonAllPerCardThisTurn = 0;
