@@ -37,6 +37,9 @@ public class BattleService {
     private int skillCountCombat;    // 本场战斗累计技能牌计数（黄金项链，跨回合累计）
     private boolean hasDealtDamageThisTurn; // 魔力花：本回合是否已造成过伤害
     private boolean exhaustedThisAction;   // 本次操作是否消耗了卡牌（安东尼之怒）
+    private boolean cardPlayedThisTurn;     // 本回合是否打出过卡牌（山之心）
+    private boolean mountainHeartUsedThisBattle; // 山之心本场战斗是否已触发
+    private int totemCardCount;             // 未知图腾：累计出牌计数
     private final Random random = new Random();
 
     // 🔥 简单状态牌模板（晕眩、灼伤）
@@ -152,6 +155,9 @@ public class BattleService {
         this.skillCountCombat = 0;
         this.hasDealtDamageThisTurn = false;
         this.exhaustedThisAction = false;
+        this.cardPlayedThisTurn = false;
+        this.mountainHeartUsedThisBattle = false;
+        this.totemCardCount = 0;
         this.blockPerAttackThisTurn = 0;
         this.hasDiscardedThisTurn = false;
         this.drawCountThisTurn = 0;
@@ -189,6 +195,10 @@ public class BattleService {
             int val = RelicEffectHandler.getEffectValue(player, "ENERGY_PER_TURN");
             energy += val;
             logList.add("✳️ 能量方块使初始能量 +" + val);
+        }
+        if (RelicEffectHandler.hasEffect(player, "CHAMPION_TROPHY")) {
+            energy++;
+            logList.add("🏆 冠军奖杯：回想起一路上的艰辛，你不再软脚......");
         }
         // 🆕 音叉：每场战斗第一回合获得格挡
         if (RelicEffectHandler.hasEffect(player, "BLOCK_FIRST_TURN")) {
@@ -228,6 +238,7 @@ public class BattleService {
         int drawCount = Math.max(0, 5 - innateCards.size());
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) drawCount++;
         if (RelicEffectHandler.hasEffect(player, "DRAW_PER_TURN")) drawCount++;
+        if (RelicEffectHandler.hasEffect(player, "CHAMPION_TROPHY")) drawCount++;
         drawCards(drawCount);
 
         // 🆕 Boss 遗物：混沌之核 — 战斗开始获得力量
@@ -270,6 +281,17 @@ public class BattleService {
         if (card.isXCost() && energy <= 0) throw new IllegalStateException("X耗能卡牌需要至少1点能量才能打出！");
         if (!card.isXCost() && card.getCost() > energy) throw new IllegalStateException("能量不足");
 
+        cardPlayedThisTurn = true;
+        // 🆕 未知图腾：每打出4张牌抽1张（跨回合累计）
+        if (RelicEffectHandler.hasEffect(player, "UNKNOWN_TOTEM")) {
+            int threshold = RelicEffectHandler.getEffectValue(player, "UNKNOWN_TOTEM");
+            totemCardCount++;
+            if (totemCardCount >= threshold) {
+                drawCards(1);
+                logList.add("🗿 未知图腾触发：累计打出 " + threshold + " 张牌，抽1张牌");
+                totemCardCount = 0;
+            }
+        }
         exhaustedThisAction = false;
         logList.add("━━━ 🃏 使用: " + card.getName() + " ━━━");
 
@@ -819,6 +841,17 @@ public class BattleService {
         hand.addAll(retained);
         removeDeadEnemies();
 
+ // 🆕 收集待召唤的敌人，在迭代结束后统一添加，防止 ConcurrentModificationException
+        List<Enemy> summonedEnemies = new ArrayList<>();
+
+        // 🆕 山之心：未打出任何卡牌结束回合时，额外开始一个回合（跳过敌人行动，每场战斗一次）
+        boolean mountainHeartExtraTurn = RelicEffectHandler.hasEffect(player, "MOUNTAIN_HEART") && !cardPlayedThisTurn && !mountainHeartUsedThisBattle && getAliveEnemies().size() > 0;
+        if (mountainHeartExtraTurn) {
+            logList.add("⛰️ 山之心触发：另一个你选择帮助你......");
+            mountainHeartUsedThisBattle = true;
+        }
+        if (!mountainHeartExtraTurn) {
+       
         for (Enemy enemy : enemies) {
             enemy.onTurnStart();
             logList.addAll(enemy.getLastTurnStartLogs());
@@ -839,7 +872,7 @@ public class BattleService {
                         for (int i = 0; i < intent.getSummonCount(); i++) {
                             Enemy newDagger = new Enemy(daggerTpl, dataRepo);
                             newDagger.setDrawer(cardType -> addStatusCardToDrawPile(cardType));
-                            enemies.add(newDagger);
+                            summonedEnemies.add(newDagger);
                             logList.add("🗡️ " + enemy.getEnemyName() + "召唤了一把匕首！");
                         }
                     }
@@ -883,6 +916,13 @@ public class BattleService {
 
             if (!enemy.isAlive()) logList.add(String.format("💀 %s 被击败！", enemy.getEnemyName()));
         }
+        } // end if !mountainHeartExtraTurn
+        if (mountainHeartExtraTurn) {
+            for (Enemy enemy : enemies) enemy.advanceIntent();
+        }
+        // 🆕 将召唤的敌人统一加入战斗（在for-each结束后，防止 ConcurrentModificationException）
+        enemies.addAll(summonedEnemies);
+
         removeDeadEnemies();
 
         if (getAliveEnemies().isEmpty()) {
@@ -901,6 +941,7 @@ public class BattleService {
 
         energy = 3;
         blockPerAttackThisTurn = 0;
+        cardPlayedThisTurn = false;
         hasDiscardedThisTurn = false;
         drawCountThisTurn = 0;
         poisonAllPerCardThisTurn = 0;
@@ -911,7 +952,24 @@ public class BattleService {
         int turnDrawCount = 5 - retained.size();
         if (RelicEffectHandler.hasEffect(player, "FIRST_DRAW_BONUS")) turnDrawCount++;
         if (RelicEffectHandler.hasEffect(player, "DRAW_PER_TURN")) turnDrawCount++;
+        if (RelicEffectHandler.hasEffect(player, "CHAMPION_TROPHY")) {
+            energy++;
+            turnDrawCount++;
+        }
         drawCards(Math.max(0, turnDrawCount));
+
+        // 🆕 i18芯片：抽牌堆仅1张且弃牌堆18张时触发
+        if (RelicEffectHandler.hasEffect(player, "I18_CHIP")) {
+            if (drawPile.size() == 1 && discardPile.size() == 18) {
+                int dmg = RelicEffectHandler.getEffectValue(player, "I18_CHIP");
+                for (Enemy e : getAliveEnemies()) {
+                    int dealt = e.takeDamage(dmg, null, true);
+                    logList.addAll(e.getLastCombatLogs());
+                    logList.add("💥 i18芯片对 " + e.getEnemyName() + " 造成 " + dealt + " 点伤害");
+                }
+                logList.add("🗿：i18研发成功，看来你的研发能力与我不相上下啊......");
+            }
+        }
 
         if (playerExtraPoisonTick) {
             for (Enemy e : enemies) {
@@ -976,6 +1034,13 @@ public class BattleService {
             if (energyLoss > 0) {
                 energy = Math.max(0, energy - energyLoss);
                 logList.add(String.format("🌑 抽到了【%s】，失去了 %d 点能量，当前能量: %d", drawnCard.getName(), energyLoss, energy));
+            }
+
+            // 🆕 粘液球：抽到粘液时自动打出（不消耗费用）
+            if (RelicEffectHandler.hasEffect(player, "SLIME_BALL") && "粘液".equals(drawnCard.getName())) {
+                hand.remove(drawnCard);
+                exhaustPile.add(drawnCard);
+                logList.add("🟢 粘液球自动打出【粘液】，已消耗");
             }
         }
         if (drawn > 0) {
