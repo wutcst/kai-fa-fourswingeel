@@ -39,6 +39,7 @@ public class BattleService {
     private boolean exhaustedThisAction;   // 本次操作是否消耗了卡牌（安东尼之怒）
     private boolean cardPlayedThisTurn;     // 本回合是否打出过卡牌（山之心）
     private boolean mountainHeartUsedThisBattle; // 山之心本场战斗是否已触发
+    private int totemCardCount;             // 未知图腾：累计出牌计数
     private final Random random = new Random();
 
     // 🔥 简单状态牌模板（晕眩、灼伤）
@@ -156,6 +157,7 @@ public class BattleService {
         this.exhaustedThisAction = false;
         this.cardPlayedThisTurn = false;
         this.mountainHeartUsedThisBattle = false;
+        this.totemCardCount = 0;
         this.blockPerAttackThisTurn = 0;
         this.hasDiscardedThisTurn = false;
         this.drawCountThisTurn = 0;
@@ -280,6 +282,16 @@ public class BattleService {
         if (!card.isXCost() && card.getCost() > energy) throw new IllegalStateException("能量不足");
 
         cardPlayedThisTurn = true;
+        // 🆕 未知图腾：每打出4张牌抽1张（跨回合累计）
+        if (RelicEffectHandler.hasEffect(player, "UNKNOWN_TOTEM")) {
+            int threshold = RelicEffectHandler.getEffectValue(player, "UNKNOWN_TOTEM");
+            totemCardCount++;
+            if (totemCardCount >= threshold) {
+                drawCards(1);
+                logList.add("🗿 未知图腾触发：累计打出 " + threshold + " 张牌，抽1张牌");
+                totemCardCount = 0;
+            }
+        }
         exhaustedThisAction = false;
         logList.add("━━━ 🃏 使用: " + card.getName() + " ━━━");
 
