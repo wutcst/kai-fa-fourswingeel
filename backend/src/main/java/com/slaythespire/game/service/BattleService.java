@@ -913,6 +913,19 @@ public class BattleService {
         if (RelicEffectHandler.hasEffect(player, "DRAW_PER_TURN")) turnDrawCount++;
         drawCards(Math.max(0, turnDrawCount));
 
+        // 🆕 i18芯片：抽牌堆仅1张且弃牌堆18张时触发
+        if (RelicEffectHandler.hasEffect(player, "I18_CHIP")) {
+            if (drawPile.size() == 1 && discardPile.size() == 18) {
+                int dmg = RelicEffectHandler.getEffectValue(player, "I18_CHIP");
+                for (Enemy e : getAliveEnemies()) {
+                    int dealt = e.takeDamage(dmg, null, true);
+                    logList.addAll(e.getLastCombatLogs());
+                    logList.add("💥 i18芯片对 " + e.getEnemyName() + " 造成 " + dealt + " 点伤害");
+                }
+                logList.add("🗿：i18研发成功，看来你的研发能力与我不相上下啊......");
+            }
+        }
+
         if (playerExtraPoisonTick) {
             for (Enemy e : enemies) {
                 if (!e.isAlive()) continue;

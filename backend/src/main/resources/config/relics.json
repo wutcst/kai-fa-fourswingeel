@@ -33,6 +33,7 @@
   { "id": "small_gold_bag", "name": "小袋金币", "description": "拾起时，获得 50 金币。", "effectType": "NO_EFFECT", "value": 50, "rarity": "COMMON", "charId": null },
   { "id": "power_shard", "name": "力量碎片", "description": "最大生命值 +5。", "effectType": "MAX_HP", "value": 5, "rarity": "COMMON", "charId": null },
   { "id": "light_boots", "name": "轻灵靴", "description": "每回合结束时，获得 4 点格挡。", "effectType": "BLOCK_END_TURN", "value": 4, "rarity": "COMMON", "charId": null },
+  { "id": "i18_chip", "name": "火博士的i18芯片", "description": "当抽牌堆仅有1张且弃牌堆有18张时，对所有敌人造成60点伤害。", "effectType": "I18_CHIP", "value": 60, "rarity": "COMMON", "charId": null },
 
   { "id": "tuning_fork", "name": "音叉", "description": "每场战斗的第一回合开始时，获得 10 点格挡。", "effectType": "BLOCK_FIRST_TURN", "value": 10, "rarity": "COMMON", "charId": null },
   { "id": "perr_eye", "name": "佩尔之眼", "description": "每场战斗的第一回合开始时，所有敌人获得 1 层虚弱。", "effectType": "WEAKEN_FIRST_TURN", "value": 1, "rarity": "COMMON", "charId": null },
