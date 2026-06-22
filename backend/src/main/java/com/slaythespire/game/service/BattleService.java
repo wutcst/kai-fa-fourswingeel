@@ -39,6 +39,7 @@ public class BattleService {
     private boolean exhaustedThisAction;   // 本次操作是否消耗了卡牌（安东尼之怒）
     private boolean cardPlayedThisTurn;     // 本回合是否打出过卡牌（山之心）
     private boolean mountainHeartUsedThisBattle; // 山之心本场战斗是否已触发
+    private boolean omoriKnifeUsedThisBattle; // OMORI的刀本场战斗是否已触发
     private int totemCardCount;             // 未知图腾：累计出牌计数
     private final Random random = new Random();
 
@@ -158,6 +159,7 @@ public class BattleService {
         this.cardPlayedThisTurn = false;
         this.mountainHeartUsedThisBattle = false;
         this.totemCardCount = 0;
+        this.omoriKnifeUsedThisBattle = false;
         this.blockPerAttackThisTurn = 0;
         this.hasDiscardedThisTurn = false;
         this.drawCountThisTurn = 0;
@@ -509,6 +511,44 @@ public class BattleService {
 
             if (savedStrength != null) {
                 player.addStatus(savedStrength);
+            }
+        }
+
+        // 🆕 OMORI的刀：每场战斗第一次打出的攻击牌重复打出3次
+        if (card.getType() == Card.CardType.ATTACK && card.getDamage() > 0) {
+            if (RelicEffectHandler.hasEffect(player, "OMORI_KNIFE") && !omoriKnifeUsedThisBattle) {
+                omoriKnifeUsedThisBattle = true;
+                int extraHits = 3;
+                logList.add("🗡️ OMORI的刀触发！额外打出 " + extraHits + " 次");
+                // 重复伤害
+                List<Enemy> currentAlive = new ArrayList<>(aliveEnemies);
+                for (int h = 0; h < extraHits; h++) {
+                    if (currentAlive.isEmpty()) break;
+                    int dmgPerHit = baseDamage;
+                    if (strengthMultiplier > 1 && strengthCount > 0) {
+                        dmgPerHit += strengthCount * strengthMultiplier;
+                    }
+                    if (card.isAoe()) {
+                        for (Enemy e : new ArrayList<>(currentAlive)) {
+                            if (!e.isAlive()) { currentAlive.remove(e); continue; }
+                            int d = e.takeDamage(dmgPerHit, player);
+                            logList.addAll(e.getLastCombatLogs());
+                            logList.add("🗡️ OMORI刀额外对 " + e.getEnemyName() + " 造成 " + d + " 点伤害");
+                            if (!e.isAlive()) currentAlive.remove(e);
+                        }
+                    } else {
+                        if (card.isRandomTarget() && !currentAlive.isEmpty()) {
+                            Enemy rt = currentAlive.get(new Random().nextInt(currentAlive.size()));
+                            int d = rt.takeDamage(dmgPerHit, player);
+                            logList.addAll(rt.getLastCombatLogs());
+                            logList.add("🗡️ OMORI刀额外对 " + rt.getEnemyName() + " 造成 " + d + " 点伤害");
+                        } else if (!currentAlive.isEmpty()) {
+                            int d = target.takeDamage(dmgPerHit, player);
+                            logList.addAll(target.getLastCombatLogs());
+                            logList.add("🗡️ OMORI刀额外对 " + target.getEnemyName() + " 造成 " + d + " 点伤害");
+                        }
+                    }
+                }
             }
         }
 
