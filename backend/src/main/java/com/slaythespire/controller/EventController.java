@@ -18,16 +18,27 @@ public class EventController {
     private EventService eventService;
 
     /**
-     * 随机获取一个事件（含选项，不含效果内部逻辑）
-     * 前端仅用于展示
+     * 随机获取一个事件，或指定 eventId 强制触发特定事件（调试用）
      */
     @GetMapping("/roll")
-    public ResponseEntity<EventTemplate> rollEvent(@RequestParam(defaultValue = "1") int act) {
-        EventTemplate event = eventService.rollEvent(act);
+    public ResponseEntity<EventTemplate> rollEvent(@RequestParam(defaultValue = "1") int act,
+                                                    @RequestParam(required = false) String eventId) {
+        EventTemplate event;
+        if (eventId != null && !eventId.isEmpty()) {
+            event = eventService.getEventById(eventId);
+        } else {
+            event = eventService.rollEvent(act);
+        }
         if (event == null) {
             return ResponseEntity.internalServerError().build();
         }
         return ResponseEntity.ok(event);
+    }
+
+    /** 返回所有事件列表（调试用） */
+    @GetMapping("/list")
+    public ResponseEntity<List<EventTemplate>> listEvents() {
+        return ResponseEntity.ok(eventService.getAllEvents());
     }
 
     /**

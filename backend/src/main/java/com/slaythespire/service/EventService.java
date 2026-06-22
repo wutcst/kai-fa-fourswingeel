@@ -91,6 +91,16 @@ public class EventService {
         return fresh.get(random.nextInt(fresh.size()));
     }
 
+    /** 根据 ID 查找事件 */
+    public EventTemplate getEventById(String id) {
+        return events.stream().filter(e -> e.getId().equals(id)).findFirst().orElse(null);
+    }
+
+    /** 返回所有事件 */
+    public List<EventTemplate> getAllEvents() {
+        return new ArrayList<>(events);
+    }
+
     /**
      * 执行选项效果，直接修改存档并持久化
      * @param eventId 事件 ID

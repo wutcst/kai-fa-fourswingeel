@@ -7,13 +7,31 @@
   <script src="card_ui.js"></script>
   <script src="save_helper.js"></script>
   <style>
-    body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; position: relative; }
+    body { margin: 0; padding-top: 50px; background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
     .event-background { width: 100%; height: 250px; display: flex; align-items: center; justify-content: center; font-size: 80px; color: white; text-shadow: 0 0 20px rgba(0,0,0,0.8); }
     .event-text { max-width: 600px; padding: 20px; text-align: center; font-size: 18px; line-height: 1.6; background: rgba(0,0,0,0.4); border-radius: 12px; margin: 20px; }
     .options { display: flex; gap: 30px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
     .option-btn { padding: 15px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; background: #e67e22; color: white; max-width: 250px; }
     .option-btn:hover { background: #d35400; transform: translateY(-2px); }
     .option-btn:disabled { background: #555; cursor: not-allowed; transform: none; }
+    /* 配对游戏 */
+    .game-area { display: none; flex-direction: column; align-items: center; margin-top: 10px; }
+    .game-area h2 { color: #f1c40f; }
+    .game-score { font-size: 16px; color: #bdc3c7; margin: 6px 0; }
+    .grid { display: grid; grid-template-columns: repeat(4, 90px); gap: 8px; justify-content: center; margin: 10px 0; }
+    .tile { width: 90px; height: 120px; perspective: 600px; cursor: pointer; }
+    .tile-inner { position: relative; width: 100%; height: 100%; transition: transform 0.4s; transform-style: preserve-3d; }
+    .tile.flipped .tile-inner { transform: rotateY(180deg); }
+    .tile.matched { cursor: default; opacity: 0.7; }
+    .tile.matched .tile-inner { transform: rotateY(180deg); }
+    .tile-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; text-align: center; border: 3px solid #555; }
+    .tile-back { background: linear-gradient(135deg, #2c3e50, #34495e); font-size: 28px; border-color: #555 !important; }
+    .tile-front { transform: rotateY(180deg); padding: 4px; color: white; font-weight: bold; }
+    .tile-front .card-name { font-size: 12px; margin: 3px 0; }
+    .tile-front .card-cost { background: #e74c3c; border-radius: 50%; width: 18px; height: 18px; line-height: 18px; font-size: 10px; font-weight: bold; }
+    .game-btns { display: flex; gap: 10px; margin-top: 8px; }
+    .game-btns button { padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; }
+    .btn-quit { background: #e74c3c; color: white; }
   </style>
 </head>
 <body>
@@ -21,119 +39,366 @@
   <div class="event-background" id="event-bg"></div>
   <div class="event-text" id="event-description"></div>
   <div class="options" id="options-container"></div>
+  <div class="game-area" id="game-area">
+    <h2>🃏 卡牌配对</h2>
+    <div class="game-score">🃏 已获得: <b id="match-count">0</b>/<b id="total-pairs">0</b> &nbsp;|&nbsp; 🔄 剩余翻牌: <b id="flips-left">10</b></div>
+    <div class="grid" id="grid"></div>
+    <div class="game-btns">
+      <button class="btn-quit" id="quit-btn">放弃挑战</button>
+    </div>
+  </div>
+  <!-- 猜卡牌区域 -->
+  <div class="game-area" id="guess-area">
+    <h2>❓ 猜猜这是哪张牌？</h2>
+    <div id="guess-stats" style="background:rgba(0,0,0,0.3);padding:16px 24px;border-radius:10px;margin:10px 0;text-align:center;font-size:16px;line-height:1.8;"></div>
+    <div class="options" id="guess-options" style="margin-top:10px;"></div>
+  </div>
 
   <script>
-      const params = new URLSearchParams(window.location.search);
-      const char = params.get('char') || '1';
-      const currentNode = params.get('currentNode') || 'start';
-      const nextNode = params.get('nextNode') || currentNode;
-      const act = params.get('act') || '1';
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var char = params.get('char') || '1';
+      var currentNode = params.get('currentNode') || 'start';
+      var nextNode = params.get('nextNode') || currentNode;
+      var act = params.get('act') || '1';
+      var eventData = null;
 
-      let eventData = null; // 保存后端返回的事件数据
-
-      // 加载事件
       async function loadEvent() {
         try {
-          const resp = await fetch('/api/event/roll?act=' + encodeURIComponent(act));
-          if (resp.ok) {
-            eventData = await resp.json();
-            renderEvent(eventData);
-          } else {
-            throw new Error('事件接口错误');
-          }
-        } catch (e) {
-          console.error('无法获取事件', e);
-          // 降级显示简单文本
-          document.getElementById('event-bg').style.background = 'linear-gradient(135deg, #333, #111)';
-          document.getElementById('event-bg').innerHTML = '❓';
-          document.getElementById('event-description').textContent = '一片未知的区域，什么也没有发生。';
-          const optionsDiv = document.getElementById('options-container');
-          optionsDiv.innerHTML = '';
-          // 提供继续前进按钮，防止玩家卡死
-          const skipBtn = document.createElement('button');
-          skipBtn.className = 'option-btn';
-          skipBtn.textContent = '继续前进 →';
-          skipBtn.addEventListener('click', () => {
-            window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
-          });
-          optionsDiv.appendChild(skipBtn);
-        }
+          var url = '/api/event/roll?act=' + encodeURIComponent(act);
+          var eid = params.get('eventId');
+          if (eid) url += '&eventId=' + encodeURIComponent(eid);
+          var resp = await fetch(url);
+          if (resp.ok) { eventData = await resp.json(); renderEvent(eventData); return; }
+          throw new Error('event API error');
+        } catch(e) { console.error(e); showFallback(); }
+      }
+
+      function showFallback() {
+        document.getElementById('event-bg').style.background = 'linear-gradient(135deg, #333, #111)';
+        document.getElementById('event-bg').innerHTML = '❓';
+        document.getElementById('event-description').textContent = '一片未知的区域，什么也没有发生。';
+        var div = document.getElementById('options-container'); div.innerHTML = '';
+        var btn = document.createElement('button'); btn.className = 'option-btn'; btn.textContent = '继续前进 →';
+        btn.onclick = function() { window.location.href = 'map.html?char=' + char + '&currentNode=' + encodeURIComponent(nextNode) + '&act=' + act; };
+        div.appendChild(btn);
       }
 
       function renderEvent(event) {
         document.getElementById('event-bg').style.background = event.background || 'linear-gradient(135deg, #333, #111)';
-        document.getElementById('event-bg').innerHTML = `<span>${event.icon || '❓'}</span>`;
-        document.getElementById('event-description').textContent = event.description || '无描述';
+        document.getElementById('event-bg').innerHTML = '<span>' + (event.icon || '❓') + '</span>';
+        document.getElementById('event-description').textContent = event.description || '';
+        var div = document.getElementById('options-container'); div.innerHTML = '';
+        event.options.forEach(function(opt, i) {
+          var btn = document.createElement('button'); btn.className = 'option-btn'; btn.textContent = opt.text;
+          btn.onclick = function() { handleOption(event, i, opt, btn); };
+          div.appendChild(btn);
+        });
+      }
 
-        const optionsDiv = document.getElementById('options-container');
-        optionsDiv.innerHTML = '';
-        event.options.forEach((opt, index) => {
-          const btn = document.createElement('button');
-          btn.className = 'option-btn';
-          btn.textContent = opt.text;
-          btn.addEventListener('click', async () => {
-            // 检查是否需要选择卡牌删除（CHOOSE_REMOVE_CARD 效果）
-            const hasChooseRemove = opt.effects && opt.effects.some(function(e) { return e.type === 'CHOOSE_REMOVE_CARD'; });
-            if (hasChooseRemove) {
-              const removeEffect = opt.effects.find(function(e) { return e.type === 'CHOOSE_REMOVE_CARD'; });
-              const removeCount = removeEffect.count || 1;
-              // 保存事件上下文到 sessionStorage，供 event_remove.html 使用
-              sessionStorage.setItem('eventRemoveContext', JSON.stringify({
-                eventId: event.id,
-                optionIndex: index,
-                removeCount: removeCount,
-                char: char,
-                nextNode: nextNode,
-                act: act
-              }));
-              window.location.href = `event_remove.html?char=${char}&count=${removeCount}`;
-              return;
-            }
-
-            btn.disabled = true;
-            try {
-              const chooseResp = await fetch(`/api/event/choose?eventId=${encodeURIComponent(event.id)}&optionIndex=${index}&charId=${char}`, { method: 'POST' });
-              if (chooseResp.ok) {
-                const result = await chooseResp.text();
-                console.log('事件结果:', result);
-                window.showModal(result, {
-                  title: '事件发生',
-                  icon: event.icon || '✨',
-                  buttonText: '继续',
-                  borderColor: '#e67e22',
-                  onClose: function() {
-                    // 检查是否获得了彩蛋遗物，单独弹窗
-                    loadSaveData(char).then(function(sd) {
-                      if (sd.relics && sd.relics.includes('jiucai_anger')) {
-                        window.showModal('怪物太难都是九才8干的，大家一起骂他', {
-                          title: '😡 九才8之怒',
-                          icon: '😡',
-                          borderColor: '#e74c3c',
-                          onClose: function() {
-                            window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
-                          }
-                        });
-                      } else {
-                        window.location.href = `map.html?char=${char}&currentNode=${encodeURIComponent(nextNode)}&act=${act}`;
-                      }
-                    });
-                  }
+      async function handleOption(event, index, opt, btn) {
+        // 猜卡牌
+        if (opt.effects && opt.effects.some(function(e) { return e.type === 'GUESS_CARD'; })) {
+          startGuessGame(); return;
+        }
+        // 幸运轮盘
+        if (opt.effects && opt.effects.some(function(e) { return e.type === 'LUCKY_WHEEL'; })) {
+          doLuckyWheel(); return;
+        }
+        // 贪婪宝箱
+        if (opt.effects && opt.effects.some(function(e) { return e.type === 'GREEDY_CHEST'; })) {
+          doGreedyChest(); return;
+        }
+        // 配对游戏
+        if (opt.effects && opt.effects.some(function(e) { return e.type === 'MATCH_GAME'; })) {
+          startMatchGame(); return;
+        }
+        // 选择删牌
+        if (opt.effects && opt.effects.some(function(e) { return e.type === 'CHOOSE_REMOVE_CARD'; })) {
+          var re = opt.effects.find(function(e) { return e.type === 'CHOOSE_REMOVE_CARD'; });
+          sessionStorage.setItem('eventRemoveContext', JSON.stringify({ eventId: event.id, optionIndex: index, removeCount: re.count || 1, char: char, nextNode: nextNode, act: act }));
+          window.location.href = 'event_remove.html?char=' + char + '&count=' + (re.count || 1); return;
+        }
+        // 普通事件
+        btn.disabled = true;
+        try {
+          var r = await fetch('/api/event/choose?eventId=' + encodeURIComponent(event.id) + '&optionIndex=' + index + '&charId=' + char, { method: 'POST' });
+          if (r.ok) {
+            var txt = await r.text();
+            window.showModal(txt, { title: '事件发生', icon: event.icon || '✨', borderColor: '#e67e22', buttonText: '继续',
+              onClose: function() {
+                loadSaveData(char).then(function(sd) {
+                  var cb = function() { window.location.href = 'map.html?char=' + char + '&currentNode=' + encodeURIComponent(nextNode) + '&act=' + act; };
+                  if (sd.relics && sd.relics.includes('jiucai_anger')) {
+                    window.showModal('怪物太难都是九才8干的，大家一起骂他', { title: '😡 九才8之怒', icon: '😡', borderColor: '#e74c3c', onClose: cb });
+                  } else { cb(); }
                 });
-              } else {
-                window.showModal('请稍后重试', { title: '执行失败', icon: '⚠️', borderColor: '#e74c3c' });
-                btn.disabled = false;
               }
-            } catch (e) {
-              console.error('执行事件错误', e);
-              window.showModal('网络错误，请检查连接后重试', { title: '发生错误', icon: '❌', borderColor: '#e74c3c' });
-              btn.disabled = false;
+            });
+          } else { window.showModal('请稍后重试', { title: '执行失败', icon: '⚠️', borderColor: '#e74c3c' }); btn.disabled = false; }
+        } catch(e) { window.showModal('网络错误', { title: '错误', icon: '❌', borderColor: '#e74c3c' }); btn.disabled = false; }
+      }
+
+      /* ==================== 配对游戏 (内嵌) ==================== */
+      var PAIR_COUNT = 6, maxFlips = 10, matchedCount = 0, flipsUsed = 0, lockClick = false;
+      var earnedCards = [], chosenCards = [], tilesData = [];
+
+      async function startMatchGame() {
+        document.getElementById('event-bg').style.display = 'none';
+        document.getElementById('event-description').style.display = 'none';
+        document.getElementById('options-container').style.display = 'none';
+        document.getElementById('game-area').style.display = 'flex';
+        document.getElementById('total-pairs').textContent = PAIR_COUNT;
+        document.getElementById('flips-left').textContent = maxFlips;
+
+        var saveData; try { saveData = await loadSaveData(char); } catch(e) { saveData = { deck: [], relics: [] }; }
+        saveData.deck = saveData.deck || [];
+        if (nextNode === 'console' || !nextNode) nextNode = saveData.currentNode || 'start';
+        if (!act || act === 'undefined') act = saveData.act || '1';
+
+        var allCards = [];
+        try {
+          var r = await fetch('/api/cards');
+          if (r.ok) {
+            var all = await r.json();
+            var seen = {};
+            all.forEach(function(c) {
+              if (c.upgraded || c.rarity === 'START') return;
+              if (c.charId && c.charId !== char && c.charId !== '0') return;
+              if (seen[c.id]) return; seen[c.id] = true;
+              allCards.push(c);
+            });
+          }
+        } catch(e) {}
+
+        if (allCards.length < PAIR_COUNT) { endGame('卡牌不足，无法游戏'); return; }
+
+        var byRarity = {};
+        allCards.forEach(function(c) { var r = c.rarity || 'COMMON'; (byRarity[r] = byRarity[r] || []).push(c); });
+        chosenCards = [];
+        function pick(rarity) { var p = byRarity[rarity]; if (p && p.length) chosenCards.push(p.splice(Math.floor(Math.random() * p.length), 1)[0]); }
+        pick('UNCOMMON'); pick('RARE'); pick('SPECIAL');
+        var cp = (byRarity['COMMON'] || []).slice();
+        while (chosenCards.length < PAIR_COUNT && cp.length) chosenCards.push(cp.splice(Math.floor(Math.random() * cp.length), 1)[0]);
+
+        tilesData = [];
+        chosenCards.forEach(function(c) { tilesData.push(c); tilesData.push(c); });
+        for (var i = tilesData.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = tilesData[i]; tilesData[i] = tilesData[j]; tilesData[j] = t; }
+
+        renderTiles();
+        document.getElementById('quit-btn').onclick = function() { endGame(''); };
+      }
+
+      function renderTiles() {
+        var grid = document.getElementById('grid'); grid.innerHTML = '';
+        tilesData.forEach(function(card, idx) {
+          var tile = document.createElement('div'); tile.className = 'tile'; tile.dataset.index = idx;
+          var bg = CARD_UI.getCardCharStyle(card), bd = CARD_UI.getRarityBorderColor(card);
+          tile.innerHTML = '<div class="tile-inner"><div class="tile-face tile-back">❓</div><div class="tile-face tile-front" style="background:' + bg + ';border-color:' + bd + ';"><div class="card-cost">' + card.cost + '</div><div class="card-name">' + card.name + '</div><div style="font-size:9px;color:#ccc;">' + CARD_UI.getCardTypeLabel(card) + '</div></div></div>';
+          tile.onclick = function() { flipTile(idx, card.id); };
+          grid.appendChild(tile);
+        });
+        document.getElementById('match-count').textContent = '0';
+        document.getElementById('flips-left').textContent = maxFlips;
+        matchedCount = 0; flipsUsed = 0; earnedCards = []; lockClick = false;
+      }
+
+      var flippedTiles = [];
+      function flipTile(idx, cardId) {
+        if (lockClick || flipsUsed >= maxFlips) return;
+        var tile = document.getElementById('grid').children[idx];
+        if (tile.classList.contains('flipped') || tile.classList.contains('matched')) return;
+        tile.classList.add('flipped'); flipsUsed++;
+        document.getElementById('flips-left').textContent = maxFlips - flipsUsed;
+        flippedTiles.push({ idx: idx, cid: cardId });
+        if (flippedTiles.length === 2) {
+          lockClick = true;
+          var a = flippedTiles[0], b = flippedTiles[1];
+          if (a.cid === b.cid && a.idx !== b.idx) {
+            setTimeout(function() {
+              document.getElementById('grid').children[a.idx].classList.add('matched');
+              document.getElementById('grid').children[b.idx].classList.add('matched');
+              matchedCount++; earnedCards.push(a.cid);
+              document.getElementById('match-count').textContent = matchedCount;
+              flippedTiles = []; lockClick = false;
+              if (matchedCount >= PAIR_COUNT) endGame('all');
+            }, 300);
+          } else {
+            setTimeout(function() {
+              document.getElementById('grid').children[a.idx].classList.remove('flipped');
+              document.getElementById('grid').children[b.idx].classList.remove('flipped');
+              flippedTiles = []; lockClick = false;
+              if (flipsUsed >= maxFlips) endGame('');
+            }, 600);
+          }
+        }
+        if (flipsUsed >= maxFlips && flippedTiles.length < 2) { setTimeout(function() { endGame(''); }, 300); }
+      }
+
+      async function endGame(reason) {
+        lockClick = true;
+        document.getElementById('game-area').style.display = 'none';
+        document.getElementById('options-container').style.display = 'flex';
+        document.getElementById('options-container').innerHTML = '';
+
+        var saveData; try { saveData = await loadSaveData(char); } catch(e) { saveData = { deck: [], relics: [] }; }
+        saveData.deck = saveData.deck || [];
+        for (var i = 0; i < earnedCards.length; i++) {
+          try {
+            var r = await fetch('/api/card/' + encodeURIComponent(earnedCards[i]));
+            if (r.ok) { var cd = await r.json(); saveData.deck.push(cd); }
+          } catch(e) {}
+        }
+        try { await saveSaveData(saveData); } catch(e) {}
+
+        var msg = earnedCards.length > 0 ? '获得了 ' + earnedCards.length + ' 张卡牌！' : '没有获得卡牌';
+        var title = reason === 'all' ? '🎉 全部配对！' : (flipsUsed >= maxFlips ? '⏰ 次数用完' : '游戏结束');
+        window.showModal(msg, { title: title, icon: '🃏', borderColor: '#f1c40f',
+          onClose: function() { window.location.href = 'map.html?char=' + char + '&currentNode=' + encodeURIComponent(nextNode) + '&act=' + act; }
+        });
+      }
+
+      /* ==================== 猜卡牌游戏 ==================== */
+      async function startGuessGame() {
+        document.getElementById('event-bg').style.display = 'none';
+        document.getElementById('event-description').style.display = 'none';
+        document.getElementById('options-container').style.display = 'none';
+        document.getElementById('game-area').style.display = 'none';
+        var ga = document.getElementById('guess-area'); ga.style.display = 'flex';
+
+        var all = [];
+        try {
+          var r = await fetch('/api/cards');
+          if (r.ok) all = await r.json();
+        } catch(e) {}
+        // 筛选可用卡牌
+        var pool = all.filter(function(c) { return !c.upgraded && c.rarity !== 'START' && c.rarity !== 'SPECIAL' && (!c.charId || c.charId === char || c.charId === '0'); });
+        if (pool.length < 3) { pool = all.filter(function(c) { return !c.upgraded; }); }
+        if (pool.length < 3) { endGuess(null); return; }
+
+        // 随机选目标 + 两个干扰项
+        var targetIdx = Math.floor(Math.random() * pool.length);
+        var target = pool[targetIdx];
+        var wrongs = []; var seen = { '': true }; seen[target.id] = true;
+        while (wrongs.length < 2) {
+          var w = pool[Math.floor(Math.random() * pool.length)];
+          if (!seen[w.id]) { seen[w.id] = true; wrongs.push(w); }
+        }
+
+        // 显示目标卡牌信息
+        var stats = '⚡ 费用: ' + target.cost + '<br>';
+        if (target.damage > 0) stats += '⚔️ 伤害: ' + target.damage + '<br>';
+        if (target.block > 0) stats += '🛡️ 格挡: ' + target.block + '<br>';
+        stats += '📋 类型: ' + CARD_UI.getCardTypeLabel(target) + '<br>';
+        var effText = CARD_UI.getCardEffectText(target);
+        if (effText && effText !== '无效果') stats += '✨ 效果: ' + effText + '<br>';
+        document.getElementById('guess-stats').innerHTML = stats;
+
+        // 生成 3 个选项（打乱顺序）
+        var options = [{ card: target, correct: true }].concat(wrongs.map(function(c) { return { card: c, correct: false }; }));
+        for (var i = options.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = options[i]; options[i] = options[j]; options[j] = t; }
+
+        var div = document.getElementById('guess-options'); div.innerHTML = '';
+        options.forEach(function(opt) {
+          var btn = document.createElement('button'); btn.className = 'option-btn';
+          btn.textContent = opt.card.name + ' (' + CARD_UI.getCardTypeLabel(opt.card) + ')';
+          btn.onclick = function() { endGuess(opt.correct ? opt.card : null); };
+          div.appendChild(btn);
+        });
+      }
+
+      async function endGuess(wonCard) {
+        document.getElementById('guess-area').style.display = 'none';
+        document.getElementById('options-container').style.display = 'flex';
+        document.getElementById('options-container').innerHTML = '';
+
+        if (wonCard) {
+          var saveData; try { saveData = await loadSaveData(char); } catch(e) { saveData = { deck: [] }; }
+          saveData.deck = saveData.deck || [];
+          try {
+            var r = await fetch('/api/card/' + encodeURIComponent(wonCard.id));
+            if (r.ok) { var cd = await r.json(); saveData.deck.push(cd); }
+          } catch(e) {}
+          try { await saveSaveData(saveData); } catch(e) {}
+        }
+        window.showModal(wonCard ? '猜对了！获得 ' + wonCard.name : '猜错了...没有奖励', {
+          title: wonCard ? '✅ 猜对了！' : '❌ 猜错了', icon: wonCard ? '🎉' : '😢', borderColor: wonCard ? '#2ecc71' : '#e74c3c',
+          onClose: function() { window.location.href = 'map.html?char=' + char + '&currentNode=' + encodeURIComponent(nextNode) + '&act=' + act; }
+        });
+      }
+
+      /* ==================== 幸运轮盘 ==================== */
+      async function doLuckyWheel() {
+        var outcomes = [
+          { msg: '🎉 +50 金币！', gold: 50 }, { msg: '🃏 随机获得一张卡牌！', card: true },
+          { msg: '📿 获得一件普通遗物！', relic: 'common' }, { msg: '❤️ +15 HP！', hp: 15 },
+          { msg: '😢 什么都没发生...', none: true }
+        ];
+        var result = outcomes[Math.floor(Math.random() * outcomes.length)];
+        var saveData; try { saveData = await loadSaveData(char); } catch(e) { saveData = { deck: [], relics: [], gold: 0, playerHp: 70, maxHp: 70 }; }
+        saveData.deck = saveData.deck || []; saveData.relics = saveData.relics || [];
+        saveData.gold = saveData.gold || 0; saveData.playerHp = saveData.playerHp || 70; saveData.maxHp = saveData.maxHp || 70;
+
+        if (result.gold) saveData.gold += result.gold;
+        if (result.card) {
+          try {
+            var cr = await fetch('/api/cards'); if (cr.ok) {
+              var all = await cr.json();
+              var pool = all.filter(function(c) { return !c.upgraded && c.rarity !== 'START' && c.rarity !== 'SPECIAL' && (!c.charId || c.charId === char || c.charId === '0'); });
+              if (pool.length > 0) {
+                var picked = pool[Math.floor(Math.random() * pool.length)];
+                var cardResp = await fetch('/api/card/' + encodeURIComponent(picked.id));
+                if (cardResp.ok) { var cd = await cardResp.json(); saveData.deck.push(cd); result.msg += ' (' + picked.name + ')'; }
+              }
             }
-          });
-          optionsDiv.appendChild(btn);
+          } catch(e) {}
+        }
+        if (result.relic) {
+          try {
+            var rr = await fetch('/api/relics'); if (rr.ok) {
+              var allR = await rr.json();
+              var tier = result.relic === 'common' ? 'COMMON' : 'RARE';
+              var pool = allR.filter(function(r) { return r.rarity === tier && !saveData.relics.includes(r.id); });
+              if (pool.length > 0) {
+                var picked = pool[Math.floor(Math.random() * pool.length)];
+                saveData.relics.push(picked.id); result.msg += ' (' + picked.name + ')';
+              }
+            }
+          } catch(e) {}
+        }
+        if (result.hp) saveData.playerHp = Math.min(saveData.maxHp, saveData.playerHp + result.hp);
+        try { await saveSaveData(saveData); } catch(e) {}
+        window.showModal(result.msg, { title: '🎡 轮盘结果', icon: '🎡', borderColor: '#f39c12',
+          onClose: function() { window.location.href = 'map.html?char=' + char + '&currentNode=' + encodeURIComponent(nextNode) + '&act=' + act; }
+        });
+      }
+
+      /* ==================== 贪婪宝箱 ==================== */
+      async function doGreedyChest() {
+        var win = Math.random() < 0.5;
+        var msg = win ? '🎉 赌赢了！获得稀有遗物！' : '😢 赌输了...宝箱里什么都没有';
+        var saveData; try { saveData = await loadSaveData(char); } catch(e) { saveData = { relics: [] }; }
+        saveData.relics = saveData.relics || [];
+        if (win) {
+          try {
+            var rr = await fetch('/api/relics'); if (rr.ok) {
+              var all = await rr.json();
+              var pool = all.filter(function(r) { return r.rarity === 'RARE' && !saveData.relics.includes(r.id); });
+              if (pool.length > 0) {
+                var picked = pool[Math.floor(Math.random() * pool.length)];
+                saveData.relics.push(picked.id); msg += ' (' + picked.name + ')';
+              }
+            }
+          } catch(e) {}
+        }
+        try { await saveSaveData(saveData); } catch(e) {}
+        window.showModal(msg, { title: '🎁 贪婪宝箱', icon: '🎁', borderColor: win ? '#2ecc71' : '#e74c3c',
+          onClose: function() { window.location.href = 'map.html?char=' + char + '&currentNode=' + encodeURIComponent(nextNode) + '&act=' + act; }
         });
       }
 
       loadEvent();
+    })();
   </script>
 </body>
 </html>
