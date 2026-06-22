@@ -990,6 +990,13 @@ public class BattleService {
                 energy = Math.max(0, energy - energyLoss);
                 logList.add(String.format("🌑 抽到了【%s】，失去了 %d 点能量，当前能量: %d", drawnCard.getName(), energyLoss, energy));
             }
+
+            // 🆕 粘液球：抽到粘液时自动打出（不消耗费用）
+            if (RelicEffectHandler.hasEffect(player, "SLIME_BALL") && "粘液".equals(drawnCard.getName())) {
+                hand.remove(drawnCard);
+                exhaustPile.add(drawnCard);
+                logList.add("🟢 粘液球自动打出【粘液】，已消耗");
+            }
         }
         if (drawn > 0) {
             logList.add(String.format("抽了 %d 张牌（手牌 %d/%d）", drawn, hand.size(), HAND_LIMIT));
