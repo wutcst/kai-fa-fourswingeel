@@ -841,14 +841,17 @@ public class BattleService {
         hand.addAll(retained);
         removeDeadEnemies();
 
+ // 🆕 收集待召唤的敌人，在迭代结束后统一添加，防止 ConcurrentModificationException
+        List<Enemy> summonedEnemies = new ArrayList<>();
+
         // 🆕 山之心：未打出任何卡牌结束回合时，额外开始一个回合（跳过敌人行动，每场战斗一次）
         boolean mountainHeartExtraTurn = RelicEffectHandler.hasEffect(player, "MOUNTAIN_HEART") && !cardPlayedThisTurn && !mountainHeartUsedThisBattle && getAliveEnemies().size() > 0;
         if (mountainHeartExtraTurn) {
             logList.add("⛰️ 山之心触发：另一个你选择帮助你......");
             mountainHeartUsedThisBattle = true;
         }
-
         if (!mountainHeartExtraTurn) {
+       
         for (Enemy enemy : enemies) {
             enemy.onTurnStart();
             logList.addAll(enemy.getLastTurnStartLogs());
@@ -869,7 +872,7 @@ public class BattleService {
                         for (int i = 0; i < intent.getSummonCount(); i++) {
                             Enemy newDagger = new Enemy(daggerTpl, dataRepo);
                             newDagger.setDrawer(cardType -> addStatusCardToDrawPile(cardType));
-                            enemies.add(newDagger);
+                            summonedEnemies.add(newDagger);
                             logList.add("🗡️ " + enemy.getEnemyName() + "召唤了一把匕首！");
                         }
                     }
@@ -917,6 +920,9 @@ public class BattleService {
         if (mountainHeartExtraTurn) {
             for (Enemy enemy : enemies) enemy.advanceIntent();
         }
+        // 🆕 将召唤的敌人统一加入战斗（在for-each结束后，防止 ConcurrentModificationException）
+        enemies.addAll(summonedEnemies);
+
         removeDeadEnemies();
 
         if (getAliveEnemies().isEmpty()) {
