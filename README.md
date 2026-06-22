@@ -173,7 +173,3 @@ mvn spring-boot:run
 - **前端**: 原生 HTML/JS + Vue 3 (仅战斗页面)
 - **存储**: JSON 文件存档
 - **构建**: Maven
-
-## 许可证
-
-MIT
