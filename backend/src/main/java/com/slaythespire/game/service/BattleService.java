@@ -819,6 +819,9 @@ public class BattleService {
         hand.addAll(retained);
         removeDeadEnemies();
 
+        // 🆕 收集待召唤的敌人，在迭代结束后统一添加，防止 ConcurrentModificationException
+        List<Enemy> summonedEnemies = new ArrayList<>();
+
         for (Enemy enemy : enemies) {
             enemy.onTurnStart();
             logList.addAll(enemy.getLastTurnStartLogs());
@@ -839,7 +842,7 @@ public class BattleService {
                         for (int i = 0; i < intent.getSummonCount(); i++) {
                             Enemy newDagger = new Enemy(daggerTpl, dataRepo);
                             newDagger.setDrawer(cardType -> addStatusCardToDrawPile(cardType));
-                            enemies.add(newDagger);
+                            summonedEnemies.add(newDagger);
                             logList.add("🗡️ " + enemy.getEnemyName() + "召唤了一把匕首！");
                         }
                     }
@@ -883,6 +886,9 @@ public class BattleService {
 
             if (!enemy.isAlive()) logList.add(String.format("💀 %s 被击败！", enemy.getEnemyName()));
         }
+        // 🆕 将召唤的敌人统一加入战斗（在for-each结束后，防止 ConcurrentModificationException）
+        enemies.addAll(summonedEnemies);
+
         removeDeadEnemies();
 
         if (getAliveEnemies().isEmpty()) {
